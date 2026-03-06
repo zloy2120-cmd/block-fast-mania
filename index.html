@@ -592,7 +592,43 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 #ghost{position:fixed;pointer-events:none;z-index:900;display:none;gap:2px;opacity:.88;}
 .gc{border-radius:5px;}
-</head>
+
+/* ══ SETTINGS extras ══ */
+.sp-skin-btn,.sp-achieve-btn{width:100%;margin-top:8px;border:none;border-radius:11px;padding:10px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:transform .15s;}
+.sp-skin-btn{background:linear-gradient(135deg,rgba(168,85,247,.35),rgba(124,58,237,.25));border:1px solid rgba(168,85,247,.4);color:#c4b5fd;}
+.sp-achieve-btn{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(245,158,11,.12));border:1px solid rgba(251,191,36,.35);color:var(--gold);margin-top:6px;}
+.sp-skin-btn:active,.sp-achieve-btn:active{transform:scale(.97);}
+
+/* ══ SKINS ══ */
+.sk-head,.ach-head{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px;flex-shrink:0;}
+.sk-body{flex:1;overflow-y:auto;padding:0 14px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.sk-preview{display:flex;gap:6px;justify-content:center;margin-top:8px;}
+.sk-preview-block{width:36px;height:36px;border-radius:10px;}
+.sk-label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;}
+.sk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;}
+.sk-card{border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:all .18s;background:rgba(255,255,255,.04);}
+.sk-card.active{border-color:var(--cyan);background:rgba(34,211,238,.1);box-shadow:0 0 16px rgba(34,211,238,.25);}
+.sk-card:active{transform:scale(.96);}
+.sk-swatches{display:flex;gap:4px;justify-content:center;margin-bottom:8px;}
+.sk-swatch{width:18px;height:18px;border-radius:5px;}
+.sk-name{font-size:12px;font-weight:800;color:var(--text);}
+.sk-badge{font-size:9px;margin-top:3px;padding:2px 7px;border-radius:20px;display:inline-block;}
+.sk-badge.free{background:rgba(34,197,94,.2);color:#4ade80;}
+.sk-badge.locked{background:rgba(255,255,255,.08);color:var(--muted);}
+
+/* ══ ACHIEVEMENTS ══ */
+.ach-body{flex:1;overflow-y:auto;padding:0 14px 20px;display:flex;flex-direction:column;gap:8px;}
+.ach-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);transition:all .2s;}
+.ach-card.unlocked{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);}
+.ach-icon{font-size:28px;flex-shrink:0;filter:grayscale(1) opacity(.35);}
+.ach-card.unlocked .ach-icon{filter:none;}
+.ach-info{flex:1;}
+.ach-title{font-size:13px;font-weight:900;color:var(--text);}
+.ach-desc{font-size:10px;color:var(--muted);margin-top:2px;}
+.ach-prog{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px;overflow:hidden;}
+.ach-prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),#a855f7);transition:width .6s ease;}
+.ach-check{font-size:18px;flex-shrink:0;}
+</style>
 <body>
 
 <!-- MENU -->
@@ -774,7 +810,33 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="sp-title">⚙ НАСТРОЙКИ</div>
   <div class="sp-row"><span class="sp-lbl">🔊 Звук</span><button class="toggle on" id="t-sound" onclick="toggleSetting('sound')"></button></div>
   <div class="sp-row"><span class="sp-lbl">📳 Вибрация</span><button class="toggle on" id="t-vibro" onclick="toggleSetting('vibro')"></button></div>
+  <button class="sp-skin-btn" onclick="closeSettings();showSkins()">🎨 Скины блоков</button>
+  <button class="sp-achieve-btn" onclick="closeSettings();showAchievements()">🏅 Ачивменты</button>
   <button class="sp-menu-btn" onclick="closeSettings();goMenu()">← Главное меню</button>
+</div>
+
+<!-- SKINS -->
+<div id="skins-screen" class="screen hidden">
+  <div class="sk-head">
+    <button class="board-back" onclick="showScreen('menu')">← Назад</button>
+    <div class="board-title">🎨 СКИНЫ</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="sk-body">
+    <div class="sk-preview" id="sk-preview"></div>
+    <div class="sk-label">Предпросмотр</div>
+    <div class="sk-grid" id="sk-grid"></div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div id="achieve-screen" class="screen hidden">
+  <div class="ach-head">
+    <button class="board-back" onclick="showScreen('menu')">← Назад</button>
+    <div class="board-title">🏅 АЧИВМЕНТЫ</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="ach-body" id="ach-body"></div>
 </div>
 
 <!-- GAME OVER -->
@@ -966,8 +1028,8 @@ const lsS=(m,v)=>{
   try{
     localStorage.setItem('bfm7_'+m,v);
     window.Telegram?.WebApp?.CloudStorage?.setItem('bfm7_'+m,String(v));
-    // Отправляем на глобальный сервер
-    submitScore(m, v);
+    // submitScore вызывается отдельно после определения API
+    if(typeof submitScore==='function') submitScore(m,v);
   }catch{}
 };
 function restoreCloudScores(){
@@ -1534,6 +1596,8 @@ function showGO(){
     document.getElementById('go-title').textContent=t('gameOver');
   }
   document.getElementById('go').classList.add('show');
+  // Обновляем статистику для ачивментов
+  updateAchStats({ games_played:1, total_lines:lines, max_combo_ever:maxCombo });
 }
 function continuePlaying(){
   dead=false;locked=false;isNewRecord=false;isTimeUp=false;
@@ -1729,6 +1793,179 @@ function restartGame(){
   isDailyMode=false; // рестарт всегда обычный режим
   document.getElementById('go').classList.remove('show');
   startGame(mode);
+}
+
+/* ══ SKINS SYSTEM ══ */
+const SKINS = [
+  { id:'default', name:'Классика',  free:true,
+    colors:['#FF3535','#FF8500','#FFD300','#2ECC44','#0DBBD8','#3366FF','#9922CC','#EE0E88'] },
+  { id:'neon',    name:'Неон',      free:true,
+    colors:['#FF006E','#FB5607','#FFBE0B','#8338EC','#3A86FF','#06D6A0','#FF006E','#F72585'] },
+  { id:'pastel',  name:'Пастель',   free:false,
+    colors:['#FFB3C1','#FFD6A5','#FDFFB6','#CAFFBF','#9BF6FF','#A0C4FF','#BDB2FF','#FFC6FF'] },
+  { id:'dark',    name:'Тёмный',    free:false,
+    colors:['#7B0000','#7B3D00','#7B6D00','#004D00','#004D4D','#003D7B','#4D007B','#7B0044'] },
+  { id:'ocean',   name:'Океан',     free:false,
+    colors:['#03045E','#023E8A','#0077B6','#0096C7','#00B4D8','#48CAE4','#90E0EF','#ADE8F4'] },
+  { id:'fire',    name:'Огонь',     free:false,
+    colors:['#D00000','#E85D04','#F48C06','#FAA307','#FFBA08','#DC2F02','#9D0208','#6A040F'] },
+];
+
+let currentSkin = localStorage.getItem('bfm_skin') || 'default';
+
+function getSkinColors() {
+  const s = SKINS.find(s=>s.id===currentSkin) || SKINS[0];
+  return s.colors;
+}
+
+function isSkinUnlocked(skinId) {
+  const s = SKINS.find(s=>s.id===skinId);
+  if(!s) return false;
+  if(s.free) return true;
+  return localStorage.getItem('bfm_skin_'+skinId) === '1';
+}
+
+function showSkins() {
+  showScreen('skins-screen');
+  renderSkinsScreen();
+}
+
+function renderSkinsScreen() {
+  // Preview
+  const preview = document.getElementById('sk-preview');
+  preview.innerHTML = getSkinColors().slice(0,5).map(c=>
+    `<div class="sk-preview-block" style="background:${c};box-shadow:inset 0 3px 0 rgba(255,255,255,.3),0 4px 8px rgba(0,0,0,.4)"></div>`
+  ).join('');
+
+  // Grid
+  const grid = document.getElementById('sk-grid');
+  grid.innerHTML = SKINS.map(sk => {
+    const unlocked = isSkinUnlocked(sk.id);
+    const active = sk.id === currentSkin;
+    return `<div class="sk-card${active?' active':''}" onclick="selectSkin('${sk.id}')">
+      <div class="sk-swatches">${sk.colors.slice(0,5).map(c=>`<div class="sk-swatch" style="background:${c}"></div>`).join('')}</div>
+      <div class="sk-name">${sk.name}</div>
+      <div class="sk-badge ${unlocked?'free':'locked'}">${unlocked?(active?'✅ Активен':'Доступен'):'🔒 Скоро'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectSkin(id) {
+  if(!isSkinUnlocked(id)) {
+    vibrate('go');
+    tg?.showPopup?.({title:'🔒 Скин недоступен',message:'Этот скин будет доступен в следующем обновлении!',buttons:[{id:'ok',type:'ok'}]});
+    return;
+  }
+  currentSkin = id;
+  localStorage.setItem('bfm_skin', id);
+  vibrate('line');
+  // Обновляем BC цвета
+  const colors = getSkinColors();
+  colors.forEach((c,i) => { if(BC[i]) BC[i].b = c; });
+  renderSkinsScreen();
+}
+
+/* ══ ACHIEVEMENTS SYSTEM ══ */
+const ACHIEVEMENTS = [
+  { id:'first_game',  icon:'🎮', title:'Первый шаг',     desc:'Сыграй первую партию',           max:1,   key:'games_played' },
+  { id:'score_10k',   icon:'⭐', title:'Новичок',         desc:'Набери 10 000 очков',             max:10000, key:'best_score' },
+  { id:'score_100k',  icon:'🌟', title:'Мастер',          desc:'Набери 100 000 очков',            max:100000,key:'best_score' },
+  { id:'score_500k',  icon:'👑', title:'Легенда',         desc:'Набери 500 000 очков',            max:500000,key:'best_score' },
+  { id:'combo_5',     icon:'🔥', title:'Комбинатор',      desc:'Сделай комбо ×5',                max:5,   key:'max_combo_ever' },
+  { id:'combo_10',    icon:'💥', title:'Взрыв',           desc:'Сделай комбо ×10',               max:10,  key:'max_combo_ever' },
+  { id:'lines_100',   icon:'📦', title:'Сборщик',         desc:'Убери 100 линий',                max:100, key:'total_lines' },
+  { id:'lines_1000',  icon:'🏭', title:'Завод',           desc:'Убери 1000 линий',               max:1000,key:'total_lines' },
+  { id:'daily_3',     icon:'📅', title:'Ежедневник',      desc:'Сыграй Daily 3 дня подряд',      max:3,   key:'daily_streak' },
+  { id:'daily_7',     icon:'🗓️', title:'Недельный игрок', desc:'Сыграй Daily 7 дней подряд',     max:7,   key:'daily_streak' },
+  { id:'speed_win',   icon:'⚡', title:'Скоростник',       desc:'Набери 50 000 в Спидране',       max:50000,key:'speed_best' },
+  { id:'invite_1',    icon:'👥', title:'Тимбилдер',       desc:'Пригласи 1 друга',               max:1,   key:'referral_count' },
+];
+
+function getAchStats() {
+  return {
+    games_played:    parseInt(localStorage.getItem('bfm_stat_games')||'0'),
+    best_score:      Math.max(lsG('classic'),lsG('mini')),
+    max_combo_ever:  parseInt(localStorage.getItem('bfm_stat_maxcombo')||'0'),
+    total_lines:     parseInt(localStorage.getItem('bfm_stat_lines')||'0'),
+    daily_streak:    parseInt(localStorage.getItem('bfm_stat_streak')||'0'),
+    speed_best:      lsG('speed'),
+    referral_count:  parseInt(localStorage.getItem('bfm_stat_refs')||'0'),
+  };
+}
+
+function updateAchStats(delta) {
+  // delta = {games_played:1, total_lines:5, max_combo_ever:7, ...}
+  const stats = getAchStats();
+  if(delta.games_played)   localStorage.setItem('bfm_stat_games',  stats.games_played + delta.games_played);
+  if(delta.total_lines)    localStorage.setItem('bfm_stat_lines',  stats.total_lines  + delta.total_lines);
+  if(delta.max_combo_ever && delta.max_combo_ever > stats.max_combo_ever)
+                           localStorage.setItem('bfm_stat_maxcombo', delta.max_combo_ever);
+  checkNewAchievements();
+}
+
+function checkNewAchievements() {
+  const stats = getAchStats();
+  let newlyUnlocked = [];
+  ACHIEVEMENTS.forEach(a => {
+    const already = localStorage.getItem('bfm_ach_'+a.id);
+    if(already) return;
+    const val = stats[a.key] || 0;
+    if(val >= a.max) {
+      localStorage.setItem('bfm_ach_'+a.id, '1');
+      newlyUnlocked.push(a);
+    }
+  });
+  if(newlyUnlocked.length > 0) showAchUnlock(newlyUnlocked[0]);
+}
+
+function showAchUnlock(ach) {
+  vibrate('combo');
+  // Показываем тост с ачивментом
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,rgba(251,191,36,.95),rgba(245,158,11,.9));
+    border-radius:16px;padding:12px 18px;display:flex;align-items:center;gap:10px;
+    font-family:'Nunito',sans-serif;font-weight:900;color:#000;font-size:13px;
+    box-shadow:0 8px 32px rgba(251,191,36,.5);z-index:999;
+    animation:toastIn .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;`;
+  toast.innerHTML = `<span style="font-size:24px">${ach.icon}</span><div><div>Ачивмент разблокирован!</div><div style="font-size:11px;opacity:.7">${ach.title}</div></div>`;
+  const style = document.createElement('style');
+  style.textContent = '@keyframes toastIn{from{transform:translateX(-50%) translateY(40px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}';
+  document.head.appendChild(style);
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 3000);
+}
+
+function showAchievements() {
+  showScreen('achieve-screen');
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const stats = getAchStats();
+  const body = document.getElementById('ach-body');
+  body.innerHTML = ACHIEVEMENTS.map(a => {
+    const val = Math.min(stats[a.key]||0, a.max);
+    const pct = Math.round(val/a.max*100);
+    const done = localStorage.getItem('bfm_ach_'+a.id);
+    return `<div class="ach-card${done?' unlocked':''}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-info">
+        <div class="ach-title">${a.title}</div>
+        <div class="ach-desc">${a.desc}</div>
+        <div class="ach-prog"><div class="ach-prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="ach-check">${done?'✅':'${val.toLocaleString()}/${a.max.toLocaleString()}'}</div>
+    </div>`;
+  }).join('');
+  // Fix template literal in innerHTML
+  body.querySelectorAll('.ach-check').forEach((el,i)=>{
+    if(!el.textContent.includes('✅')){
+      const a=ACHIEVEMENTS[i];
+      const val=Math.min(stats[a.key]||0,a.max);
+      el.textContent=`${val.toLocaleString()}/${a.max.toLocaleString()}`;
+    }
+  });
 }
 
 /* ══ BOOT ══ */
