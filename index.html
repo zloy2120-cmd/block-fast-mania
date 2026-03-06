@@ -556,9 +556,42 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .flash-ov{position:fixed;inset:0;z-index:490;pointer-events:none;background:rgba(255,255,255,.14);animation:flashFade .4s ease forwards;}
 @keyframes flashFade{0%{opacity:1;}100%{opacity:0;}}
 
+/* ══ ONBOARDING ══ */
+#onboarding-ov{
+  display:none;position:fixed;inset:0;z-index:900;
+  background:rgba(6,5,22,.88);backdrop-filter:blur(20px);
+  align-items:center;justify-content:center;
+}
+#onboarding-ov.show{display:flex;}
+.ob-card{
+  background:linear-gradient(160deg,#0e0e2a,#161640);
+  border:1.5px solid rgba(255,255,255,.12);border-radius:28px;
+  padding:32px 24px 22px;text-align:center;
+  width:min(300px,88vw);
+  box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05);
+  animation:obPop .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes obPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.ob-emoji{font-size:56px;margin-bottom:12px;display:block;animation:obBob 2s ease-in-out infinite;}
+@keyframes obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ob-title{font-family:'Bungee',cursive;font-size:20px;color:#fff;margin-bottom:10px;}
+.ob-text{font-size:14px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:20px;}
+.ob-dots{display:flex;gap:7px;justify-content:center;margin-bottom:20px;}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s;}
+.ob-dot.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan);width:22px;border-radius:4px;}
+.ob-btn{
+  width:100%;border:none;border-radius:14px;padding:14px;
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);
+  color:#fff;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;
+  cursor:pointer;margin-bottom:10px;
+  box-shadow:0 6px 20px rgba(109,40,217,.5);
+  transition:transform .14s;
+}
+.ob-btn:active{transform:scale(.97);}
+.ob-skip{border:none;background:transparent;color:rgba(255,255,255,.35);font-size:12px;font-family:'Nunito',sans-serif;cursor:pointer;padding:4px;}
+
 #ghost{position:fixed;pointer-events:none;z-index:900;display:none;gap:2px;opacity:.88;}
 .gc{border-radius:5px;}
-</style>
 </head>
 <body>
 
@@ -793,6 +826,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div style="font-size:12px;color:#818cf8;text-align:center" id="ad-label">Досмотри бесплатно!</div>
   </div>
   <button class="skip-btn" id="skip-ad">✅ Получить награду</button>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboarding-ov">
+  <div class="ob-card">
+    <div class="ob-emoji" id="ob-emoji">🎮</div>
+    <div class="ob-title" id="ob-title">Добро пожаловать!</div>
+    <div class="ob-text" id="ob-text">Перетащи фигуру на поле</div>
+    <div class="ob-dots" id="ob-dots"></div>
+    <button class="ob-btn" id="ob-btn" onclick="nextOnboarding()">Понял!</button>
+    <button class="ob-skip" onclick="localStorage.setItem('bfm_onboarded','1');document.getElementById('onboarding-ov').classList.remove('show')">Пропустить</button>
+  </div>
 </div>
 
 <div id="fx"></div>
@@ -1529,32 +1574,131 @@ function addSpeedTime(secs,label){
   refillAll();renderGrid();renderPieces();renderHold();updateComboDots();
   showTimerBonus(label||'+'+secs+'с');resumeTimer();
 }
-function goStarsContinue(){
-  if(tg?.showPopup){tg.showPopup({title:'⭐ Продолжить за Stars',message:'25 Stars = продолжить с текущим счётом!',buttons:[{id:'buy',type:'default',text:'⭐ 25 Stars → Продолжить'},{id:'no',type:'cancel',text:'Отмена'}]},btn=>{if(btn==='buy')continuePlaying();});}
-  else continuePlaying();
+/* ══ REAL STARS PAYMENTS ══ */
+// Бот должен создать invoice через Bot API — Worker делает это за нас
+async function createStarsInvoice(type){
+  const id = MY_TG_ID();
+  if(!id){ fallbackStars(type); return; }
+  try {
+    const res = await fetch(`${API}/invoice`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tg_id: id, type })
+    });
+    const data = await res.json();
+    if(data.invoice_link){
+      // Открываем реальный платёж Stars в Telegram
+      tg.openInvoice(data.invoice_link, (status)=>{
+        if(status==='paid'){
+          vibrate('combo');
+          if(type==='continue') continuePlaying();
+          else if(type==='speed_time') addSpeedTime(25,'⭐ +25 сек');
+        }
+      });
+    } else {
+      fallbackStars(type);
+    }
+  } catch(e){
+    fallbackStars(type);
+  }
 }
-function goSpeedStars(){
-  if(tg?.showPopup){tg.showPopup({title:'⭐ Добавить время',message:'25 Stars = +25 секунд!',buttons:[{id:'buy',type:'default',text:'⭐ 25 Stars → +25 сек'},{id:'no',type:'cancel',text:'Отмена'}]},btn=>{if(btn==='buy')addSpeedTime(25,'⭐ +25 сек');});}
-  else addSpeedTime(25,'⭐ +25 сек');
+// Fallback — если Worker недоступен (тестирование вне Telegram)
+function fallbackStars(type){
+  if(tg?.showPopup){
+    tg.showPopup({
+      title: type==='continue'?'⭐ Продолжить':'⭐ +25 секунд',
+      message: type==='continue'?'25 Stars — продолжить с текущим счётом!':'25 Stars — добавить 25 секунд!',
+      buttons:[{id:'ok',type:'default',text:'✅ Окей'},{id:'no',type:'cancel',text:'Отмена'}]
+    }, btn=>{ if(btn==='ok'){ if(type==='continue') continuePlaying(); else addSpeedTime(25,'⭐ +25 сек'); }});
+  } else {
+    if(type==='continue') continuePlaying();
+    else addSpeedTime(25,'⭐ +25 сек');
+  }
+}
+function goStarsContinue(){ createStarsInvoice('continue'); }
+function goSpeedStars(){ createStarsInvoice('speed_time'); }
+
+/* ══ REFERRAL SYSTEM ══ */
+function checkReferral(){
+  // Telegram передаёт start_param автоматически при переходе по реф-ссылке
+  const startParam = tg?.initDataUnsafe?.start_param;
+  const myId = MY_TG_ID();
+  if(startParam && myId && startParam !== String(myId)){
+    // Сообщаем серверу что пришли по реферальной ссылке
+    fetch(`${API}/referral`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tg_id: myId, ref_id: startParam, first_name: MY_NAME() })
+    }).catch(()=>{});
+    // Показываем приветствие новому игроку
+    setTimeout(()=>{
+      tg?.showPopup?.({
+        title:'🎁 Тебя пригласили!',
+        message:'Твой друг приглашает тебя сыграть в Block Fast Mania. Побей его рекорд!',
+        buttons:[{id:'ok',type:'default',text:'🎮 Играть!'}]
+      });
+    }, 1200);
+  }
 }
 
-/* ══ SHARE RESULT ══ */
+/* Обновляем shareResult — добавляем реф-ссылку */
 function shareResult(){
   const modeNames={classic:'Классик 10×10',mini:'Мини Арена 8×8',speed:'Спидран 8×8'};
-  const isDaily=isDailyMode;
+  const myId = MY_TG_ID();
+  const botName = 'BlockFastManiaBot'; // замени на своего бота
+  const refLink = myId ? `\n👉 https://t.me/${botName}?start=${myId}` : '';
   let text;
-  if(isDaily){
-    text=`🎮 Block Fast Mania — Daily Challenge\n📅 ${getDailyDateStr()}\n🏆 Мой результат: ${score.toLocaleString()} очков\n📦 ${lines} линий · 🔥 Комбо ×${maxCombo}\n\nА ты сможешь лучше? 👇`;
+  if(isDailyMode){
+    text=`🎮 Block Fast Mania — Daily Challenge\n📅 ${getDailyDateStr()}\n🏆 Мой результат: ${score.toLocaleString()} очков\n📦 ${lines} линий · 🔥 Комбо ×${maxCombo}\n\nА ты сможешь лучше?${refLink}`;
   } else {
-    text=`🎮 Block Fast Mania [${modeNames[mode]||mode}]\n🏆 Набрал ${score.toLocaleString()} очков!\n📦 ${lines} линий · 🔥 Макс комбо ×${maxCombo}\n\nПобей мой рекорд! 👇`;
+    text=`🎮 Block Fast Mania [${modeNames[mode]||mode}]\n🏆 Набрал ${score.toLocaleString()} очков!\n📦 ${lines} линий · 🔥 Макс комбо ×${maxCombo}\n\nПобей мой рекорд!${refLink}`;
   }
   vibrate('menu');
-  if(window.Telegram?.WebApp?.switchInlineQuery){
-    window.Telegram.WebApp.switchInlineQuery(text,['users','groups']);
+  if(tg?.switchInlineQuery){
+    tg.switchInlineQuery(text,['users','groups','channels']);
   } else if(navigator.share){
     navigator.share({text});
   } else {
-    navigator.clipboard?.writeText(text).then(()=>alert('Скопировано! Вставь в чат 📋'));
+    navigator.clipboard?.writeText(text).then(()=>{ tg?.showPopup?.({title:'📋 Скопировано',message:'Вставь в любой чат!',buttons:[{id:'ok',type:'ok'}]}); });
+  }
+}
+
+/* ══ ONBOARDING ══ */
+const ONBOARDING_KEY = 'bfm_onboarded';
+let onboardingStep = 0;
+const ONBOARDING_STEPS = [
+  { emoji:'🎮', title: LANG==='ru'?'Добро пожаловать!':'Welcome!',    text: LANG==='ru'?'Перетащи фигуру на поле. Заполни линию — она исчезнет!':'Drag a piece onto the grid. Fill a line — it disappears!', btn: LANG==='ru'?'Понял!':'Got it!' },
+  { emoji:'🔥', title: LANG==='ru'?'Комбо — ключ к победе!':'Combos win games!', text: LANG==='ru'?'Заполняй несколько линий подряд — множитель растёт и очки взрываются!':'Clear multiple lines in a row — the multiplier grows and scores explode!', btn: LANG==='ru'?'Круто!':'Awesome!' },
+  { emoji:'📦', title: LANG==='ru'?'Банк фигур':'Piece bank',         text: LANG==='ru'?'Сохрани одну фигуру в банк — используй в нужный момент!':'Save one piece in the bank — use it at the right moment!', btn: LANG==='ru'?'Начать!':'Let\'s go!' },
+];
+function showOnboarding(){
+  if(localStorage.getItem(ONBOARDING_KEY)) return;
+  onboardingStep=0;
+  showOnboardingStep(0);
+}
+function showOnboardingStep(i){
+  const s=ONBOARDING_STEPS[i];
+  if(!s){
+    document.getElementById('onboarding-ov').classList.remove('show');
+    localStorage.setItem(ONBOARDING_KEY,'1');
+    return;
+  }
+  document.getElementById('ob-emoji').textContent=s.emoji;
+  document.getElementById('ob-title').textContent=s.title;
+  document.getElementById('ob-text').textContent=s.text;
+  document.getElementById('ob-btn').textContent=s.btn;
+  // Dots
+  const dots=document.getElementById('ob-dots');
+  dots.innerHTML=ONBOARDING_STEPS.map((_,j)=>`<div class="ob-dot${j===i?' active':''}"></div>`).join('');
+  document.getElementById('onboarding-ov').classList.add('show');
+}
+function nextOnboarding(){
+  onboardingStep++;
+  if(onboardingStep>=ONBOARDING_STEPS.length){
+    document.getElementById('onboarding-ov').classList.remove('show');
+    localStorage.setItem(ONBOARDING_KEY,'1');
+  } else {
+    showOnboardingStep(onboardingStep);
   }
 }
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden',s.id!==id));}
@@ -1589,6 +1733,7 @@ function restartGame(){
 
 /* ══ BOOT ══ */
 restoreCloudScores();
+checkReferral();
 (function(){
   const d=new Date();
   const dateStr=`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
@@ -1600,8 +1745,9 @@ restoreCloudScores();
 })();
 applyLang();
 initMenuBg();
-switchMenuTab('classic');
 showScreen('menu');
+// Онбординг — только новым игрокам, через секунду после загрузки
+setTimeout(showOnboarding, 1000);
 </script>
 </body>
 </html>
