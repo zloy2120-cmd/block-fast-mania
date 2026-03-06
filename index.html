@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="16">
+<meta name="version" content="17">
 <title>⚡ Block Fast Mania</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
@@ -293,7 +293,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .timer-val{font-family:'Bungee',cursive;font-size:24px;color:var(--green);filter:drop-shadow(0 0 8px rgba(34,197,94,.35));}
 .timer-val.hot{color:#ef4444;filter:drop-shadow(0 0 8px rgba(239,68,68,.5));animation:tpulse .4s ease infinite alternate;}
 @keyframes tpulse{from{opacity:1}to{opacity:.4}}
-.timer-bonus-tag{display:none !important;}
+.timer-bonus-tag{display:none;position:absolute;right:0;top:-20px;font-size:11px;font-weight:900;color:var(--green);animation:none;}
+.timer-bonus-tag.show{display:block;animation:timerBonusPop .6s ease forwards;}
+@keyframes timerBonusPop{0%{opacity:0;transform:translateY(4px);}30%{opacity:1;transform:translateY(-4px);}80%{opacity:1;}100%{opacity:0;transform:translateY(-12px);}}
 .timer-track{height:5px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;}
 .timer-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),#eab308,#ef4444);transition:width .95s linear;}
 
@@ -923,13 +925,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <script>
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
-if(tg){tg.ready();tg.expand();}
+if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;});}
 
 /* ══ SETTINGS ══ */
 let snd=true,vib=true;
 function toggleSetting(k){if(k==='sound'){snd=!snd;document.getElementById('t-sound').className='toggle '+(snd?'on':'off');}else{vib=!vib;document.getElementById('t-vibro').className='toggle '+(vib?'on':'off');}}
-function openSettings(){document.getElementById('settings-panel').classList.add('show');document.getElementById('settings-backdrop').classList.add('show');}
-function closeSettings(){document.getElementById('settings-panel').classList.remove('show');document.getElementById('settings-backdrop').classList.remove('show');}
+function openSettings(){
+  document.getElementById('settings-panel').classList.add('show');
+  document.getElementById('settings-backdrop').classList.add('show');
+  // [FIX] Паузируем таймер в Speedrun пока открыты настройки
+  if(mode==='speed'&&timIv){clearInterval(timIv);timIv=null;}
+}
+function closeSettings(){
+  document.getElementById('settings-panel').classList.remove('show');
+  document.getElementById('settings-backdrop').classList.remove('show');
+  // [FIX] Возобновляем таймер если игра активна
+  if(mode==='speed'&&!dead&&timSec>0&&!timIv)resumeTimer();
+}
 
 /* ══ HAPTIC — Telegram API + fallback ══ */
 function vibrate(type){
@@ -1048,16 +1060,22 @@ function restoreCloudScores(){
   if(!cs)return;
   ['classic','mini','speed','daily'].forEach(m=>{
     cs.getItem('bfm7_'+m,(err,val)=>{
-      if(!err&&val){const local=lsG(m);if(parseInt(val)>local){try{localStorage.setItem('bfm7_'+m,val);}catch{}}}
+      if(!err&&val){
+        const parsed=parseInt(val);
+        if(!isNaN(parsed)&&parsed>0){ // [FIX] защита от NaN и мусорных значений
+          const local=lsG(m);
+          if(parsed>local){try{localStorage.setItem('bfm7_'+m,parsed);}catch{}}
+        }
+      }
     });
   });
 }
 
 /* ══ DAILY CHALLENGE — seeded random (одинаково у всех!) ══ */
 let isDailyMode=false,dailyRNG=null;
-function getDailySeed(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+function getDailySeed(){const s=new Date().toISOString().slice(0,10).replace(/-/g,'');return parseInt(s);}
 function makeSRNG(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
-function getDailyDateStr(){const d=new Date();return d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();}
+function getDailyDateStr(){const p=new Date().toISOString().slice(0,10).split('-');return p[2]+'.'+p[1]+'.'+p[0];}
 function getDailyKey(){return 'bfm_daily_played_'+getDailySeed();}
 function startDaily(){
   if(localStorage.getItem(getDailyKey())){
@@ -1084,19 +1102,18 @@ const API = 'https://block-fast-mania.zloy2120.workers.dev';
 const MY_TG_ID = ()=> tg?.initDataUnsafe?.user?.id || null;
 const MY_NAME  = ()=> tg?.initDataUnsafe?.user?.first_name || 'Игрок';
 const MY_UNAME = ()=> tg?.initDataUnsafe?.user?.username || '';
+// [FIX] Защита от XSS — экранируем HTML-символы в именах пользователей
+function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* Отправить результат на сервер */
 async function submitScore(modeKey, scoreVal){
-  const id = MY_TG_ID();
-  if(!id) return; // не в Telegram — не отправляем
+  if(!tg?.initData) return; // [FIX] нет initData — не в Telegram, не отправляем
   try {
     await fetch(`${API}/score`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        tg_id: id,
-        first_name: MY_NAME(),
-        username: MY_UNAME(),
+        init_data: tg.initData, // [FIX] Worker верифицирует HMAC — tg_id берётся оттуда
         mode: modeKey,
         score: scoreVal,
         lines,
@@ -1110,17 +1127,20 @@ async function submitScore(modeKey, scoreVal){
 /* Кеш лидерборда — не грузим повторно 60 секунд */
 const boardCache = {};
 const CACHE_TTL = 60000;
+let _boardReqId = 0; // [FIX] токен отмены — предотвращает async race при быстром переключении вкладок
 
 async function fetchLeaderboard(m){
   const now = Date.now();
   if(boardCache[m] && now - boardCache[m].ts < CACHE_TTL){
     return boardCache[m].data;
   }
+  const reqId = ++_boardReqId; // запоминаем ID запроса
   const id = MY_TG_ID();
   try {
     const url = `${API}/leaderboard?mode=${m}&limit=50${id?'&tg_id='+id:''}`;
     const res = await fetch(url);
     const data = await res.json();
+    if(reqId !== _boardReqId) return null; // [FIX] пришёл устаревший ответ — игнорируем
     boardCache[m] = { data, ts: now };
     return data;
   } catch(e){
@@ -1210,13 +1230,60 @@ function renderMenuPanel(m){
   if(!panel)return;
   const me=getMe(m);
   const myScore=me.score>0?me.score.toLocaleString():t('noScore');
+
+  // [FIX] Загружаем реальные данные с сервера (с кешем 60 сек)
+  fetchLeaderboard(m).then(data=>{
+    let entries=[];
+    if(data&&data.board&&data.board.length>0){
+      entries=data.board.slice(0,6).map(e=>({name:esc(e.first_name||e.username||'Player'),avatar:'👤',score:e.score,isMe:String(e.tg_id)===String(MY_TG_ID())}));
+    } else {
+      entries=[...FP_PLACEHOLDER[m]||[]];
+    }
+    // Добавляем себя если не в топе
+    if(!entries.some(e=>e.isMe)&&me.score>0) entries=[...entries,me].sort((a,b)=>b.score-a.score);
+    const top3=entries.slice(0,3);
+    const rest=entries.slice(3,6);
+    const podiumOrder=[1,0,2];
+    const podItems=podiumOrder.map(i=>{
+      const p=top3[i];
+      if(!p)return'<div class="mb-pod"></div>';
+      const barCls=['b2','b1','b3'][podiumOrder.indexOf(i)];
+      const podCls=['p2','p1','p3'][podiumOrder.indexOf(i)];
+      const crown=i===0?'<span class="mb-pod-crown">👑</span>':'';
+      return`<div class="mb-pod">
+        <div class="mb-pod-name">${p.isMe?t('you'):p.name.split(' ')[0]}</div>
+        <div class="mb-pod-score">${p.score>0?p.score.toLocaleString():t('noScore')}</div>
+        <div class="mb-pod-avatar ${podCls}">${crown}${p.avatar}</div>
+        <div class="mb-pod-bar ${barCls}"></div>
+      </div>`;
+    }).join('');
+    const rowsHtml=rest.map((p,i)=>{
+      const rank=i+4;
+      return`<div class="mb-row${p.isMe?' mb-me':''}">
+        <span class="mb-rank">#${rank}</span>
+        <span class="mb-avatar">${p.avatar}</span>
+        <span class="mb-name">${p.name}${p.isMe?` <span style="font-size:9px;color:var(--cyan)">${t('you')}</span>`:''}</span>
+        <span class="mb-score">${p.score>0?p.score.toLocaleString():t('noScore')}</span>
+      </div>`;
+    }).join('');
+    panel.innerHTML=`
+      <div class="mb-myscore">
+        <div class="mb-myscore-left">
+          <div class="mb-myscore-icon">⭐</div>
+          <span class="mb-myscore-lbl">${t('myBest')}</span>
+        </div>
+        <span class="mb-myscore-val">${myScore}</span>
+      </div>
+      <div class="mb-podium">${podItems}</div>
+      <div class="mb-rows">${rowsHtml}</div>`;
+  });
+
+  // Показываем заглушку пока грузится
   const all=[...FP_PLACEHOLDER[m]||[],me].sort((a,b)=>b.score-a.score);
   const top3=all.slice(0,3);
   const rest=all.slice(3,6);
   const medals=['🥇','🥈','🥉'];
-  const podiumOrder=[1,0,2]; // 2nd, 1st, 3rd visually
-
-  // Podium HTML
+  const podiumOrder=[1,0,2];
   const podItems=podiumOrder.map(i=>{
     const p=top3[i];
     if(!p)return'<div class="mb-pod"></div>';
@@ -1230,18 +1297,15 @@ function renderMenuPanel(m){
       <div class="mb-pod-bar ${barCls}"></div>
     </div>`;
   }).join('');
-
-  // Rows #4-6
   const rowsHtml=rest.map((p,i)=>{
     const rank=i+4;
     return`<div class="mb-row${p.isMe?' mb-me':''}">
       <span class="mb-rank">#${rank}</span>
       <span class="mb-avatar">${p.avatar}</span>
-      <span class="mb-name">${p.name}${p.isMe?' <span style="font-size:9px;color:var(--cyan)">${t("you")}</span>':''}</span>
+      <span class="mb-name">${p.name}${p.isMe?` <span style="font-size:9px;color:var(--cyan)">${t('you')}</span>`:''}</span>
       <span class="mb-score">${p.score>0?p.score.toLocaleString():t('noScore')}</span>
     </div>`;
   }).join('');
-
   panel.innerHTML=`
     <div class="mb-myscore">
       <div class="mb-myscore-left">
@@ -1297,7 +1361,7 @@ function renderBoardRows(data){
       if(!e)return;
       const rank=ei+1;
       const isMe=data?(String(e.tg_id)===String(MY_TG_ID())):e.isMe;
-      const name=e.first_name||e.name||'Игрок';
+      const name=esc(e.first_name||e.name||'Игрок');
       const avatar=e.avatar||(isMe?'⭐':'👤');
       const score=(e.score||0).toLocaleString();
       const crownColor=crownColors[pi];
@@ -1317,7 +1381,7 @@ function renderBoardRows(data){
   entries.slice(3,10).forEach((e,i)=>{
     const rank=(e.rank||(entries.indexOf(e)+1));
     const isMe=data?(String(e.tg_id)===String(MY_TG_ID())):e.isMe;
-    const name=e.first_name||e.name||'Игрок',avatar=e.avatar||(isMe?'⭐':'👤');
+    const name=esc(e.first_name||e.name||'Игрок'),avatar=e.avatar||(isMe?'⭐':'👤');
     const row=document.createElement('div');row.className='board-row'+(isMe?' is-me':'');
     row.innerHTML=`<div class="br-rank rn">#${rank}</div><div class="br-avatar">${avatar}</div><div class="br-info"><div class="br-name">${name}${isMe?' <span style="font-size:10px;color:var(--cyan)">(ты)</span>':''}</div><div class="br-sub">${LANG==='ru'?'Лучший':'Best'}</div></div><div class="br-score">${(e.score||0).toLocaleString()}</div>`;
     frag.appendChild(row);
@@ -1327,7 +1391,7 @@ function renderBoardRows(data){
   if(myRankFromServer&&myRankFromServer>10&&myEntryFromServer){
     const sep=document.createElement('div');sep.style.cssText='text-align:center;color:var(--muted);font-size:11px;margin:6px 0;';sep.textContent='• • •';
     const myRow=document.createElement('div');myRow.className='board-row is-me';
-    myRow.innerHTML=`<div class="br-rank rn">#${myRankFromServer}</div><div class="br-avatar">⭐</div><div class="br-info"><div class="br-name">${MY_NAME()} <span style="font-size:10px;color:var(--cyan)">(ты)</span></div><div class="br-sub">${LANG==='ru'?'Твой':'Yours'}</div></div><div class="br-score">${(myEntryFromServer.score||0).toLocaleString()}</div>`;
+    myRow.innerHTML=`<div class="br-rank rn">#${myRankFromServer}</div><div class="br-avatar">⭐</div><div class="br-info"><div class="br-name">${esc(MY_NAME())} <span style="font-size:10px;color:var(--cyan)">(ты)</span></div><div class="br-sub">${LANG==='ru'?'Твой':'Yours'}</div></div><div class="br-score">${(myEntryFromServer.score||0).toLocaleString()}</div>`;
     table.appendChild(sep);table.appendChild(myRow);
   }
 }
@@ -1558,6 +1622,7 @@ function moveGhost(x,y,shape){
 }
 function startDrag(si,e){
   if(dead||locked)return;
+  if(drag)return; // [FIX] предотвращаем мультитач race condition
   const p=(si==='h')?held:pieces[si];if(!p)return;
   e.preventDefault();e.stopPropagation();
   if(rafDrag){cancelAnimationFrame(rafDrag);rafDrag=null;} // отменяем предыдущий незавершённый drag
@@ -1628,7 +1693,7 @@ function setupDrag(){
 /* ══ SCORE ══ */
 function addSc(pts,flash){
   score+=pts;
-  if(score>best){best=score;lsS(mode,best);isNewRecord=true;}
+  if(score>best){best=score;lsS(isDailyMode?'daily':mode,best);isNewRecord=true;}
   document.getElementById('g-crown').className='g-crown-icon'+(score>0&&score>=best&&best>0?' show':'');
   document.getElementById('gs-best').textContent=best.toLocaleString();
   const el=document.getElementById('gs-score');el.textContent=score.toLocaleString();
@@ -1812,13 +1877,12 @@ function addSpeedTime(secs,label){
 /* ══ REAL STARS PAYMENTS ══ */
 // Бот должен создать invoice через Bot API — Worker делает это за нас
 async function createStarsInvoice(type){
-  const id = MY_TG_ID();
-  if(!id){ fallbackStars(type); return; }
+  if(!tg?.initData){ fallbackStars(type); return; } // [FIX] нужен initData для верификации
   try {
     const res = await fetch(`${API}/invoice`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ tg_id: id, type })
+      body: JSON.stringify({ init_data: tg.initData, type }) // [FIX] убран tg_id
     });
     const data = await res.json();
     if(data.invoice_link){
@@ -1855,15 +1919,14 @@ function goSpeedStars(){ createStarsInvoice('speed_time'); }
 
 /* ══ REFERRAL SYSTEM ══ */
 function checkReferral(){
-  // Telegram передаёт start_param автоматически при переходе по реф-ссылке
   const startParam = tg?.initDataUnsafe?.start_param;
   const myId = MY_TG_ID();
-  if(startParam && myId && startParam !== String(myId)){
-    // Сообщаем серверу что пришли по реферальной ссылке
+  if(startParam && myId && startParam !== String(myId) && tg?.initData){
+    // [FIX] Передаём initData — Worker верифицирует и берёт tg_id/first_name оттуда
     fetch(`${API}/referral`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ tg_id: myId, ref_id: startParam, first_name: MY_NAME() })
+      body: JSON.stringify({ init_data: tg.initData, ref_id: startParam })
     }).catch(()=>{});
     // Показываем приветствие новому игроку
     setTimeout(()=>{
