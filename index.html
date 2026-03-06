@@ -180,10 +180,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .mb-pod-avatar.p1{border-color:rgba(255,214,0,.7);box-shadow:0 0 14px rgba(255,214,0,.4);}
 .mb-pod-avatar.p2{border-color:rgba(148,163,184,.5);}
 .mb-pod-avatar.p3{border-color:rgba(251,146,60,.5);}
-.mb-pod-crown{position:absolute;top:-10px;font-size:13px;animation:crownBob 2s ease-in-out infinite;}
+.mb-pod-crown{position:absolute;top:-10px;font-size:18px;animation:crownBob 2s ease-in-out infinite;}
+.mb-pod-crown.gold{filter:drop-shadow(0 0 4px rgba(255,200,0,.8));}
+.mb-pod-crown.silver{filter:grayscale(1) brightness(1.8) drop-shadow(0 0 4px rgba(200,210,220,.7));}
+.mb-pod-crown.bronze{filter:sepia(1) saturate(1.2) hue-rotate(5deg) brightness(0.8) drop-shadow(0 0 4px rgba(180,100,30,.6));}
 @keyframes crownBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
 .mb-pod-name{font-size:9px;font-weight:800;color:var(--text);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mb-pod-score{font-family:'Bungee',cursive;font-size:9px;color:var(--gold);}
+.mb-pod-score{font-family:'Bungee',cursive;font-size:11px;color:var(--gold);}
 .mb-pod-bar{width:100%;border-radius:6px 6px 0 0;}
 .mb-pod-bar.b1{height:48px;background:linear-gradient(180deg,rgba(255,214,0,.35),rgba(255,214,0,.1));border:1px solid rgba(255,214,0,.3);}
 .mb-pod-bar.b2{height:36px;background:linear-gradient(180deg,rgba(148,163,184,.25),rgba(148,163,184,.07));border:1px solid rgba(148,163,184,.2);}
@@ -300,7 +303,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .timer-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),#eab308,#ef4444);transition:width .95s linear;}
 
 /* GRID */
-#grid-wrap{position:relative;flex-shrink:0;}
+#grid-wrap{position:relative;flex-shrink:0;margin-bottom:34px;}
 #grid{
   display:grid;
   background:rgba(10,9,38,.6);
@@ -388,18 +391,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* ══ NEW TROPHY — как на скрине: золотой кубок с блоками ══ */
 .board-trophy-wrap{width:100%;flex-shrink:0;margin-bottom:8px;position:relative;height:160px;}
 .trophy-png{width:100%;height:160px;object-fit:contain;position:relative;z-index:2;
-  filter:drop-shadow(0 8px 24px rgba(255,200,0,.4)) brightness(1.05);
-  mix-blend-mode:screen;
+  filter:drop-shadow(0 4px 16px rgba(255,200,0,.25)) brightness(1.05);
   animation:trophyFloat 3s ease-in-out infinite;}
 @keyframes trophyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .trophy-bg{
   width:100%;height:100%;border-radius:20px;
   background:transparent;
-  position:relative;overflow:hidden;
+  position:relative;
   display:flex;align-items:center;justify-content:center;
 }
 /* Starfield */
-.trophy-stars-bg{position:absolute;inset:0;}
+.trophy-stars-bg{position:absolute;inset:0;display:none;}
 .tsb{position:absolute;background:#fff;border-radius:50%;animation:tsAnim ease-in-out infinite;}
 @keyframes tsAnim{0%,100%{opacity:.08;}50%{opacity:.5;}}
 /* Static sparkle dots (4 corners) */
@@ -510,14 +512,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* ══ PODIUM ══ */
 .podium-wrap{width:100%;display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:0 4px 12px;flex-shrink:0;}
 .podium-slot{display:flex;flex-direction:column;align-items:center;flex:1;max-width:110px;position:relative;}
-.pod-crown{font-size:28px;line-height:1;margin-bottom:3px;display:block;}
-.pod-crown.gold{animation:crownFloat 2.2s ease-in-out infinite;}
-.pod-crown.silver{animation:crownFloat 2.6s ease-in-out infinite .3s;}
-.pod-crown.bronze{animation:crownFloat 3s ease-in-out infinite .6s;}
+.pod-crown{font-size:36px;line-height:1;margin-bottom:3px;display:block;}
+.pod-crown.gold{animation:crownFloat 2.2s ease-in-out infinite;filter:drop-shadow(0 0 6px rgba(255,200,0,.7));}
+.pod-crown.silver{animation:crownFloat 2.6s ease-in-out infinite .3s;filter:grayscale(1) brightness(1.7) drop-shadow(0 0 5px rgba(200,210,220,.6));}
+.pod-crown.bronze{animation:crownFloat 3s ease-in-out infinite .6s;filter:sepia(1) saturate(1.2) hue-rotate(5deg) brightness(0.85) drop-shadow(0 0 5px rgba(180,100,30,.5));}
 @keyframes crownFloat{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-5px) scale(1.08)}70%{transform:translateY(-2px) scale(1.03)}}
 .pod-avatar{font-size:24px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);}
 .pod-name{font-size:10px;font-weight:900;color:#fff;text-align:center;margin:4px 0 2px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.pod-score{font-size:10px;font-weight:800;margin-bottom:5px;text-align:center;}
+.pod-score{font-size:14px;font-weight:800;margin-bottom:5px;text-align:center;}
 .pod-bar{width:100%;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(255,255,255,.7);}
 .pod-1 .pod-avatar{border-color:var(--gold);box-shadow:0 0 14px rgba(251,191,36,.5);}
 .pod-1 .pod-score{color:var(--gold);}
@@ -1249,7 +1251,8 @@ function renderMenuPanel(m){
       if(!p)return'<div class="mb-pod"></div>';
       const barCls=['b2','b1','b3'][podiumOrder.indexOf(i)];
       const podCls=['p2','p1','p3'][podiumOrder.indexOf(i)];
-      const crown=i===0?'<span class="mb-pod-crown">👑</span>':'';
+      const crownColors=['gold','silver','bronze'];
+      const crown='<span class="mb-pod-crown '+crownColors[i]+'">👑</span>';
       return`<div class="mb-pod">
         <div class="mb-pod-name">${p.isMe?t('you'):p.name.split(' ')[0]}</div>
         <div class="mb-pod-score">${p.score>0?p.score.toLocaleString():t('noScore')}</div>
@@ -1289,7 +1292,8 @@ function renderMenuPanel(m){
     if(!p)return'<div class="mb-pod"></div>';
     const barCls=['b2','b1','b3'][podiumOrder.indexOf(i)];
     const podCls=['p2','p1','p3'][podiumOrder.indexOf(i)];
-    const crown=i===0?'<span class="mb-pod-crown">👑</span>':'';
+    const crownColors=['gold','silver','bronze'];
+      const crown='<span class="mb-pod-crown '+crownColors[i]+'">👑</span>';
     return`<div class="mb-pod">
       <div class="mb-pod-name">${p.isMe?t('you'):p.name.split(' ')[0]}</div>
       <div class="mb-pod-score">${p.score>0?p.score.toLocaleString():t('noScore')}</div>
