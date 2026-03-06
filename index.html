@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="version" content="16">
 <title>⚡ Block Fast Mania</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
@@ -388,7 +390,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   mix-blend-mode:screen;
   animation:trophyFloat 3s ease-in-out infinite;}
 @keyframes trophyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.trophy-bg{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:transparent;}
 .trophy-bg{
   width:100%;height:100%;border-radius:20px;
   background:transparent;
@@ -1057,9 +1058,16 @@ let isDailyMode=false,dailyRNG=null;
 function getDailySeed(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
 function makeSRNG(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
 function getDailyDateStr(){const d=new Date();return d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();}
+function getDailyKey(){return 'bfm_daily_played_'+getDailySeed();}
 function startDaily(){
+  if(localStorage.getItem(getDailyKey())){
+    const best=lsG('daily');
+    const msg=LANG==='ru'?`📅 Ты уже сыграл сегодня!\nТвой результат: ${best.toLocaleString()}`:`📅 Already played today!\nYour score: ${best.toLocaleString()}`;
+    alert(msg);
+    return;
+  }
   isDailyMode=true;dailyRNG=makeSRNG(getDailySeed());
-  startGame('classic');
+  startGame('__daily__');
   setTimeout(()=>{document.getElementById('g-mode-tag').textContent='📅 DAILY';},50);
 }
 
@@ -1282,7 +1290,8 @@ function renderBoardRows(data){
   if(podium && entries.length>=2){
     const podOrder=[1,0,2].filter(i=>entries[i]);
     const podClass=['pod-2','pod-1','pod-3'];
-    const crownClass=['silver','gold','bronze'];
+    // Цвета корон: золото, серебро, бронза
+    const crownColors=['#c0c0c0','#FFD700','#cd7c43']; // порядок: 2й, 1й, 3й
     podOrder.forEach((ei,pi)=>{
       const e=entries[ei];
       if(!e)return;
@@ -1291,13 +1300,14 @@ function renderBoardRows(data){
       const name=e.first_name||e.name||'Игрок';
       const avatar=e.avatar||(isMe?'⭐':'👤');
       const score=(e.score||0).toLocaleString();
+      const crownColor=crownColors[pi];
       const slot=document.createElement('div');
       slot.className=`podium-slot ${podClass[pi]}`;
       slot.innerHTML=`
         <div class="pod-avatar">${avatar}</div>
         <div class="pod-name">${name}${isMe?' (ты)':''}</div>
         <div class="pod-score">${score}</div>
-        <div class="pod-bar"><span style="font-size:22px;filter:${ei===0?'sepia(1) saturate(4) hue-rotate(0deg)':ei===1?'sepia(1) saturate(2) hue-rotate(180deg) brightness(1.4)':'sepia(1) saturate(3) hue-rotate(320deg) brightness(.85)'}">👑</span></div>`;
+        <div class="pod-bar"><span style="font-size:26px;filter:drop-shadow(0 0 6px ${crownColor});animation:crownFloat ${1.8+pi*.4}s ease-in-out infinite ${pi*.2}s">👑</span></div>`;
       podium.appendChild(slot);
     });
   }
@@ -1550,6 +1560,7 @@ function startDrag(si,e){
   if(dead||locked)return;
   const p=(si==='h')?held:pieces[si];if(!p)return;
   e.preventDefault();e.stopPropagation();
+  if(rafDrag){cancelAnimationFrame(rafDrag);rafDrag=null;} // отменяем предыдущий незавершённый drag
   dragMoved=false;drag={si,shape:p.shape.map(r=>[...r]),ci:p.ci};
   gridBounds=getGridBounds();
   const[x,y]=evXY(e);
@@ -1714,6 +1725,8 @@ function showGO(){
     document.getElementById('go-title').textContent=t('gameOver');
   }
   document.getElementById('go').classList.add('show');
+  // Сохраняем флаг что daily сегодня сыгран
+  if(isDailyMode) localStorage.setItem(getDailyKey(),'1');
   // Обновляем статистику для ачивментов
   updateAchStats({ games_played:1, total_lines:lines, max_combo_ever:maxCombo });
 }
@@ -1928,7 +1941,8 @@ function goMenu(){if(timIv){clearInterval(timIv);timIv=null;}document.getElement
 
 /* ══ START ══ */
 function startGame(m){
-  if(!isDailyMode) isDailyMode=false; // reset if not called from startDaily
+  if(m!=='__daily__') isDailyMode=false; // сбрасываем если не daily запуск
+  if(m==='__daily__') m='classic'; // daily всегда classic grid
   mode=m;N=(m==='classic')?10:8;
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
   isNewRecord=false;isTimeUp=false;noBlastStreak=0;
@@ -2107,6 +2121,7 @@ function renderAchievements() {
     const val = Math.min(stats[a.key]||0, a.max);
     const pct = Math.round(val/a.max*100);
     const done = localStorage.getItem('bfm_ach_'+a.id);
+    const counter = done ? '✅' : `${val.toLocaleString()}/${a.max.toLocaleString()}`;
     return `<div class="ach-card${done?' unlocked':''}">
       <div class="ach-icon">${a.icon}</div>
       <div class="ach-info">
@@ -2114,30 +2129,24 @@ function renderAchievements() {
         <div class="ach-desc">${a.desc}</div>
         <div class="ach-prog"><div class="ach-prog-fill" style="width:${pct}%"></div></div>
       </div>
-      <div class="ach-check">${done?'✅':'${val.toLocaleString()}/${a.max.toLocaleString()}'}</div>
+      <div class="ach-check">${counter}</div>
     </div>`;
   }).join('');
-  // Fix template literal in innerHTML
-  body.querySelectorAll('.ach-check').forEach((el,i)=>{
-    if(!el.textContent.includes('✅')){
-      const a=ACHIEVEMENTS[i];
-      const val=Math.min(stats[a.key]||0,a.max);
-      el.textContent=`${val.toLocaleString()}/${a.max.toLocaleString()}`;
-    }
-  });
 }
 
 /* ══ BOOT ══ */
 restoreCloudScores();
 checkReferral();
+// Инвалидируем кеш координат сетки при повороте/ресайзе
+window.addEventListener('resize', () => { gridBounds = null; });
 (function(){
   const d=new Date();
   const dateStr=`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
   const el=document.getElementById('daily-date-desc');
   if(el) el.textContent=`${dateStr} · ${t('dailyDesc')}`;
-  const ds=lsG('daily');
   const badge=document.getElementById('daily-badge');
-  if(ds>0&&badge) badge.textContent='✅ DONE';
+  if(localStorage.getItem(getDailyKey())&&badge) badge.textContent='✅ DONE';
+  else if(lsG('daily')>0&&badge) badge.textContent='✅ DONE';
 })();
 applyLang();
 initMenuBg();
