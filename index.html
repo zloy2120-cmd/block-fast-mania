@@ -364,10 +364,10 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
    outline задаётся ТОЛЬКО через анимацию (без статичного цвета → нет синей рамки)
    filter:drop-shadow composited на GPU */
 @keyframes glowC{
-  0%  {outline:5px solid #00e5ff;filter:drop-shadow(0 0 16px #00e5ff);}
-  33% {outline:5px solid #ffe600;filter:drop-shadow(0 0 16px #ffe600);}
-  66% {outline:5px solid #ff3cac;filter:drop-shadow(0 0 16px #ff3cac);}
-  100%{outline:5px solid #00e5ff;filter:drop-shadow(0 0 16px #00e5ff);}
+  0%  {outline:2px solid #00e5ff;filter:drop-shadow(0 0 12px #00e5ff);}
+  33% {outline:2px solid #ffe600;filter:drop-shadow(0 0 12px #ffe600);}
+  66% {outline:2px solid #ff3cac;filter:drop-shadow(0 0 12px #ff3cac);}
+  100%{outline:2px solid #00e5ff;filter:drop-shadow(0 0 12px #00e5ff);}
 }
 .cell.line-ready{
   animation:glowC 1.8s linear infinite !important;
