@@ -1817,7 +1817,8 @@ async function submitBPXP(scoreVal, modeKey){
       body: JSON.stringify({
         init_data: tg.initData,
         score:     Math.round(scoreVal),
-        mode:      modeKey
+        mode:      modeKey,
+        game_id:   _currentGameId  // защита от дублирования XP за одну игру
       })
     });
     // Ответ не используем — клиент уже применил XP локально
@@ -2886,6 +2887,8 @@ function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 
 /* ══ GAME OVER ══ */
 let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
+let _currentGameId=null; // уникальный ID текущей игры — защита от повторной отправки XP
+function _generateGameId(){return Date.now()+'-'+Math.random().toString(36).substring(2,11);}
 let _animTimers=[]; // копим setTimeout-ы анимаций для очистки при startGame
 function _anim(fn,ms){const id=setTimeout(()=>{_animTimers=_animTimers.filter(x=>x!==id);fn();},ms);_animTimers.push(id);return id;}
 function checkGO(){
@@ -3381,6 +3384,7 @@ function startGame(m){
   if(m==='__daily__') m='classic'; // daily всегда classic grid
   mode=m;N=(m==='classic')?10:8;
   _animTimers.forEach(clearTimeout);_animTimers=[];
+  _currentGameId=_generateGameId(); // новый ID на каждую игру
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
   isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_goScheduled=false;
   // Применяем активный буст
