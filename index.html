@@ -699,8 +699,8 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 .pod-3 .pod-bar{height:34px;background:rgba(180,83,9,.22);border:1px solid rgba(180,83,9,.3);}
 /* Fix board rows width */
 .board-table{width:100%;display:flex;flex-direction:column;gap:6px;}
-.board-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);width:100%;box-sizing:border-box;}
-.board-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:10px 12px;}
+/* [FIX BUG-E] объединены два дублирующихся .board-row в одно правило */
+.board-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1.5px solid var(--border);width:100%;box-sizing:border-box;}
 .board-row.rank-1{background:linear-gradient(135deg,rgba(251,191,36,.13),rgba(245,158,11,.06));border-color:rgba(251,191,36,.38);}
 .board-row.rank-2{background:linear-gradient(135deg,rgba(148,163,184,.1),rgba(100,116,139,.05));border-color:rgba(148,163,184,.28);}
 .board-row.rank-3{background:linear-gradient(135deg,rgba(180,83,9,.1),rgba(146,64,14,.06));border-color:rgba(251,146,60,.28);}
@@ -1405,7 +1405,15 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
 if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;});}
+// После других глобальных переменных
+let currentGameId = null;
 
+// Функция генерации уникального ID
+function generateGameId() {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `${timestamp}-${random}`;
+}
 /* ══ SETTINGS ══ */
 let snd=true,vib=true;
 function toggleSetting(k){if(k==='sound'){snd=!snd;document.getElementById('t-sound').className='toggle '+(snd?'on':'off');}else{vib=!vib;document.getElementById('t-vibro').className='toggle '+(vib?'on':'off');}}
@@ -1419,7 +1427,8 @@ function closeSettings(){
   document.getElementById('settings-panel').classList.remove('show');
   document.getElementById('settings-backdrop').classList.remove('show');
   // [FIX] Возобновляем таймер если игра активна
-  if(mode==='speed'){if(!dead){if(timSec<=0)timSec=30;if(!timIv)resumeTimer();}}
+  // [FIX BUG-B] Возобновляем таймер только если время ещё есть (timSec>0)
+  if(mode==='speed'){if(!dead&&timSec>0){if(!timIv)resumeTimer();}}
 }
 
 /* ══ HAPTIC — Telegram API + fallback ══ */
@@ -1610,6 +1619,7 @@ function getDailySeed(){const d=new Date();const s=`${d.getFullYear()}${String(d
 function makeSRNG(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
 function getDailyDateStr(){const d=new Date();return d.getDate()+'.'+( d.getMonth()+1)+'.'+d.getFullYear();}
 function getDailyKey(){return 'bfm_daily_played_'+getDailySeed();}
+function getYesterdayDailySeed(){const d=new Date();d.setDate(d.getDate()-1);return parseInt(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`);}
 function startDaily(){
   if(localStorage.getItem(getDailyKey())){
     const best=lsG('daily');
@@ -1651,6 +1661,7 @@ async function submitBPXP(scoreVal, modeKey){
         init_data: tg.initData,
         score:     Math.round(scoreVal),
         mode:      modeKey
+		game_id: currentGameId
       })
     });
     // Ответ не используем — клиент уже применил XP локально
@@ -2075,11 +2086,28 @@ function rotHeld(){if(!held)return;held.shape=rotateCW(held.shape);vibrate(6);re
 function tapSlot(i){if(dead||locked||!pieces[i])return;sel=(sel===i)?-1:i;clearHL();renderPieces();renderHold();}
 function tapHold(){
   if(dead||locked)return;
-  if(sel>=0&&sel<3&&pieces[sel]){const prev=dc(held);held=dc(pieces[sel]);pieces[sel]=prev;sel=-1;clearHL();renderPieces();renderHold();vibrate(8);}
+  if(sel>=0&&sel<3&&pieces[sel]){
+    const isCrystalSlot=(_crystalPiece===sel);
+    const heldWasCrystal=(held&&held.crystal);
+    const prev=dc(held);held=dc(pieces[sel]);pieces[sel]=prev;
+    // [FIX BUG1] Синхронизируем _crystalPiece и .crystal при свапе
+    if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
+    else if(heldWasCrystal){_crystalPiece=sel;if(pieces[sel])pieces[sel].crystal=false;if(held)held.crystal=false;}
+    sel=-1;clearHL();renderPieces();renderHold();vibrate(8);
+  }
   else if(sel==='h'){sel=-1;renderHold();}
   else if(held){sel='h';renderHold();}
 }
-function doHoldSwapDrag(si){if(si==='h')return;const p=pieces[si];if(!p)return;const prev=dc(held);held=dc(p);pieces[si]=prev;sel=-1;clearHL();renderPieces();renderHold();vibrate(8);}
+function doHoldSwapDrag(si){
+  if(si==='h')return;const p=pieces[si];if(!p)return;
+  const isCrystalSlot=(_crystalPiece===si);
+  const heldWasCrystal=(held&&held.crystal);
+  const prev=dc(held);held=dc(p);pieces[si]=prev;
+  // [FIX BUG1] Синхронизируем _crystalPiece и .crystal при свапе из drag
+  if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
+  else if(heldWasCrystal){_crystalPiece=si;if(pieces[si])pieces[si].crystal=false;if(held)held.crystal=false;}
+  sel=-1;clearHL();renderPieces();renderHold();vibrate(8);
+}
 
 /* ══ PLACEMENT ══ */
 function canP(shape,sr,sc){for(let r=0;r<shape.length;r++)for(let c=0;c<shape[0].length;c++){if(!shape[r][c])continue;const gr=sr+r,gc=sc+c;if(gr<0||gr>=N||gc<0||gc>=N||grid[gr][gc]>=0)return false;}return true;}
@@ -2121,8 +2149,8 @@ async function place(si,sr,sc){
   // Сброс кристального слота после использования
   if(isCrystalPiece) _crystalPiece=-1;
   addSc(placed.length*2*lvl,false);renderPieces();renderHold();
-  // Тик кристального множителя + счётчик ходов
-  crystalTick();
+  // [FIX BUG2] Шаг 1: только счётчик ходов — мульт не трогаем до gotCrystal
+  crystalMoveTick();
   await W(150);
 
   const rowsC=[],colsC=[];
@@ -2225,6 +2253,10 @@ async function place(si,sr,sc){
       }
     }
 
+    // [FIX BUG2] Шаг 2: декремент кристального мульта ПОСЛЕ gotCrystal обработки
+    // (если gotCrystal, то _crystalTurns уже установлен/сброшен выше)
+    if(!gotCrystal) crystalTurnsTick();
+
     // ── Финальные очки с множителями ──
     const basePts = cleared*cleared*100*combo*lvl;
     const pts = Math.round(basePts * _crystalMult * (gotChain ? 1.5 : 1) * streakMult());
@@ -2256,6 +2288,8 @@ async function place(si,sr,sc){
     const nl=Math.floor(lines/8)+1;if(nl!==lvl){lvl=nl;showLvlFX(lvl);}
     await W(Math.max(delay+470, 660));
   } else {
+    // [FIX BUG2] Ход без линии — тоже декрементируем кристальный мульт
+    crystalTurnsTick();
     noBlastStreak++;
     if(noBlastStreak>=3){
       if(_activeBoostThisGame==='combo_shield'&&!_comboShieldUsed&&combo>1){
@@ -2691,7 +2725,15 @@ function fillPieces(){for(let i=0;i<3;i++)if(!pieces[i])pieces[i]=rnd();}
 function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 
 /* ══ GAME OVER ══ */
-function checkGO(){if(dead)return;const all=[...pieces.filter(Boolean),...(held?[held]:[])];if(!all.length)return;if(all.some(p=>canPAny(p.shape)))return;setTimeout(showGO,500);}
+let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
+function checkGO(){
+  if(dead||_goScheduled)return;
+  const all=[...pieces.filter(Boolean),...(held?[held]:[])];
+  if(!all.length)return;
+  if(all.some(p=>canPAny(p.shape)))return;
+  _goScheduled=true;
+  setTimeout(()=>{_goScheduled=false;showGO();},500);
+}
 function showGO(){
   if(dead)return;dead=true;if(timIv){clearInterval(timIv);timIv=null;}
   document.getElementById('go-score').textContent=score.toLocaleString();
@@ -2776,18 +2818,30 @@ function showGO(){
   const scbtn=document.getElementById('go-speed-continue-btn');
   if(scbtn) scbtn.closest('.go-section').style.display = _continueUsedThisGame ? 'none' : '';
   // Сохраняем флаг что daily сегодня сыгран
-  if(isDailyMode) localStorage.setItem(getDailyKey(),'1');
+  if(isDailyMode) {
+    localStorage.setItem(getDailyKey(),'1');
+    // [FIX BUG-A] Считаем серию: если вчера тоже играли — streak+1, иначе сброс до 1
+    const _yKey = 'bfm_daily_played_'+getYesterdayDailySeed();
+    const _yPlayed = !!localStorage.getItem(_yKey);
+    const _curStreak = parseInt(localStorage.getItem('bfm_stat_streak')||'0');
+    const _newStreak = _yPlayed ? _curStreak+1 : 1;
+    updateAchStats({ games_played:1, total_lines:lines, max_combo_ever:maxCombo, daily_streak:_newStreak });
+  } else {
+    updateAchStats({ games_played:1, total_lines:lines, max_combo_ever:maxCombo });
+  }
   // Отправляем финальный счёт один раз при game over
   submitScore(isDailyMode?'daily':mode, score);
-  // Обновляем статистику для ачивментов
-  updateAchStats({ games_played:1, total_lines:lines, max_combo_ever:maxCombo });
 }
 function continuePlaying(){
   _continueUsedThisGame=true;
-  dead=false;locked=false;isNewRecord=false;isTimeUp=false;
+  dead=false;locked=false;isNewRecord=false;isTimeUp=false;_goScheduled=false;
   document.getElementById('go').classList.remove('show');
   held=null;noBlastStreak=0;
-  // [FIX] Сброс всех бонусных состояний при продолжении
+  // [FIX BUG3] Сброс комбо при продолжении — иначе эксплойт ×12 мульта
+  combo=1;maxCombo=Math.max(maxCombo,combo);
+  document.getElementById('gs-combo').textContent='×1 КОМБО';
+  document.getElementById('gs-combo').className='g-combo-num x1';
+  // Сброс всех бонусных состояний при продолжении
   crystalReset();chainReset();streakReset();
   refillAll();
   renderGrid();renderPieces();renderHold();updateComboDots();
@@ -2872,14 +2926,20 @@ function showFakeAd(type){
     ?'Досмотри — получи <strong style="color:#fff">+10 секунд!</strong>'
     :'Досмотри — получи продолжение<br><strong style="color:#fff">бесплатно!</strong>';
   ov.classList.add('show');sk.style.display='none';
-  let t=5;tc.textContent=t;
-  const iv=setInterval(()=>{t--;tc.textContent=t;if(t<=0){clearInterval(iv);tc.textContent='✓';sk.style.display='block';}},1000);
+  // [FIX BUG-D] переименовано в adTimer — не затеняет i18n-функцию t()
+  let adTimer=5;tc.textContent=adTimer;
+  const iv=setInterval(()=>{adTimer--;tc.textContent=adTimer;if(adTimer<=0){clearInterval(iv);tc.textContent='✓';sk.style.display='block';}},1000);
   sk.onclick=()=>{ov.classList.remove('show');giveAdReward(type);};
 }
 function addSpeedTime(secs,label){
   timSec=Math.min(timSec+secs,300);
   document.getElementById('go').classList.remove('show');
-  dead=false;locked=false;isTimeUp=false;held=null;noBlastStreak=0;
+  dead=false;locked=false;isTimeUp=false;held=null;noBlastStreak=0;_goScheduled=false;
+  // [FIX BUG4] Сброс комбо и механик — зеркалируем continuePlaying()
+  combo=1;
+  document.getElementById('gs-combo').textContent='×1 КОМБО';
+  document.getElementById('gs-combo').className='g-combo-num x1';
+  crystalReset();chainReset();streakReset();
   refillAll();renderGrid();renderPieces();renderHold();updateComboDots();
   showTimerBonus(label||'+'+secs+'с');resumeTimer();
 }
@@ -2937,6 +2997,12 @@ function checkReferral(){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ init_data: tg.initData, ref_id: startParam })
     }).catch(()=>{});
+    // [FIX BUG-A] Считаем реферала один раз по startParam — защита от повторного счёта
+    const _refKey = 'bfm_ref_counted_'+startParam;
+    if(!localStorage.getItem(_refKey)){
+      localStorage.setItem(_refKey,'1');
+      updateAchStats({ referral_count:1 });
+    }
     // Показываем приветствие новому игроку
     setTimeout(()=>{
       tg?.showPopup?.({
@@ -3152,7 +3218,7 @@ function startGame(m){
   if(m==='__daily__') m='classic'; // daily всегда classic grid
   mode=m;N=(m==='classic')?10:8;
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
-  isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;
+  isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_goScheduled=false;
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
   _comboShieldUsed = false;
@@ -3186,6 +3252,9 @@ function startGame(m){
   if(m==='speed')setTimeout(startTimer,300);
 }
 function restartGame(){
+	// ДОБАВЬТЕ ЭТУ СТРОКУ в начало функции
+  currentGameId = generateGameId();
+  console.log('Game started, ID:', currentGameId);
   isDailyMode=false; // рестарт всегда обычный режим
   document.getElementById('go').classList.remove('show');
   startGame(mode);
@@ -3416,12 +3485,17 @@ function getAchStats() {
 }
 
 function updateAchStats(delta) {
-  // delta = {games_played:1, total_lines:5, max_combo_ever:7, ...}
+  // delta = {games_played:1, total_lines:5, max_combo_ever:7, daily_streak:N, referral_count:N}
   const stats = getAchStats();
   if(delta.games_played)   localStorage.setItem('bfm_stat_games',  stats.games_played + delta.games_played);
   if(delta.total_lines)    localStorage.setItem('bfm_stat_lines',  stats.total_lines  + delta.total_lines);
   if(delta.max_combo_ever && delta.max_combo_ever > stats.max_combo_ever)
                            localStorage.setItem('bfm_stat_maxcombo', delta.max_combo_ever);
+  // [FIX BUG-A] daily_streak — выставляем новое значение серии напрямую
+  if(delta.daily_streak !== undefined)
+                           localStorage.setItem('bfm_stat_streak', delta.daily_streak);
+  // [FIX BUG-A] referral_count — накопительный счётчик
+  if(delta.referral_count) localStorage.setItem('bfm_stat_refs',  stats.referral_count + delta.referral_count);
   checkNewAchievements();
 }
 
@@ -3810,7 +3884,8 @@ async function bpClaim(lvlNum){
   // Применяем локально (после подтверждения сервера или offline)
   bpMarkClaimed(lvlNum);
   if(lv.reward.type==='boost'){
-    const amt = (lv.reward.id==='xp2x') ? 3 : (lv.reward.id==='score2x' && lvlNum===13) ? 2 : 1;
+    // [FIX BUG-C] lvl14=combo_shield×3 (по описанию '3 бесплатных щита'); lvl13=xp2x→уже учтён первой ветвью
+    const amt = (lv.reward.id==='xp2x') ? 3 : (lv.reward.id==='combo_shield' && lvlNum===14) ? 3 : 1;
     boostAdd(lv.reward.id, amt);
   } else if(lv.reward.type==='skin'){
     bpUnlockSkin(lv.reward.id);
@@ -3896,23 +3971,27 @@ function crystalUpdateHUD(){
   }
 }
 
-// Тик кристала после хода — уменьшаем счётчик
-function crystalTick(){
-  if(_crystalTurns>0){
-    _crystalTurns--;
-    if(_crystalTurns===0){
-      _crystalMult=1;
-      // Убираем следы с поля
-      document.querySelectorAll('.cell.crystal-trail').forEach(el=>el.classList.remove('crystal-trail'));
-    }
-    crystalUpdateHUD();
-  }
-  // Спавним кристалл каждые 8 ходов
+// [FIX BUG2] crystalTick разбит на два этапа:
+// 1) crystalMoveTick() — счётчик ходов, вызывается сразу при ходе
+// 2) crystalTurnsTick() — декремент активного мульта, вызывается ПОСЛЕ gotCrystal
+function crystalMoveTick(){
   _moveCount++;
   if(_moveCount%8===0 && _crystalPiece<0 && _crystalMult===1){
     crystalSpawn();
   }
 }
+function crystalTurnsTick(){
+  if(_crystalTurns>0){
+    _crystalTurns--;
+    if(_crystalTurns===0){
+      _crystalMult=1;
+      document.querySelectorAll('.cell.crystal-trail').forEach(el=>el.classList.remove('crystal-trail'));
+    }
+    crystalUpdateHUD();
+  }
+}
+// Обратная совместимость — оставляем старое имя как комбинацию обоих
+function crystalTick(){crystalMoveTick();crystalTurnsTick();}
 
 /* ════════════════════════════════════════════════════════════════
    ⚡ ЦЕПОЧКИ (CHAIN CELLS)
