@@ -1408,6 +1408,10 @@ if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;
 
 /* ══ SETTINGS ══ */
 let snd=true,vib=true;
+/* ══ SAFE localStorage ══ */
+function safeGet(key,def=''){try{const v=localStorage.getItem(key);return v===null?def:v;}catch{return def;}}
+function safeSet(key,val){try{localStorage.setItem(key,String(val));}catch(e){console.warn('ls set fail',key,e);}}
+function safeDel(key){try{localStorage.removeItem(key);}catch{}}
 function toggleSetting(k){if(k==='sound'){snd=!snd;document.getElementById('t-sound').className='toggle '+(snd?'on':'off');}else{vib=!vib;document.getElementById('t-vibro').className='toggle '+(vib?'on':'off');}}
 function openSettings(){
   document.getElementById('settings-panel').classList.add('show');
@@ -1428,17 +1432,178 @@ function vibrate(type){
   if(!vib)return;
   const hf=window.Telegram?.WebApp?.HapticFeedback;
   if(hf){
-    if(type==='place'||type===8||!type) hf.impactOccurred('light');
-    else if(type==='line')  hf.notificationOccurred('success');
-    else if(type==='combo') hf.impactOccurred('heavy');
-    else if(type==='go'||type===50)    hf.notificationOccurred('error');
-    else if(type==='menu')  hf.impactOccurred('medium');
+    // Telegram HapticFeedback — работает на iOS и Android через TG
+    if(type==='place'||type===10||type===8||!type) hf.impactOccurred('light');
+    else if(type==='line')  { hf.impactOccurred('medium'); }
+    else if(type==='combo') { hf.impactOccurred('heavy'); }
+    else if(type==='crystal') { hf.impactOccurred('heavy'); setTimeout(()=>hf.impactOccurred('medium'),80); }
+    else if(type==='chain') { hf.impactOccurred('medium'); setTimeout(()=>hf.impactOccurred('light'),60); }
+    else if(type==='go'||type===50) { hf.notificationOccurred('error'); }
+    else if(type==='levelup') { hf.notificationOccurred('success'); }
+    else if(type==='menu'||type===12) hf.impactOccurred('medium');
+    else if(typeof type==='number') hf.impactOccurred('light');
     else hf.impactOccurred('light');
   } else {
-    const ms=(typeof type==='number')?type:{place:8,line:35,combo:60,go:50,menu:12}[type]||8;
+    // Fallback для не-Telegram браузеров
+    const patterns={place:[8],line:[20,10,20],combo:[15,10,30,10,15],crystal:[10,10,40,10,10],chain:[10,15,10],go:[60,20,60],levelup:[20,10,40],menu:[12]};
+    const ms=(typeof type==='number')?[type]:(patterns[type]||[8]);
     navigator.vibrate?.(ms);
   }
 }
+
+
+/* ══ AUDIO SYSTEM — Web Audio API (процедурные звуки, без файлов) ══ */
+let _ac=null; // AudioContext — создаём лениво по первому взаимодействию
+function _getAC(){
+  if(!_ac){
+    try{
+      _ac=new(window.AudioContext||window.webkitAudioContext)();
+    }catch(e){_ac=null;}
+  }
+  if(_ac&&_ac.state==='suspended'){try{_ac.resume();}catch{}}
+  return _ac;
+}
+
+function playSound(type){
+  if(!snd)return;
+  const ac=_getAC();if(!ac)return;
+  try{
+    const now=ac.currentTime;
+    const g=ac.createGain();g.connect(ac.destination);
+    switch(type){
+
+      // ── Постановка фигуры: короткий "тук" (8-bit нотка)
+      case 'place':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='square';o.frequency.setValueAtTime(260,now);o.frequency.exponentialRampToValueAtTime(180,now+0.06);
+        g.gain.setValueAtTime(0.18,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.08);
+        o.start(now);o.stop(now+0.08);break;
+      }
+      // ── Одна линия: восходящий свип (8-bit)
+      case 'line1':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='square';o.frequency.setValueAtTime(330,now);o.frequency.exponentialRampToValueAtTime(660,now+0.18);
+        g.gain.setValueAtTime(0.22,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.22);
+        o.start(now);o.stop(now+0.22);break;
+      }
+      // ── Двойная линия: два тона нарастающих
+      case 'line2':{
+        [0,0.12].forEach((t,i)=>{
+          const o=ac.createOscillator();o.connect(g);
+          o.type='square';const f=440*(i+1)*0.75;
+          o.frequency.setValueAtTime(f,now+t);o.frequency.exponentialRampToValueAtTime(f*1.5,now+t+0.15);
+          g.gain.setValueAtTime(0.2,now+t);g.gain.exponentialRampToValueAtTime(0.001,now+t+0.2);
+          o.start(now+t);o.stop(now+t+0.2);
+        });break;
+      }
+      // ── Тройная линия: фанфара
+      case 'line3':{
+        [0,0.1,0.2].forEach((t,i)=>{
+          const o=ac.createOscillator();o.connect(g);
+          o.type='square';const freqs=[440,554,660];
+          o.frequency.setValueAtTime(freqs[i],now+t);o.frequency.exponentialRampToValueAtTime(freqs[i]*1.25,now+t+0.18);
+          g.gain.setValueAtTime(0.18,now+t);g.gain.exponentialRampToValueAtTime(0.001,now+t+0.25);
+          o.start(now+t);o.stop(now+t+0.25);
+        });break;
+      }
+      // ── Комбо! — жирный удар + нарастание
+      case 'combo':{
+        const o=ac.createOscillator(),dist=ac.createWaveShaper();
+        const curve=new Float32Array(256);for(let i=0;i<256;i++){const x=i*2/256-1;curve[i]=x*(Math.abs(x)>0.5?1.5:1);}
+        dist.curve=curve;o.connect(dist);dist.connect(g);
+        o.type='sawtooth';o.frequency.setValueAtTime(110,now);o.frequency.exponentialRampToValueAtTime(220,now+0.15);
+        g.gain.setValueAtTime(0.3,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+        o.start(now);o.stop(now+0.3);break;
+      }
+      // ── Кристал активирован — магический перелив
+      case 'crystal':{
+        const freqs=[523,659,784,1047];
+        freqs.forEach((f,i)=>{
+          const o=ac.createOscillator();const gn=ac.createGain();o.connect(gn);gn.connect(ac.destination);
+          o.type='sine';o.frequency.setValueAtTime(f,now+i*0.07);
+          gn.gain.setValueAtTime(0,now+i*0.07);gn.gain.linearRampToValueAtTime(0.15,now+i*0.07+0.04);
+          gn.gain.exponentialRampToValueAtTime(0.001,now+i*0.07+0.3);
+          o.start(now+i*0.07);o.stop(now+i*0.07+0.35);
+        });break;
+      }
+      // ── Цепочка — электрический разряд
+      case 'chain':{
+        const o=ac.createOscillator(),filt=ac.createBiquadFilter();
+        filt.type='bandpass';filt.frequency.value=800;filt.Q.value=5;
+        o.connect(filt);filt.connect(g);
+        o.type='sawtooth';o.frequency.setValueAtTime(150,now);o.frequency.exponentialRampToValueAtTime(600,now+0.12);
+        g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
+        o.start(now);o.stop(now+0.2);break;
+      }
+      // ── Горячая серия — нарастающий buzz
+      case 'streak':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='sawtooth';o.frequency.setValueAtTime(200,now);o.frequency.exponentialRampToValueAtTime(400,now+0.25);
+        g.gain.setValueAtTime(0.2,now);g.gain.setValueAtTime(0.2,now+0.1);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+        o.start(now);o.stop(now+0.3);break;
+      }
+      // ── Perfect Clear — победная мелодия
+      case 'perfect':{
+        const melody=[523,659,784,1047,784,1047,1319];
+        melody.forEach((f,i)=>{
+          const o=ac.createOscillator();const gn=ac.createGain();o.connect(gn);gn.connect(ac.destination);
+          o.type='square';o.frequency.setValueAtTime(f,now+i*0.1);
+          gn.gain.setValueAtTime(0.15,now+i*0.1);gn.gain.exponentialRampToValueAtTime(0.001,now+i*0.1+0.15);
+          o.start(now+i*0.1);o.stop(now+i*0.1+0.18);
+        });break;
+      }
+      // ── Level Up — торжественный аккорд
+      case 'levelup':{
+        [523,659,784].forEach((f,i)=>{
+          const o=ac.createOscillator();const gn=ac.createGain();o.connect(gn);gn.connect(ac.destination);
+          o.type='triangle';o.frequency.setValueAtTime(f*(1+i*0.01),now);
+          gn.gain.setValueAtTime(0.15,now);gn.gain.exponentialRampToValueAtTime(0.001,now+0.5);
+          o.start(now);o.stop(now+0.55);
+        });break;
+      }
+      // ── Game Over — нисходящий драматичный тон
+      case 'go':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='sawtooth';o.frequency.setValueAtTime(330,now);o.frequency.exponentialRampToValueAtTime(55,now+0.8);
+        g.gain.setValueAtTime(0.3,now);g.gain.setValueAtTime(0.28,now+0.4);g.gain.exponentialRampToValueAtTime(0.001,now+0.85);
+        o.start(now);o.stop(now+0.85);break;
+      }
+      // ── Hold / Swap — нейтральный "шлёп"
+      case 'hold':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='triangle';o.frequency.setValueAtTime(300,now);o.frequency.exponentialRampToValueAtTime(200,now+0.1);
+        g.gain.setValueAtTime(0.2,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.12);
+        o.start(now);o.stop(now+0.12);break;
+      }
+      // ── Ротация фигуры — лёгкое "вжик"
+      case 'rotate':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='sine';o.frequency.setValueAtTime(500,now);o.frequency.exponentialRampToValueAtTime(700,now+0.05);
+        g.gain.setValueAtTime(0.12,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.07);
+        o.start(now);o.stop(now+0.07);break;
+      }
+      // ── Меню / тап — мягкий "тик"
+      case 'menu':{
+        const o=ac.createOscillator();o.connect(g);
+        o.type='sine';o.frequency.setValueAtTime(440,now);o.frequency.exponentialRampToValueAtTime(380,now+0.05);
+        g.gain.setValueAtTime(0.1,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.07);
+        o.start(now);o.stop(now+0.07);break;
+      }
+      // ── Ачивка разблокирована — радостный джингл
+      case 'achiev':{
+        [660,880,1100,880,1100].forEach((f,i)=>{
+          const o=ac.createOscillator();const gn=ac.createGain();o.connect(gn);gn.connect(ac.destination);
+          o.type='square';o.frequency.setValueAtTime(f,now+i*0.08);
+          gn.gain.setValueAtTime(0.12,now+i*0.08);gn.gain.exponentialRampToValueAtTime(0.001,now+i*0.08+0.12);
+          o.start(now+i*0.08);o.stop(now+i*0.08+0.14);
+        });break;
+      }
+    }
+  }catch(e){}
+}
+/* Инициализируем AudioContext при первом касании (требование браузеров) */
+document.addEventListener('touchstart',()=>{_getAC();},{once:true,passive:true});
+document.addEventListener('mousedown',()=>{_getAC();},{once:true,passive:true});
 
 /* ══ ANIMATED BG BLOCKS (menu) ══ */
 const BG_COLORS=['#FF3535','#FF8500','#FFD300','#2ECC44','#0DBBD8','#3366FF','#9922CC','#EE0E88'];
@@ -1583,7 +1748,7 @@ let isNewRecord=false,isTimeUp=false,noBlastStreak=0;
 const lsG=m=>{try{return+localStorage.getItem('bfm7_'+m)||0}catch{return 0}};
 const lsS=(m,v)=>{
   try{
-    localStorage.setItem('bfm7_'+m,v);
+    safeSet('bfm7_'+m,v);
     window.Telegram?.WebApp?.CloudStorage?.setItem('bfm7_'+m,String(v));
     // submitScore вызывается только из showGO — без дебаунса здесь
   }catch{}
@@ -1684,7 +1849,7 @@ async function submitScore(modeKey, scoreVal){
 /* Загрузить лидерборд с сервера */
 /* Кеш лидерборда — не грузим повторно 60 секунд */
 const boardCache = {};
-const CACHE_TTL = 180000; // 3 min cache
+const CACHE_TTL = 30000; // 30 sec cache (was 3 min)
 let _boardReqId = 0; // [FIX] токен отмены — предотвращает async race при быстром переключении вкладок
 
 async function fetchLeaderboard(m){
@@ -1885,7 +2050,8 @@ function renderMenuPanel(m){
 let activeBoardTab='classic';
 function showBoard(m){
   activeBoardTab=m;showScreen('board');
-  // Keep cache if fresh, force refresh only if stale
+  // Force invalidate cache при каждом открытии экрана — данные должны быть свежими
+  delete boardCache[m];
   renderBoardTab(m);
 }
 function switchBoardTab(m){
@@ -2071,10 +2237,10 @@ function renderHold(){
 }
 
 /* ══ ROTATE (bank only) ══ */
-function rotHeld(){if(!held)return;held.shape=rotateCW(held.shape);vibrate(6);renderHold();if(sel==='h')clearHL();}
+function rotHeld(){if(!held)return;held.shape=rotateCW(held.shape);vibrate(6);playSound('rotate');renderHold();if(sel==='h')clearHL();}
 
 /* ══ SELECTION ══ */
-function tapSlot(i){if(dead||locked||!pieces[i])return;sel=(sel===i)?-1:i;clearHL();renderPieces();renderHold();}
+function tapSlot(i){if(dead||locked||!pieces[i])return;sel=(sel===i)?-1:i;clearHL();renderPieces();renderHold();if(sel===i)playSound('menu');}
 function tapHold(){
   if(dead||locked)return;
   if(sel>=0&&sel<3&&pieces[sel]){
@@ -2084,7 +2250,7 @@ function tapHold(){
     // [FIX BUG1] Синхронизируем _crystalPiece и .crystal при свапе
     if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
     else if(heldWasCrystal){_crystalPiece=sel;if(pieces[sel])pieces[sel].crystal=false;if(held)held.crystal=false;}
-    sel=-1;clearHL();renderPieces();renderHold();vibrate(8);
+    sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
   }
   else if(sel==='h'){sel=-1;renderHold();}
   else if(held){sel='h';renderHold();}
@@ -2097,7 +2263,7 @@ function doHoldSwapDrag(si){
   // [FIX BUG1] Синхронизируем _crystalPiece и .crystal при свапе из drag
   if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
   else if(heldWasCrystal){_crystalPiece=si;if(pieces[si])pieces[si].crystal=false;if(held)held.crystal=false;}
-  sel=-1;clearHL();renderPieces();renderHold();vibrate(8);
+  sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
 }
 
 /* ══ PLACEMENT ══ */
@@ -2123,7 +2289,7 @@ async function place(si,sr,sc){
   if(locked||dead)return;
   const p=(si==='h')?held:pieces[si];
   if(!p||!canP(p.shape,sr,sc))return;
-  locked=true;sel=-1;clearHL();vibrate(10);
+  locked=true;sel=-1;clearHL();vibrate(10);playSound('place');playSound('place');
   const placed=[];
   for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){if(!p.shape[r][c])continue;grid[sr+r][sc+c]=p.ci;placed.push([sr+r,sc+c]);}
   const isCrystalPiece = (si !== 'h' && _crystalPiece === si) || (si === 'h' && held?.crystal);
@@ -2162,6 +2328,8 @@ async function place(si,sr,sc){
 
     const fl=document.createElement('div');fl.className='flash-ov';document.body.appendChild(fl);setTimeout(()=>fl.remove(),420);
     vibrate(22);
+    // Звук взрыва линий — нарастает с количеством
+    playSound(cleared>=3?'line3':cleared===2?'line2':'line1');
     // Pre-blast glow phase
     for(const k of toClear){
       const[r,c]=k.split(',').map(Number);const el=cel(r,c);
@@ -2235,12 +2403,13 @@ async function place(si,sr,sc){
         _crystalMult=3;_crystalTurns=3;
         crystalUpdateHUD();
         spawnScoreNum(window.innerWidth/2,window.innerHeight*.36,'💎 ×3 SCORE!','#cc88ff',22);
-        vibrate('combo');
+        vibrate('crystal');playSound('crystal');playSound('crystal');
       } else {
         // Продлеваем / сбрасываем таймер если мульт уже активен
         _crystalTurns=3;
         crystalUpdateHUD();
         spawnScoreNum(window.innerWidth/2,window.innerHeight*.36,'💎 ×3 +3 ХД!','#cc88ff',18);
+        playSound('crystal');
       }
     }
 
@@ -2602,9 +2771,9 @@ function showComboBanner(c,cleared,pts){
   spawnScoreNum(cx, cy+baseSize*.55, '+'+Math.round(pts).toLocaleString(), col, 28+Math.min(c,8)*1.5);
 }
 
-function showLvlFX(n){document.querySelectorAll('.lvl-fx').forEach(e=>e.remove());const el=document.createElement('div');el.className='lvl-fx';el.innerHTML=`<div class="lvl-lbl">УРОВЕНЬ</div><div class="lvl-num">${n}</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),1600);}
+function showLvlFX(n){vibrate('levelup');playSound('levelup');document.querySelectorAll('.lvl-fx').forEach(e=>e.remove());const el=document.createElement('div');el.className='lvl-fx';el.innerHTML=`<div class="lvl-lbl">УРОВЕНЬ</div><div class="lvl-num">${n}</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),1600);}
 /* ══ PERFECT CLEAR ANIMATION ══ */
-async function perfectClear(){
+async function perfectClear(){playSound('perfect');
   const bonus=3000*lvl*combo;
   addSc(bonus,true);
 
@@ -2717,6 +2886,8 @@ function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 
 /* ══ GAME OVER ══ */
 let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
+let _animTimers=[]; // копим setTimeout-ы анимаций для очистки при startGame
+function _anim(fn,ms){const id=setTimeout(()=>{_animTimers=_animTimers.filter(x=>x!==id);fn();},ms);_animTimers.push(id);return id;}
 function checkGO(){
   if(dead||_goScheduled)return;
   const all=[...pieces.filter(Boolean),...(held?[held]:[])];
@@ -2737,7 +2908,7 @@ function showGO(){
   const sl=document.getElementById('go-sl-lines'); if(sl) sl.textContent=t('lines');
   const slv=document.getElementById('go-sl-lvl'); if(slv) slv.textContent=t('level');
   const sc=document.getElementById('go-sl-cmb'); if(sc) sc.textContent=t('maxCombo');
-  vibrate('go');
+  vibrate('go');playSound('go');
   // ─── BP: начисляем XP за игру
   if(!isDailyMode){
     const xpEarned = calcXP(score);
@@ -2747,10 +2918,10 @@ function showGO(){
     // Потребляем буст (xp2x — 1 из 3 игр, score2x/3x — 1 игра)
     if(_activeBoostThisGame==='xp2x'){
       // xp2x даётся на 3 игры — трекинг через отдельный счётчик
-      let xpGames = (+localStorage.getItem('bfm_xp2x_games')||0)+1;
-      if(xpGames>=3){ boostConsume('xp2x'); localStorage.removeItem('bfm_xp2x_games'); boostSetActive(null); }
-      else localStorage.setItem('bfm_xp2x_games',xpGames);
-    } else if(_activeBoostThisGame && _activeBoostThisGame!=='free_continue'){
+      let xpGames = (+safeGet('bfm_xp2x_games','0')||0)+1;
+      if(xpGames>=3){ boostConsume('xp2x'); safeDel('bfm_xp2x_games'); boostSetActive(null); }
+      else safeSet('bfm_xp2x_games',xpGames);
+    } else if(_activeBoostThisGame && _activeBoostThisGame!=='free_continue' && _activeBoostThisGame!=='combo_shield'){
       boostConsume(_activeBoostThisGame);
       boostSetActive(null);
     }
@@ -2810,11 +2981,11 @@ function showGO(){
   if(scbtn) scbtn.closest('.go-section').style.display = _continueUsedThisGame ? 'none' : '';
   // Сохраняем флаг что daily сегодня сыгран
   if(isDailyMode) {
-    localStorage.setItem(getDailyKey(),'1');
+    safeSet(getDailyKey(),'1');
     // [FIX BUG-A] Считаем серию: если вчера тоже играли — streak+1, иначе сброс до 1
     const _yKey = 'bfm_daily_played_'+getYesterdayDailySeed();
-    const _yPlayed = !!localStorage.getItem(_yKey);
-    const _curStreak = parseInt(localStorage.getItem('bfm_stat_streak')||'0');
+    const _yPlayed = !!safeGet(_yKey,'');
+    const _curStreak = parseInt(safeGet('bfm_stat_streak','0'));
     const _newStreak = _yPlayed ? _curStreak+1 : 1;
     updateAchStats({ games_played:1, total_lines:lines, max_combo_ever:maxCombo, daily_streak:_newStreak });
   } else {
@@ -2855,7 +3026,7 @@ function resumeTimer(){
     document.getElementById('timer-val').textContent=`${m2}:${s.toString().padStart(2,'0')}`;
     document.getElementById('timer-fill').style.width=(timSec/300*100)+'%';
     document.getElementById('timer-val').className='timer-val'+(timSec<=30?' hot':'');
-    if(timSec<=0){clearInterval(timIv);timIv=null;isTimeUp=true;showGO();}
+    if(timSec<=0){clearInterval(timIv);timIv=null;isTimeUp=true;if(!locked){showGO();}else{const _tw=setInterval(()=>{if(!locked){clearInterval(_tw);showGO();}},50);}}
   },1000);
 }
 
@@ -3009,21 +3180,22 @@ function checkReferral(){
 function shareResult(){
   const modeNames={classic:'Классик 10×10',mini:'Мини Арена 8×8',speed:'Спидран 8×8'};
   const myId = MY_TG_ID();
-  const botName = 'BlockFastManiaBot'; // замени на своего бота
-  const refLink = myId ? `\n👉 https://t.me/${botName}?start=${myId}` : '';
-  let text;
+  const botName = 'BlockFastManiaBot';
+  vibrate('menu'); playSound('menu');
   if(isDailyMode){
-    text=`🎮 Block Fast Mania — Daily Challenge\n📅 ${getDailyDateStr()}\n🏆 Мой результат: ${score.toLocaleString()} очков\n📦 ${lines} линий · 🔥 Комбо ×${maxCombo}\n\nА ты сможешь лучше?${refLink}`;
+    const refParam = myId ? '?start='+myId : '';
+    const shareText = `🎮 Block Fast Mania — Daily Challenge%0A📅 ${getDailyDateStr()}%0A🏆 Мой результат: ${score.toLocaleString()} очков%0A📦 ${lines} линий · 🔥 Комбо ×${maxCombo}%0A%0AА ты сможешь лучше?%0Ahttps://t.me/${botName}${refParam}`;
+    const shareUrl = `https://t.me/share/url?url=https://t.me/${botName}${refParam}&text=${shareText}`;
+    if(tg?.openTelegramLink){ tg.openTelegramLink(shareUrl); }
+    else if(navigator.share){ navigator.share({text: decodeURIComponent(shareText.replace(/%0A/g,'\n'))}); }
+    else { navigator.clipboard?.writeText(decodeURIComponent(shareText.replace(/%0A/g,'\n'))).then(()=>{ tg?.showPopup?.({title:'📋 Скопировано',message:'Вставь в любой чат!',buttons:[{id:'ok',type:'ok'}]}); }); }
   } else {
-    text=`🎮 Block Fast Mania [${modeNames[mode]||mode}]\n🏆 Набрал ${score.toLocaleString()} очков!\n📦 ${lines} линий · 🔥 Макс комбо ×${maxCombo}\n\nПобей мой рекорд!${refLink}`;
-  }
-  vibrate('menu');
-  if(tg?.switchInlineQuery){
-    tg.switchInlineQuery(text,['users','groups','channels']);
-  } else if(navigator.share){
-    navigator.share({text});
-  } else {
-    navigator.clipboard?.writeText(text).then(()=>{ tg?.showPopup?.({title:'📋 Скопировано',message:'Вставь в любой чат!',buttons:[{id:'ok',type:'ok'}]}); });
+    const refParam = myId ? '?start='+myId : '';
+    const shareText = `🎮 Block Fast Mania [${modeNames[mode]||mode}]%0A🏆 Набрал ${score.toLocaleString()} очков!%0A📦 ${lines} линий · 🔥 Макс комбо ×${maxCombo}%0A%0AПобей мой рекорд!%0Ahttps://t.me/${botName}${refParam}`;
+    const shareUrl = `https://t.me/share/url?url=https://t.me/${botName}${refParam}&text=${shareText}`;
+    if(tg?.openTelegramLink){ tg.openTelegramLink(shareUrl); }
+    else if(navigator.share){ navigator.share({text: decodeURIComponent(shareText.replace(/%0A/g,'\n'))}); }
+    else { navigator.clipboard?.writeText(decodeURIComponent(shareText.replace(/%0A/g,'\n'))).then(()=>{ tg?.showPopup?.({title:'📋 Скопировано',message:'Вставь в любой чат!',buttons:[{id:'ok',type:'ok'}]}); }); }
   }
 }
 
@@ -3208,6 +3380,7 @@ function startGame(m){
   if(m!=='__daily__') isDailyMode=false; // сбрасываем если не daily запуск
   if(m==='__daily__') m='classic'; // daily всегда classic grid
   mode=m;N=(m==='classic')?10:8;
+  _animTimers.forEach(clearTimeout);_animTimers=[];
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
   isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_goScheduled=false;
   // Применяем активный буст
@@ -3462,31 +3635,37 @@ const ACHIEVEMENTS = [
 
 function getAchStats() {
   return {
-    games_played:    parseInt(localStorage.getItem('bfm_stat_games')||'0'),
+    games_played:    parseInt(safeGet('bfm_stat_games','0')),
     best_score:      Math.max(lsG('classic'),lsG('mini'),lsG('speed')),
     max_combo_ever:  parseInt(localStorage.getItem('bfm_stat_maxcombo')||'0'),
     total_lines:     parseInt(localStorage.getItem('bfm_stat_lines')||'0'),
-    daily_streak:    parseInt(localStorage.getItem('bfm_stat_streak')||'0'),
+    daily_streak:    parseInt(safeGet('bfm_stat_streak','0')),
     speed_best:      lsG('speed'),
-    referral_count:  parseInt(localStorage.getItem('bfm_stat_refs')||'0'),
+    referral_count:  parseInt(safeGet('bfm_stat_refs','0')),
   };
 }
 
 function updateAchStats(delta) {
   // delta = {games_played:1, total_lines:5, max_combo_ever:7, daily_streak:N, referral_count:N}
   const stats = getAchStats();
-  if(delta.games_played)   localStorage.setItem('bfm_stat_games',  stats.games_played + delta.games_played);
-  if(delta.total_lines)    localStorage.setItem('bfm_stat_lines',  stats.total_lines  + delta.total_lines);
+  if(delta.games_played)   safeSet('bfm_stat_games',  stats.games_played + delta.games_played);
+  if(delta.total_lines)    safeSet('bfm_stat_lines',  stats.total_lines  + delta.total_lines);
   if(delta.max_combo_ever && delta.max_combo_ever > stats.max_combo_ever)
-                           localStorage.setItem('bfm_stat_maxcombo', delta.max_combo_ever);
+                           safeSet('bfm_stat_maxcombo', delta.max_combo_ever);
   // [FIX BUG-A] daily_streak — выставляем новое значение серии напрямую
   if(delta.daily_streak !== undefined)
-                           localStorage.setItem('bfm_stat_streak', delta.daily_streak);
+                           safeSet('bfm_stat_streak', delta.daily_streak);
   // [FIX BUG-A] referral_count — накопительный счётчик
-  if(delta.referral_count) localStorage.setItem('bfm_stat_refs',  stats.referral_count + delta.referral_count);
+  if(delta.referral_count) safeSet('bfm_stat_refs',  stats.referral_count + delta.referral_count);
   checkNewAchievements();
 }
 
+let _achQueue=[], _achShowing=false;
+function _achShowNext(){
+  if(!_achQueue.length){_achShowing=false;return;}
+  _achShowing=true;
+  showAchUnlock(_achQueue.shift());
+}
 function checkNewAchievements() {
   const stats = getAchStats();
   let newlyUnlocked = [];
@@ -3499,13 +3678,13 @@ function checkNewAchievements() {
       newlyUnlocked.push(a);
     }
   });
-  if(newlyUnlocked.length > 0) showAchUnlock(newlyUnlocked[0]);
+  if(newlyUnlocked.length > 0){ _achQueue.push(...newlyUnlocked); if(!_achShowing) _achShowNext(); }
 }
 
 // БАГ 9 FIX: стиль создаётся один раз, не дублируется при каждом вызове
 (()=>{const s=document.createElement('style');s.textContent='@keyframes toastIn{from{transform:translateX(-50%) translateY(40px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}';document.head.appendChild(s);})();
 function showAchUnlock(ach) {
-  vibrate('combo');
+  vibrate('combo');playSound('achiev');playSound('achiev');
   const toast = document.createElement('div');
   toast.className='ach-toast';
   toast.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
@@ -4068,8 +4247,8 @@ function chainActivate(hits,hitKeys,clearCount){
   txt.textContent=`CHAIN ×${hits}! +×1.5`;
   hud.classList.add('show');
   setTimeout(()=>hud.classList.remove('show'),2500);
-  // Вибрация
-  vibrate('combo');
+  // Вибрация + звук
+  vibrate('chain');playSound('chain');
   return true;
 }
 
@@ -4092,6 +4271,7 @@ function streakOnLine(cleared){
     _streakCount++;
     if(_streakCount>=STREAK_THRESH&&!_streakActive){
       _streakActive=true;
+      vibrate('combo');playSound('streak');
       showStreakBanner();
     }
     if(_streakActive) updateStreakHUD();
