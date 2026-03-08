@@ -1472,13 +1472,7 @@ function playSound(type){
     const g=ac.createGain();g.connect(ac.destination);
     switch(type){
 
-      // ── Постановка фигуры: короткий "тук" (8-bit нотка)
-      case 'place':{
-        const o=ac.createOscillator();o.connect(g);
-        o.type='square';o.frequency.setValueAtTime(260,now);o.frequency.exponentialRampToValueAtTime(180,now+0.06);
-        g.gain.setValueAtTime(0.18,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.08);
-        o.start(now);o.stop(now+0.08);break;
-      }
+
       // ── Одна линия: восходящий свип (8-bit)
       case 'line1':{
         const o=ac.createOscillator();o.connect(g);
@@ -1506,14 +1500,62 @@ function playSound(type){
           o.start(now+t);o.stop(now+t+0.25);
         });break;
       }
-      // ── Комбо! — жирный удар + нарастание
+      // ── Комбо! — звук зависит от уровня комбо (передаём уровень через playSound('combo', N))
       case 'combo':{
-        const o=ac.createOscillator(),dist=ac.createWaveShaper();
-        const curve=new Float32Array(256);for(let i=0;i<256;i++){const x=i*2/256-1;curve[i]=x*(Math.abs(x)>0.5?1.5:1);}
-        dist.curve=curve;o.connect(dist);dist.connect(g);
-        o.type='sawtooth';o.frequency.setValueAtTime(110,now);o.frequency.exponentialRampToValueAtTime(220,now+0.15);
-        g.gain.setValueAtTime(0.3,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
-        o.start(now);o.stop(now+0.3);break;
+        const lv=_lastComboLv||2;
+        if(lv<=3){
+          // ×2-×3: нарастающий свип — "вжух!"
+          const o=ac.createOscillator();o.connect(g);
+          o.type='sawtooth';
+          o.frequency.setValueAtTime(180,now);o.frequency.exponentialRampToValueAtTime(440,now+0.18);
+          g.gain.setValueAtTime(0.22,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.22);
+          o.start(now);o.stop(now+0.22);
+        } else if(lv<=5){
+          // ×4-×5: двойной удар "БАМ-БАМ"
+          [0,0.13].forEach((t,i)=>{
+            const o=ac.createOscillator();const gn=ac.createGain();o.connect(gn);gn.connect(ac.destination);
+            o.type='square';o.frequency.setValueAtTime(220*(i+1),now+t);o.frequency.exponentialRampToValueAtTime(330*(i+1),now+t+0.12);
+            gn.gain.setValueAtTime(0.2,now+t);gn.gain.exponentialRampToValueAtTime(0.001,now+t+0.18);
+            o.start(now+t);o.stop(now+t+0.2);
+          });
+        } else if(lv<=8){
+          // ×6-×8: электро-разряд "БЗЗЗТ" с distortion
+          const o=ac.createOscillator(),dist=ac.createWaveShaper();
+          const curve=new Float32Array(256);for(let i=0;i<256;i++){const x=i*2/256-1;curve[i]=Math.sign(x)*Math.pow(Math.abs(x),0.3);}
+          dist.curve=curve;o.connect(dist);dist.connect(g);
+          o.type='sawtooth';o.frequency.setValueAtTime(80,now);o.frequency.exponentialRampToValueAtTime(320,now+0.12);
+          o.frequency.exponentialRampToValueAtTime(160,now+0.28);
+          g.gain.setValueAtTime(0.32,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.35);
+          o.start(now);o.stop(now+0.35);
+          // Добавляем высокочастотное шипение
+          const buf=ac.createBuffer(1,ac.sampleRate*0.15,ac.sampleRate);
+          const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3;
+          const ns=ac.createBufferSource();const flt=ac.createBiquadFilter();
+          flt.type='highpass';flt.frequency.value=3000;
+          const ng=ac.createGain();ng.gain.setValueAtTime(0.15,now);ng.gain.exponentialRampToValueAtTime(0.001,now+0.15);
+          ns.buffer=buf;ns.connect(flt);flt.connect(ng);ng.connect(ac.destination);ns.start(now);
+        } else {
+          // ×9-×12: МАКСИМАЛЬНЫЙ РЕЖИМ — "LEGENDARY" глубокий бас + нарастающий вой
+          // Бас удар
+          const bass=ac.createOscillator();const bg=ac.createGain();bass.connect(bg);bg.connect(ac.destination);
+          bass.type='sine';bass.frequency.setValueAtTime(60,now);bass.frequency.exponentialRampToValueAtTime(30,now+0.4);
+          bg.gain.setValueAtTime(0.5,now);bg.gain.exponentialRampToValueAtTime(0.001,now+0.45);
+          bass.start(now);bass.stop(now+0.45);
+          // Нарастающий синт-вой
+          const lead=ac.createOscillator();const lg=ac.createGain();lead.connect(lg);lg.connect(ac.destination);
+          lead.type='sawtooth';lead.frequency.setValueAtTime(110,now);lead.frequency.exponentialRampToValueAtTime(880,now+0.35);
+          lg.gain.setValueAtTime(0,now);lg.gain.linearRampToValueAtTime(0.25,now+0.05);lg.gain.exponentialRampToValueAtTime(0.001,now+0.4);
+          lead.start(now);lead.stop(now+0.4);
+          // Три нисходящих нотки финала
+          [0.15,0.25,0.32].forEach((t,i)=>{
+            const o=ac.createOscillator();const gn=ac.createGain();o.connect(gn);gn.connect(ac.destination);
+            o.type='square';const freqs=[880,660,440];
+            o.frequency.setValueAtTime(freqs[i],now+t);
+            gn.gain.setValueAtTime(0.15,now+t);gn.gain.exponentialRampToValueAtTime(0.001,now+t+0.1);
+            o.start(now+t);o.stop(now+t+0.12);
+          });
+        }
+        break;
       }
       // ── Кристал активирован — магический перелив
       case 'crystal':{
@@ -2290,7 +2332,7 @@ async function place(si,sr,sc){
   if(locked||dead)return;
   const p=(si==='h')?held:pieces[si];
   if(!p||!canP(p.shape,sr,sc))return;
-  locked=true;sel=-1;clearHL();vibrate(10);playSound('place');playSound('place');
+  locked=true;sel=-1;clearHL();vibrate(10);
   const placed=[];
   for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){if(!p.shape[r][c])continue;grid[sr+r][sc+c]=p.ci;placed.push([sr+r,sc+c]);}
   const isCrystalPiece = (si !== 'h' && _crystalPiece === si) || (si === 'h' && held?.crystal);
@@ -2438,7 +2480,7 @@ async function place(si,sr,sc){
     rowsC.forEach((r,ri)=>{const mid=Math.floor(N/2);const el=cel(r,mid);if(el){const rc=el.getBoundingClientRect();const pS=Math.round(pts/(rowsC.length+Math.max(colsC.length,1)));setTimeout(()=>spawnScoreNum(rc.left+rc.width/2,rc.top+rc.height/2,'+'+pS.toLocaleString(),scoreColors[ri%scoreColors.length],18+Math.min(combo,6)*2),ri*90);}});
     colsC.forEach((c,ci)=>{const mid=Math.floor(N/2);const el=cel(mid,c);if(el){const rc=el.getBoundingClientRect();const pS=Math.round(pts/(colsC.length+Math.max(rowsC.length,1)));setTimeout(()=>spawnScoreNum(rc.left+rc.width/2,rc.top+rc.height/2,'+'+pS.toLocaleString(),scoreColors[(ci+1)%scoreColors.length],18+Math.min(combo,6)*2),(ci+rowsC.length)*90);}});
 
-    requestAnimationFrame(()=>showComboBanner(combo,cleared,pts));
+    _lastComboLv=combo; requestAnimationFrame(()=>showComboBanner(combo,cleared,pts));
 
     // Speedrun: +1s per cleared line
     if(mode==='speed'&&timSec>0){
@@ -2887,7 +2929,8 @@ function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 
 /* ══ GAME OVER ══ */
 let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
-let _currentGameId=null; // уникальный ID текущей игры — защита от повторной отправки XP
+let _currentGameId=null; // уникальный ID текущей игры
+let _lastComboLv=2; // уровень комбо для звука — защита от повторной отправки XP
 function _generateGameId(){return Date.now()+'-'+Math.random().toString(36).substring(2,11);}
 let _animTimers=[]; // копим setTimeout-ы анимаций для очистки при startGame
 function _anim(fn,ms){const id=setTimeout(()=>{_animTimers=_animTimers.filter(x=>x!==id);fn();},ms);_animTimers.push(id);return id;}
