@@ -1405,15 +1405,7 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
 if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;});}
-// После других глобальных переменных
-let currentGameId = null;
 
-// Функция генерации уникального ID
-function generateGameId() {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 15);
-  return `${timestamp}-${random}`;
-}
 /* ══ SETTINGS ══ */
 let snd=true,vib=true;
 function toggleSetting(k){if(k==='sound'){snd=!snd;document.getElementById('t-sound').className='toggle '+(snd?'on':'off');}else{vib=!vib;document.getElementById('t-vibro').className='toggle '+(vib?'on':'off');}}
@@ -1661,7 +1653,6 @@ async function submitBPXP(scoreVal, modeKey){
         init_data: tg.initData,
         score:     Math.round(scoreVal),
         mode:      modeKey
-		game_id: currentGameId
       })
     });
     // Ответ не используем — клиент уже применил XP локально
@@ -3252,9 +3243,6 @@ function startGame(m){
   if(m==='speed')setTimeout(startTimer,300);
 }
 function restartGame(){
-	// ДОБАВЬТЕ ЭТУ СТРОКУ в начало функции
-  currentGameId = generateGameId();
-  console.log('Game started, ID:', currentGameId);
   isDailyMode=false; // рестарт всегда обычный режим
   document.getElementById('go').classList.remove('show');
   startGame(mode);
