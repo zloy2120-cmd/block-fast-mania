@@ -2191,7 +2191,7 @@ async function place(si,sr,sc){
   if(locked||dead)return;
   const p=(si==='h')?held:pieces[si];
   if(!p||!canP(p.shape,sr,sc))return;
-  locked=true;sel=-1;clearHL();vibrate(10);
+  locked=true;sel=-1;clearHL();vibrate(10);playSound('place');
   const placed=[];
   for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){if(!p.shape[r][c])continue;grid[sr+r][sc+c]=p.ci;placed.push([sr+r,sc+c]);}
   const isCrystalPiece = (si !== 'h' && _crystalPiece === si) || (si === 'h' && held?.crystal);
@@ -2305,7 +2305,7 @@ async function place(si,sr,sc){
         _crystalMult=3;_crystalTurns=3;
         crystalUpdateHUD();
         spawnScoreNum(window.innerWidth/2,window.innerHeight*.36,'💎 ×3 SCORE!','#cc88ff',22);
-        vibrate('crystal');playSound('crystal');playSound('crystal');
+        vibrate('crystal');playSound('crystal');
       } else {
         // Продлеваем / сбрасываем таймер если мульт уже активен
         _crystalTurns=3;
@@ -2622,6 +2622,7 @@ const CT=['','','COMBO!','HOT!','🔥 ON FIRE!','⚡ BLAST!','💥 INSANE!','�
 const CBG=['','','rgba(6,182,212,.38)','rgba(20,150,60,.38)','rgba(6,182,212,.38)','rgba(160,110,0,.40)','rgba(185,80,0,.40)','rgba(160,10,85,.40)','rgba(100,20,155,.40)','rgba(165,20,20,.40)','rgba(165,20,20,.40)','rgba(165,20,20,.40)','rgba(160,110,0,.40)'];
 
 function showComboBanner(c,cleared,pts){
+  playSound('combo');
   const idx=Math.min(c,12);const col=CC[idx]||'#22c55e';const txt=CT[idx]||'КОМБО!';
   const cx=window.innerWidth/2, cy=window.innerHeight*.40;
   // Big bold combo label — gradient style like screenshot 2
