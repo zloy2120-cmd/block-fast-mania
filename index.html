@@ -34,9 +34,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 ══════════════════════════════ */
 #menu{
   background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);
-  justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;
+  justify-content:flex-start;overflow-y:auto;padding:0;
+  -webkit-tap-highlight-color:transparent;
 }
-/* Animated background blocks */
+/* Touch response — eliminates 300ms delay on iOS */
+button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small{touch-action:manipulation;}
 .menu-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
 .bg-block{position:absolute;border-radius:8px;opacity:0;animation:bgFloat linear infinite;}
 @keyframes bgFloat{0%{opacity:0;transform:translateY(110vh) rotate(0deg);}10%{opacity:.18;}90%{opacity:.18;}100%{opacity:0;transform:translateY(-20vh) rotate(360deg);}}
@@ -136,21 +138,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 }
 .m-ach-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .m-ach-lbl{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;opacity:.8;}
-/* Title row with achievements */
-.m-title-row{display:flex;align-items:center;justify-content:center;gap:0;width:100%;position:relative;padding-right:54px;}
-/* Small achievements button — absolute right edge */
+/* Title row — just centers the title */
+.m-title-row{display:flex;align-items:center;justify-content:center;width:100%;}
+/* Small achievements button — sits next to leaderboard */
 .m-ach-btn-small{
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  border:none;border-radius:12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  border:none;border-radius:20px;cursor:pointer;
   background:radial-gradient(circle at 38% 35%,#ffe566,#f5a800 55%,#c97800 100%);
-  box-shadow:0 0 0 3px rgba(255,214,0,.2),0 4px 14px rgba(200,120,0,.5),inset 0 2px 0 rgba(255,240,160,.5);
-  padding:6px 8px;
-  transition:box-shadow .15s;
+  box-shadow:0 0 0 3px rgba(255,214,0,.2),0 6px 20px rgba(200,120,0,.5),inset 0 2px 0 rgba(255,240,160,.5);
+  padding:0 14px;min-width:68px;
+  transition:transform .15s,box-shadow .15s;
   animation:achBtnPulse 2.8s ease-in-out infinite;
   flex-shrink:0;
-  position:absolute;right:2px;top:50%;transform:translateY(-50%);
+  position:static;transform:none;
+  touch-action:manipulation;
 }
-.m-ach-btn-small:active{transform:translateY(-50%) scale(.91);}
+.m-ach-btn-small:active{transform:scale(.93);}
 .m-ach-small-lbl{font-size:8px;font-weight:900;color:rgba(80,40,0,.9);text-transform:uppercase;letter-spacing:.5px;line-height:1;}
 /* Compact achievements button */
 .m-ach-compact-btn{
@@ -231,8 +234,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .mb-score{font-family:'Bungee',cursive;font-size:11px;color:var(--gold);}
 
 /* ══ BIG LEADERBOARD BUTTON ══ */
+/* Bottom row: leaderboard + achievements */
+.menu-bottom-row{width:100%;display:flex;align-items:stretch;gap:10px;}
 .menu-leaderboard-btn{
-  width:100%;border:none;border-radius:20px;padding:0;cursor:pointer;
+  flex:1;border:none;border-radius:20px;padding:0;cursor:pointer;
   background:linear-gradient(135deg,rgba(251,191,36,.18),rgba(245,158,11,.1),rgba(251,191,36,.08));
   border:1.5px solid rgba(251,191,36,.38);
   box-shadow:0 6px 28px rgba(251,191,36,.15),inset 0 1px 0 rgba(255,255,255,.12);
@@ -1262,10 +1267,6 @@ body[class*="theme-"] .g-header {
             <img class="m-lightning" src="assets/Block.webp" style="width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 0 18px #cc44ff) drop-shadow(0 0 40px #aa00ff);">
       <div class="m-title-row">
         <div class="m-title">BLOCK FAST<br>MANIA</div>
-        <button class="m-ach-btn-small" onclick="showAchievements()" title="Ачивменты">
-          <span style="font-size:22px">🏅</span>
-          <span class="m-ach-small-lbl">Ачивки</span>
-        </button>
       </div>
       <div class="m-sub">Puzzle · Telegram · 2026</div>
     </div>
@@ -1316,17 +1317,23 @@ body[class*="theme-"] .g-header {
       </button>
     </div>
 
-    <!-- Leaderboard big button -->
-    <button class="menu-leaderboard-btn" onclick="showBoard('classic')">
-      <div class="mlb-left">
-        <div class="mlb-icon">🏆</div>
-        <div class="mlb-texts">
-          <div class="mlb-title" id="mb-view-all-btn">Таблица рекордов</div>
-          <div class="mlb-sub" id="mlb-sub-txt">Топ игроков · все режимы</div>
+    <!-- Bottom row: Leaderboard + Achievements side by side -->
+    <div class="menu-bottom-row">
+      <button class="menu-leaderboard-btn" onclick="showBoard('classic')">
+        <div class="mlb-left">
+          <div class="mlb-icon">🏆</div>
+          <div class="mlb-texts">
+            <div class="mlb-title" id="mb-view-all-btn">Таблица рекордов</div>
+            <div class="mlb-sub" id="mlb-sub-txt">Топ игроков · все режимы</div>
+          </div>
         </div>
-      </div>
-      <div class="mlb-arrow">›</div>
-    </button>
+        <div class="mlb-arrow">›</div>
+      </button>
+      <button class="m-ach-btn-small" onclick="showAchievements()" title="Ачивменты">
+        <span style="font-size:22px">🏅</span>
+        <span class="m-ach-small-lbl">Ачивки</span>
+      </button>
+    </div>
 
   </div>
 </div>
@@ -5097,7 +5104,7 @@ document.addEventListener('visibilitychange',()=>{
 applyLang();
 initMenuBg();
 updateMenuBP();
-applyBgTheme(currentTheme);
+try{ applyBgTheme(currentTheme); }catch(e){ console.warn('theme init error:',e); }
 updateRotBtn();
 updateBankLock();
 showScreen('menu');
