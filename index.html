@@ -17,9 +17,16 @@
   --bank-w:80px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:none;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:none;}
 
-.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;transition:opacity .3s,transform .3s;}
+.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;transition:opacity .3s,transform .3s;background:var(--bg);}
+#board{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
+#skins-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);transition:background .4s;}
+#skins-screen .sk-head{backdrop-filter:blur(12px);background:rgba(5,4,20,.7);border-bottom:1px solid rgba(255,255,255,.08);width:100%;}
+#skins-screen .sk-tabs{backdrop-filter:blur(12px);background:rgba(5,4,20,.55);width:100%;padding:4px 14px;}
+.sk-theme-grid .sk-theme-card{backdrop-filter:none;background:transparent !important;}
+#achieve-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
+#game{background:var(--bg) !important;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);}
 
 /* ══════════════════════════════
@@ -27,7 +34,7 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 ══════════════════════════════ */
 #menu{
   background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);
-  justify-content:flex-start;overflow-y:auto;padding:0;
+  justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;
 }
 /* Animated background blocks */
 .menu-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
@@ -129,6 +136,32 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 }
 .m-ach-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .m-ach-lbl{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;opacity:.8;}
+/* Title row with achievements */
+.m-title-row{display:flex;align-items:center;justify-content:center;gap:0;width:100%;position:relative;padding-right:54px;}
+/* Small achievements button — absolute right edge */
+.m-ach-btn-small{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  border:none;border-radius:12px;cursor:pointer;
+  background:radial-gradient(circle at 38% 35%,#ffe566,#f5a800 55%,#c97800 100%);
+  box-shadow:0 0 0 3px rgba(255,214,0,.2),0 4px 14px rgba(200,120,0,.5),inset 0 2px 0 rgba(255,240,160,.5);
+  padding:6px 8px;
+  transition:box-shadow .15s;
+  animation:achBtnPulse 2.8s ease-in-out infinite;
+  flex-shrink:0;
+  position:absolute;right:2px;top:50%;transform:translateY(-50%);
+}
+.m-ach-btn-small:active{transform:translateY(-50%) scale(.91);}
+.m-ach-small-lbl{font-size:8px;font-weight:900;color:rgba(80,40,0,.9);text-transform:uppercase;letter-spacing:.5px;line-height:1;}
+/* Compact achievements button */
+.m-ach-compact-btn{
+  width:100%;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,rgba(255,200,0,.12),rgba(200,120,0,.08));
+  border:1.5px solid rgba(255,200,0,.25);border-radius:16px;
+  padding:12px 16px;cursor:pointer;color:var(--text);
+  font-family:'Nunito',sans-serif;
+  transition:transform .15s,background .15s;
+}
+.m-ach-compact-btn:active{transform:scale(.97);background:rgba(255,200,0,.18);}
 
 /* ══════════════════════════════
    LEADERBOARD — App Store style
@@ -321,7 +354,7 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 #grid-wrap{position:relative;flex-shrink:0;margin-bottom:56px;}
 #grid{
   display:grid;
-  background:rgba(10,9,38,.6);
+  background:rgba(10,9,38,.25);
   border:2px solid rgba(255,255,255,.09);
   border-radius:14px;padding:4px;
   box-shadow:0 12px 44px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);
@@ -329,22 +362,60 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
   isolation:isolate;
   transition:background .6s,box-shadow .6s;
 }
-/* ══ ТЕМЫ ИГРОВОГО ПОЛЯ ══ */
-#grid.theme-space{
-  background:radial-gradient(ellipse at 20% 30%,rgba(30,0,80,.95) 0%,rgba(5,5,30,.98) 60%,rgba(0,0,10,1) 100%);
-  border-color:rgba(120,80,255,.35);
-  box-shadow:0 12px 44px rgba(60,0,180,.4),inset 0 1px 0 rgba(200,150,255,.12),0 0 30px rgba(80,0,200,.2);
-}
-#grid.theme-sunset{
-  background:linear-gradient(160deg,rgba(60,5,30,.95) 0%,rgba(100,20,0,.92) 40%,rgba(60,10,0,.98) 100%);
-  border-color:rgba(255,120,40,.3);
-  box-shadow:0 12px 44px rgba(200,60,0,.35),inset 0 1px 0 rgba(255,180,80,.12),0 0 25px rgba(200,40,0,.2);
-}
-#grid.theme-ice{
-  background:linear-gradient(145deg,rgba(0,30,60,.95) 0%,rgba(0,60,90,.92) 50%,rgba(0,20,50,.98) 100%);
-  border-color:rgba(100,220,255,.35);
-  box-shadow:0 12px 44px rgba(0,100,180,.4),inset 0 1px 0 rgba(180,240,255,.15),0 0 25px rgba(0,150,220,.2);
-}
+/* ══ ТЕМЫ — ПОЛНАЯ СИСТЕМА ══ */
+
+/* --- COSMOS --- */
+body.theme-cosmos { --bg:#04020f; --bg2:#080520; --card-bg:rgba(20,10,60,.85); --card-border:rgba(120,80,255,.3); }
+body.theme-cosmos #menu { background:radial-gradient(ellipse at 30% 10%,#1a0050 0%,#04020f 65%); }
+body.theme-cosmos #game  { background:radial-gradient(ellipse at 70% 80%,rgba(40,0,100,.4) 0%,#04020f 70%); }
+body.theme-cosmos .card,.theme-cosmos .g-panel,.theme-cosmos #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-cosmos #grid  { background:radial-gradient(ellipse at 20% 30%,rgba(30,0,80,.45) 0%,rgba(5,5,30,.3) 100%); border-color:rgba(120,80,255,.35); box-shadow:0 12px 44px rgba(60,0,180,.4),0 0 30px rgba(80,0,200,.2); }
+
+/* --- CYBERPUNK --- */
+body.theme-cyberpunk { --bg:#000a02; --bg2:#001a06; --card-bg:rgba(0,15,5,.9); --card-border:rgba(0,255,65,.25); }
+body.theme-cyberpunk #menu { background:radial-gradient(ellipse at 50% 0%,rgba(0,255,65,.1) 0%,#000 60%); }
+body.theme-cyberpunk #game  { background:radial-gradient(ellipse at 50% 100%,rgba(0,255,255,.1) 0%,#050510 70%); }
+body.theme-cyberpunk .card,.theme-cyberpunk .g-panel,.theme-cyberpunk #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-cyberpunk #grid  { background:linear-gradient(160deg,rgba(0,30,10,.35),rgba(0,5,0,.25)); border-color:rgba(0,255,65,.4); box-shadow:0 0 30px rgba(0,255,65,.25),0 0 60px rgba(0,200,40,.1); }
+body.theme-cyberpunk #grid::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 9px,rgba(0,255,65,.03) 10px); pointer-events:none; border-radius:12px; z-index:0; }
+
+/* --- HELL / FIRE --- */
+body.theme-hell { --bg:#0f0000; --bg2:#1a0500; --card-bg:rgba(40,5,0,.9); --card-border:rgba(255,80,0,.35); }
+body.theme-hell #menu { background:radial-gradient(ellipse at 50% 100%,rgba(200,30,0,.35) 0%,#0f0000 60%); }
+body.theme-hell #game  { background:radial-gradient(ellipse at 50% 100%,rgba(180,20,0,.3) 0%,#0f0000 70%); }
+body.theme-hell .card,.theme-hell .g-panel,.theme-hell #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-hell #grid  { background:linear-gradient(180deg,rgba(30,5,0,.35) 0%,rgba(80,10,0,.3) 100%); border-color:rgba(255,80,0,.5); box-shadow:0 12px 44px rgba(200,40,0,.4),0 0 40px rgba(255,60,0,.2); }
+
+/* --- ICE --- */
+body.theme-ice { --bg:#000d18; --bg2:#001525; --card-bg:rgba(0,20,50,.88); --card-border:rgba(100,220,255,.3); }
+body.theme-ice #menu { background:radial-gradient(ellipse at 50% 0%,rgba(0,150,220,.2) 0%,#000d18 65%); }
+body.theme-ice #game  { background:radial-gradient(ellipse at 30% 30%,rgba(0,100,180,.18) 0%,#000d18 70%); }
+body.theme-ice .card,.theme-ice .g-panel,.theme-ice #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-ice #grid  { background:linear-gradient(145deg,rgba(0,30,60,.3),rgba(0,60,90,.25)); border-color:rgba(100,220,255,.45); box-shadow:0 12px 44px rgba(0,100,180,.4),0 0 25px rgba(0,150,255,.2); }
+
+/* --- RETRO ARCADE --- */
+body.theme-retro { --bg:#000; --bg2:#0a0a0a; --card-bg:rgba(0,20,0,.9); --card-border:rgba(0,255,0,.25); }
+body.theme-retro #menu { background:#000; }
+body.theme-retro #game  { background:#000; }
+body.theme-retro .card,.theme-retro .g-panel,.theme-retro #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-retro #grid  { background:rgba(0,0,0,.25); border-color:rgba(0,255,0,.5); box-shadow:0 0 20px rgba(0,255,0,.3),inset 0 0 20px rgba(0,255,0,.05); }
+body.theme-retro::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.25) 4px); pointer-events:none; z-index:9999; }
+
+/* --- NATURE --- */
+body.theme-nature { --bg:#010f02; --bg2:#021505; --card-bg:rgba(5,30,8,.88); --card-border:rgba(60,200,80,.3); }
+body.theme-nature #menu { background:radial-gradient(ellipse at 50% 100%,rgba(20,80,10,.4) 0%,#010f02 65%); }
+body.theme-nature #game  { background:radial-gradient(ellipse at 30% 20%,rgba(30,100,15,.2) 0%,#010f02 70%); }
+body.theme-nature .card,.theme-nature .g-panel,.theme-nature #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-nature #grid  { background:linear-gradient(160deg,rgba(5,25,5,.3),rgba(10,40,5,.25)); border-color:rgba(60,200,80,.4); box-shadow:0 12px 44px rgba(20,100,10,.4),0 0 30px rgba(40,160,20,.15); }
+
+/* --- SAKURA --- */
+body.theme-sakura { --bg:#0f0008; --bg2:#180010; --card-bg:rgba(30,5,20,.88); --card-border:rgba(255,150,200,.3); }
+body.theme-sakura #menu { background:radial-gradient(ellipse at 50% 0%,rgba(200,50,120,.2) 0%,#0f0008 65%); }
+body.theme-sakura #game  { background:radial-gradient(ellipse at 70% 30%,rgba(180,40,100,.15) 0%,#0f0008 70%); }
+body.theme-sakura .card,.theme-sakura .g-panel,.theme-sakura #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rgba(60,10,35,.25)); border-color:rgba(255,150,200,.45); box-shadow:0 12px 44px rgba(180,40,100,.35),0 0 30px rgba(255,100,180,.15); }
+
+
 .cell{
   border-radius:2px;
   background:rgba(255,255,255,.06);
@@ -514,43 +585,9 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 #hold-bp-lock span{font-size:24px;line-height:1;}
 #hold-bp-lock small{font-size:11px;color:var(--gold);font-weight:900;margin-top:4px;letter-spacing:.5px;text-align:center;}
 /* BG Themes */
-body.theme-cosmos{--bg:#04020f;}
-body.theme-cosmos #game-wrap,body.theme-cosmos #game{
-  background:radial-gradient(ellipse at 30% 20%,rgba(80,0,180,.18) 0%,transparent 60%),
-             radial-gradient(ellipse at 70% 80%,rgba(0,50,150,.15) 0%,transparent 60%),
-             #04020f;
-}
-body.theme-ocean{--bg:#010d18;}
-body.theme-ocean #game-wrap,body.theme-ocean #game{
-  background:radial-gradient(ellipse at 50% 0%,rgba(0,120,160,.2) 0%,transparent 55%),
-             radial-gradient(ellipse at 20% 100%,rgba(0,80,120,.18) 0%,transparent 60%),
-             #010d18;
-}
-body.theme-sunset{--bg:#0f0508;}
-body.theme-sunset #game-wrap,body.theme-sunset #game{
-  background:radial-gradient(ellipse at 50% -10%,rgba(220,80,0,.22) 0%,transparent 55%),
-             radial-gradient(ellipse at 80% 90%,rgba(180,20,60,.15) 0%,transparent 60%),
-             #0f0508;
-}
-/* SETTINGS */
-#settings-panel{display:none;position:fixed;top:0;right:0;width:220px;z-index:650;background:linear-gradient(160deg,#15133a,#1b1940);border-left:1.5px solid rgba(255,255,255,.1);border-bottom:1.5px solid rgba(255,255,255,.1);border-radius:0 0 0 20px;padding:16px 14px;box-shadow:-8px 8px 40px rgba(0,0,0,.5);}
-#settings-panel.show{display:block;}
-.sp-title{font-family:'Bungee',cursive;font-size:14px;color:var(--cyan);margin-bottom:12px;}
-.sp-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);}
-.sp-row:last-child{border-bottom:none;}
-.sp-lbl{font-size:13px;font-weight:800;color:var(--text);}
-.toggle{width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0;}
-.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 2px 4px rgba(0,0,0,.4);}
-.toggle.on{background:linear-gradient(135deg,#22c55e,#16a34a);}
-.toggle.off{background:rgba(255,255,255,.15);}
-.toggle.on::after{transform:translateX(18px);}
-.sp-menu-btn{width:100%;margin-top:10px;border:none;border-radius:11px;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:transform .15s;}
-.sp-menu-btn:active{transform:scale(.97);}
-#settings-backdrop{display:none;position:fixed;inset:0;z-index:640;background:rgba(0,0,0,.3);}
-#settings-backdrop.show{display:block;}
 
 /* LEADERBOARD */
-#board{justify-content:flex-start;padding:14px;gap:0;overflow-y:auto;}
+#board{justify-content:flex-start;padding:14px;gap:0;overflow-y:auto;height:100%;max-height:100vh;}
 .board-head{width:100%;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:13px;}
 .board-back{border:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
 .board-back:active{transform:scale(.96);}
@@ -698,7 +735,7 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 .pod-3 .pod-score{color:#cd7c43;}
 .pod-3 .pod-bar{height:34px;background:rgba(180,83,9,.22);border:1px solid rgba(180,83,9,.3);}
 /* Fix board rows width */
-.board-table{width:100%;display:flex;flex-direction:column;gap:6px;}
+.board-table{width:100%;display:flex;flex-direction:column;gap:6px;min-height:200px;padding-bottom:20px;}
 /* [FIX BUG-E] объединены два дублирующихся .board-row в одно правило */
 .board-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1.5px solid var(--border);width:100%;box-sizing:border-box;}
 .board-row.rank-1{background:linear-gradient(135deg,rgba(251,191,36,.13),rgba(245,158,11,.06));border-color:rgba(251,191,36,.38);}
@@ -825,12 +862,12 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 
 /* ══ SKINS ══ */
 .sk-head,.ach-head{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px;flex-shrink:0;}
-.sk-body{flex:1;overflow-y:auto;padding:0 14px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.sk-body{flex:1;overflow-y:auto;padding:0 14px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;min-height:0;}
 .sk-preview{display:flex;gap:6px;justify-content:center;margin-top:8px;}
 .sk-preview-block{width:36px;height:36px;border-radius:10px;}
 .sk-label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;}
 .sk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;}
-.sk-card{border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:all .18s;background:rgba(255,255,255,.04);}
+.sk-card{border:2px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 8px;cursor:pointer;text-align:center;transition:all .22s;background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;gap:2px;}
 .sk-card.active{border-color:var(--cyan);background:rgba(34,211,238,.1);box-shadow:0 0 16px rgba(34,211,238,.25);}
 .sk-card:active{transform:scale(.96);}
 .sk-swatches{display:flex;gap:4px;justify-content:center;margin-bottom:8px;}
@@ -839,6 +876,30 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 .sk-badge{font-size:9px;margin-top:3px;padding:2px 7px;border-radius:20px;display:inline-block;}
 .sk-badge.free{background:rgba(34,197,94,.2);color:#4ade80;}
 .sk-badge.locked{background:rgba(255,255,255,.08);color:var(--muted);}
+.sk-card-icon{font-size:22px;margin-bottom:4px;}
+.sk-card-desc{font-size:9px;color:var(--muted);margin:2px 0 4px;line-height:1.3;min-height:22px;}
+
+/* Per-skin card animations */
+@keyframes skinNeonPulse{0%,100%{box-shadow:0 0 18px rgba(255,0,110,.3),0 0 30px rgba(58,134,255,.2);}50%{box-shadow:0 0 28px rgba(255,0,110,.5),0 0 50px rgba(58,134,255,.35);}}
+.sk-card-glow{animation:skinNeonPulse 2s ease-in-out infinite;}
+
+@keyframes skinFireFlicker{0%,100%{filter:brightness(1) saturate(1);}50%{filter:brightness(1.15) saturate(1.3) hue-rotate(5deg);}}
+.sk-card-fire{animation:skinFireFlicker 1.5s ease-in-out infinite;}
+
+@keyframes skinWave{0%,100%{filter:hue-rotate(0deg) brightness(1);}50%{filter:hue-rotate(20deg) brightness(1.08);}}
+.sk-card-wave{animation:skinWave 3s ease-in-out infinite;}
+
+@keyframes skinShine{0%,100%{box-shadow:0 0 12px rgba(255,215,0,.2);}50%{box-shadow:0 0 28px rgba(255,215,0,.5),inset 0 0 20px rgba(255,215,0,.1);}}
+.sk-card-shine{animation:skinShine 2s ease-in-out infinite;}
+
+@keyframes skinGalaxy{0%,100%{filter:hue-rotate(0deg) brightness(1);}50%{filter:hue-rotate(30deg) brightness(1.1);}}
+.sk-card-galaxy{animation:skinGalaxy 4s ease-in-out infinite;}
+
+@keyframes skinSoft{0%,100%{box-shadow:0 0 10px rgba(255,179,193,.2),inset 0 0 12px rgba(255,200,220,.05);}50%{box-shadow:0 0 22px rgba(255,179,193,.45),inset 0 0 20px rgba(255,200,220,.1);}}
+.sk-card-soft{animation:skinSoft 3s ease-in-out infinite;}
+
+@keyframes skinDark{0%,100%{filter:brightness(1) contrast(1);}50%{filter:brightness(1.12) contrast(1.08);}}
+.sk-card-dark{animation:skinDark 3.5s ease-in-out infinite;}
 
 /* ══ ACHIEVEMENTS ══ */
 .ach-body{flex:1;overflow-y:auto;padding:0 14px 20px;display:flex;flex-direction:column;gap:8px;}
@@ -1046,6 +1107,150 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
   0%,100%{filter:brightness(1) saturate(1);}
   50%    {filter:brightness(1.35) saturate(1.5) hue-rotate(-15deg);}
 }
+
+/* Theme selector in settings */
+.sp-theme-section { margin: 8px 0; }
+.sp-theme-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.sp-theme-btn {
+  padding:5px 4px; border-radius:8px; border:1.5px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.07); color:rgba(255,255,255,.75);
+  font-size:10px; cursor:pointer; transition:all .2s; text-align:center;
+}
+.sp-theme-btn:active { transform:scale(.95); }
+.sp-theme-btn.active { border-color:rgba(255,220,0,.6); background:rgba(255,200,0,.15); color:#ffe066; }
+
+/* ══ SETTINGS PANEL ══ */
+#settings-panel{display:none;position:fixed;top:0;right:0;width:230px;z-index:650;
+  background:linear-gradient(160deg,#15133a,#1b1940);
+  border-left:1.5px solid rgba(255,255,255,.1);
+  border-bottom:1.5px solid rgba(255,255,255,.1);
+  border-radius:0 0 0 20px;padding:14px 12px 12px;
+  box-shadow:-8px 8px 40px rgba(0,0,0,.6);
+  max-height:100vh;overflow-y:auto;
+}
+#settings-panel.show{display:block;}
+.sp-title{font-family:'Bungee',cursive;font-size:14px;color:rgba(255,255,255,.85);
+  letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.1);}
+.sp-row{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;}
+.sp-lbl{font-size:13px;color:rgba(255,255,255,.7);font-weight:700;}
+.sp-menu-btn{border:1px solid rgba(255,255,255,.15);border-radius:10px;
+  padding:8px 6px;background:rgba(255,255,255,.07);
+  color:rgba(255,255,255,.7);font-size:12px;font-family:'Nunito',sans-serif;
+  font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
+.sp-menu-btn:active{transform:scale(.96);}
+/* Toggle button */
+button.toggle{width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;
+  position:relative;transition:background .2s;}
+button.toggle.on{background:var(--cyan);}
+button.toggle.off{background:rgba(255,255,255,.2);}
+button.toggle::after{content:'';position:absolute;top:3px;width:16px;height:16px;
+  border-radius:50%;background:#fff;transition:left .2s;}
+button.toggle.on::after{left:21px;}
+button.toggle.off::after{left:3px;}
+
+/* ══ SKINS/THEMES TABS ══ */
+.sk-tabs {
+  display:flex; gap:8px; padding:0 14px 10px; flex-shrink:0; width:100%; box-sizing:border-box;
+}
+.sk-tab {
+  flex:1; padding:9px 6px; border-radius:12px; border:1.5px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.06); color:rgba(255,255,255,.55);
+  font-family:'Nunito',sans-serif; font-size:13px; font-weight:800;
+  cursor:pointer; transition:all .2s;
+}
+.sk-tab.active {
+  background:linear-gradient(135deg,rgba(168,85,247,.4),rgba(34,211,238,.25));
+  border-color:rgba(168,85,247,.6); color:#fff;
+  box-shadow:0 4px 16px rgba(168,85,247,.3);
+}
+.sk-tab:active { transform:scale(.97); }
+
+/* Theme grid in skins screen */
+.sk-theme-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  width:100%; padding:4px 0;
+}
+.sk-theme-card {
+  border:2px solid rgba(255,255,255,.1); border-radius:16px;
+  padding:14px 10px; cursor:pointer; text-align:center;
+  transition:all .22s; background:rgba(255,255,255,.04);
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  min-height:120px; justify-content:center;
+}
+.sk-theme-card.active {
+  border-color:var(--gold) !important;
+}
+.sk-theme-card:active { transform:scale(.96); }
+.sk-theme-card .th-emoji { font-size:32px; }
+.sk-theme-card .th-name {
+  font-size:12px; font-weight:900; color:rgba(255,255,255,.95);
+  text-transform:uppercase; letter-spacing:.5px; margin-top:2px;
+}
+.sk-theme-card.active .th-name { color:#ffe066; }
+.sk-theme-card .th-desc {
+  font-size:9px; color:rgba(255,255,255,.45); line-height:1.3;
+  max-width:100%;
+}
+.th-active-badge {
+  font-size:9px; background:rgba(255,220,0,.2); color:#ffe066;
+  border-radius:10px; padding:2px 8px; margin-top:2px;
+  border:1px solid rgba(255,200,0,.3);
+}
+
+#sktab-body-skins, #sktab-body-themes { width:100%; box-sizing:border-box; }
+#sktab-body-themes { padding:0 14px 20px; overflow-y:auto; flex:1; min-height:0; }
+#sktab-body-skins.hidden, #sktab-body-themes.hidden { display:none !important; }
+.sk-theme-grid { padding-bottom:20px; }
+
+/* ══ SKIN PARTICLE EFFECTS — subtle, skin-specific only ══ */
+body.skin-fire .cell:is(.bc0,.bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7,.bc8,.bc9) {
+  box-shadow: 0 0 6px rgba(255,80,0,.45), inset 0 -2px 0 rgba(200,40,0,.4) !important;
+  animation: firePulse 2.5s ease-in-out infinite;
+}
+@keyframes firePulse {
+  0%,100%{ filter:brightness(1); }
+  50%{ filter:brightness(1.12) drop-shadow(0 0 5px rgba(255,100,0,.5)); }
+}
+body.skin-neon .cell:is(.bc0,.bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7,.bc8,.bc9) {
+  box-shadow: 0 0 8px rgba(255,255,255,.2), inset 0 1px 0 rgba(255,255,255,.35) !important;
+}
+body.skin-ocean .cell:is(.bc0,.bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7,.bc8,.bc9) {
+  animation: oceanShimmer 4s ease-in-out infinite;
+}
+@keyframes oceanShimmer {
+  0%,100%{ filter:brightness(1); }
+  50%{ filter:brightness(1.08) hue-rotate(15deg); }
+}
+body.skin-pastel .cell:is(.bc0,.bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7,.bc8,.bc9) {
+  box-shadow: 0 0 8px rgba(255,200,220,.3), inset 0 1px 0 rgba(255,255,255,.4) !important;
+}
+body.skin-dark .cell:is(.bc0,.bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7,.bc8,.bc9) {
+  animation: darkPulse 3s ease-in-out infinite;
+}
+@keyframes darkPulse {
+  0%,100%{ filter:brightness(.95); }
+  50%{ filter:brightness(1.08) saturate(1.2); }
+}
+
+/* ══ THEME TRANSPARENCY — let canvas show through ══ */
+body[class*="theme-"] #game {
+  background: transparent !important;
+}
+body[class*="theme-"] #tray {
+  background: rgba(0,0,0,.35) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  backdrop-filter: blur(4px);
+}
+body[class*="theme-"] .g-panel {
+  background: rgba(0,0,0,.3) !important;
+  backdrop-filter: blur(4px);
+}
+body[class*="theme-"] #score-row, 
+body[class*="theme-"] .g-header {
+  background: rgba(0,0,0,.2) !important;
+}
 </style>
 <body>
 
@@ -1055,7 +1260,13 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
   <div class="menu-inner">
     <div class="m-logo">
             <img class="m-lightning" src="assets/Block.webp" style="width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 0 18px #cc44ff) drop-shadow(0 0 40px #aa00ff);">
-      <div class="m-title">BLOCK FAST<br>MANIA</div>
+      <div class="m-title-row">
+        <div class="m-title">BLOCK FAST<br>MANIA</div>
+        <button class="m-ach-btn-small" onclick="showAchievements()" title="Ачивменты">
+          <span style="font-size:22px">🏅</span>
+          <span class="m-ach-small-lbl">Ачивки</span>
+        </button>
+      </div>
       <div class="m-sub">Puzzle · Telegram · 2026</div>
     </div>
 
@@ -1117,11 +1328,6 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
       <div class="mlb-arrow">›</div>
     </button>
 
-    <!-- Achievement medal button -->
-    <div class="m-ach-wrap">
-      <button class="m-ach-btn" onclick="showAchievements()">🏆</button>
-      <span class="m-ach-lbl" id="m-ach-lbl">Ачивменты</span>
-    </div>
   </div>
 </div>
 
@@ -1240,10 +1446,10 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
   <div class="sp-title">⚙ НАСТРОЙКИ</div>
   <div class="sp-row"><span class="sp-lbl">🔊 Звук</span><button class="toggle on" id="t-sound" onclick="toggleSetting('sound')"></button></div>
   <div class="sp-row"><span class="sp-lbl">📳 Вибрация</span><button class="toggle on" id="t-vibro" onclick="toggleSetting('vibro')"></button></div>
-  <button class="sp-skin-btn" onclick="closeSettings();showSkins()">🎨 Скины блоков</button>
+  <button class="sp-skin-btn" onclick="closeSettings();showSkins()">🎨 Скины и Темы</button>
   <button class="sp-skin-btn" style="background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(34,211,238,.2));border-color:rgba(167,139,250,.4);color:#c4b5fd;margin-top:8px;" onclick="closeSettings();showBP()">⚡ Battle Pass</button>
   <button class="sp-achieve-btn" onclick="closeSettings();showAchievements()">🏅 Ачивменты</button>
-  <div style="display:flex;gap:8px;margin-top:4px;">
+  <div style="display:flex;gap:8px;margin-top:8px;">
     <button class="sp-menu-btn" style="flex:1;" onclick="closeSettings()">✕ Продолжить</button>
     <button class="sp-menu-btn" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171;" onclick="closeSettings();goMenu()">🏠 Меню</button>
   </div>
@@ -1253,14 +1459,23 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 <div id="skins-screen" class="screen hidden">
   <div class="sk-head">
     <button class="board-back" onclick="goBack()">← Назад</button>
-    <div class="board-title">🎨 СКИНЫ</div>
+    <div class="board-title" id="sk-screen-title">🎨 СКИНЫ</div>
     <div style="width:60px"></div>
   </div>
-  <div class="sk-body">
+  <!-- Tab switcher -->
+  <div class="sk-tabs">
+    <button class="sk-tab active" id="sktab-skins" onclick="switchSkTab('skins')">🎨 Скины</button>
+    <button class="sk-tab" id="sktab-themes" onclick="switchSkTab('themes')">🌈 Темы</button>
+  </div>
+  <!-- Skins tab -->
+  <div class="sk-body" id="sktab-body-skins">
     <div class="sk-preview" id="sk-preview"></div>
     <div class="sk-label">Предпросмотр</div>
     <div class="sk-grid" id="sk-grid"></div>
-    <div id="sk-themes"></div>
+  </div>
+  <!-- Themes tab -->
+  <div class="sk-body hidden" id="sktab-body-themes">
+    <div class="sk-theme-grid" id="sk-theme-grid"></div>
   </div>
 </div>
 
@@ -1346,7 +1561,7 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
     <div class="ob-text" id="ob-text">Перетащи фигуру на поле</div>
     <div class="ob-dots" id="ob-dots"></div>
     <button class="ob-btn" id="ob-btn" onclick="nextOnboarding()">Понял!</button>
-    <button class="ob-skip" onclick="localStorage.setItem('bfm_onboarded','1');document.getElementById('onboarding-ov').classList.remove('show')">Пропустить</button>
+    <button class="ob-skip" onclick="safeSet('bfm_onboarded','1');document.getElementById('onboarding-ov').classList.remove('show')">Пропустить</button>
   </div>
 </div>
 
@@ -1402,6 +1617,56 @@ body.theme-sunset #game-wrap,body.theme-sunset #game{
 </div>
 
 <script src="sounds.js"></script>
+<script>
+
+/* ── Default twinkling stars for menu/leaderboard ── */
+function initDefaultStars(){
+  const targets=['menu']; // только меню — board нельзя трогать, ломает position:fixed
+  targets.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el||el.querySelector('.default-stars-canvas'))return;
+    const c=document.createElement('canvas');
+    c.className='default-stars-canvas';
+    c.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:inherit;';
+    // НЕ трогаем el.style.position — у .screen уже position:fixed
+    el.prepend(c);
+    c.width=el.offsetWidth||360; c.height=el.offsetHeight||700;
+    const ctx=c.getContext('2d');
+    const stars=Array.from({length:60},()=>({
+      x:Math.random()*c.width,y:Math.random()*c.height,
+      r:Math.random()*.8+.2,
+      phase:Math.random()*Math.PI*2,speed:Math.random()*.6+.3,
+      sparkle:Math.random()>.75  // 25% are cross-sparkles
+    }));
+    function draw(){
+      // Only animate if element is visible
+      if(el.classList.contains('hidden')){requestAnimationFrame(draw);return;}
+      ctx.clearRect(0,0,c.width,c.height);
+      const t=Date.now()*.001;
+      stars.forEach(s=>{
+        const a=Math.max(0,.15+Math.sin(s.phase+t*s.speed)*.35);
+        if(s.sparkle&&a>.35){
+          // cross sparkle
+          const sz=s.r*3;
+          ctx.save();ctx.globalAlpha=a*.8;ctx.strokeStyle='#fff';ctx.lineWidth=.8;
+          ctx.beginPath();ctx.moveTo(s.x,-sz+s.y);ctx.lineTo(s.x,sz+s.y);
+          ctx.moveTo(s.x-sz*.4,s.y);ctx.lineTo(s.x+sz*.4,s.y);ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.globalAlpha=a;ctx.fillStyle='#fff';
+          ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+        }
+      });
+      ctx.globalAlpha=1;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  });
+}
+// Init after DOM ready
+setTimeout(initDefaultStars, 500);
+
+</script>
 
 <script>
 /* ══ TELEGRAM ══ */
@@ -1457,7 +1722,9 @@ function vibrate(type){
 
 
 /* ══ SOUND SYSTEM v2 — base64 audio files ══ */
-/* _SFX_SRC loaded from sounds.js */
+const _SFX_SRC = {
+  'place': 'data:audio/mpeg;base64,SUQ0Sf/2SzZQwUECdD9IvVgoUE4Zd8XZFRUk+Kv/zYkTjBehLFqIEJg4PIaocAAvKhChLFRb8qFRb//1M7P/1M/qqTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/82Jk/QtlENQKGCOwCoidwAIYRsaqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq',
+};
 
 // Счётчики для чередования комбо-звуков
 let _c4=0, _c6=0, _c9=0;
@@ -1655,7 +1922,7 @@ function restoreCloudScores(){
         const parsed=parseInt(val);
         if(!isNaN(parsed)&&parsed>0){ // [FIX] защита от NaN и мусорных значений
           const local=lsG(m);
-          if(parsed>local){try{localStorage.setItem('bfm7_'+m,parsed);}catch{}}
+          if(parsed>local){safeSet('bfm7_'+m,parsed);}
         }
       }
     });
@@ -1671,7 +1938,7 @@ function getDailyDateStr(){const d=new Date();return d.getDate()+'.'+( d.getMont
 function getDailyKey(){return 'bfm_daily_played_'+getDailySeed();}
 function getYesterdayDailySeed(){const d=new Date();d.setDate(d.getDate()-1);return parseInt(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`);}
 function startDaily(){
-  if(localStorage.getItem(getDailyKey())){
+  if(safeGet(getDailyKey(),'')){
     const best=lsG('daily');
     const msg=LANG==='ru'?`📅 Ты уже сыграл сегодня!\nТвой результат: ${best.toLocaleString()}`:`📅 Already played today!\nYour score: ${best.toLocaleString()}`;
     alert(msg);
@@ -3061,8 +3328,8 @@ function checkReferral(){
     }).catch(()=>{});
     // [FIX BUG-A] Считаем реферала один раз по startParam — защита от повторного счёта
     const _refKey = 'bfm_ref_counted_'+startParam;
-    if(!localStorage.getItem(_refKey)){
-      localStorage.setItem(_refKey,'1');
+    if(!safeGet(_refKey,'')){
+      safeSet(_refKey,'1');
       updateAchStats({ referral_count:1 });
     }
     // Показываем приветствие новому игроку
@@ -3123,7 +3390,7 @@ const ONBOARDING_STEPS = [
     btn: LANG==='ru'?'Начать!':'Let\'s go!' },
 ];
 function showOnboarding(){
-  if(localStorage.getItem(ONBOARDING_KEY)) return;
+  if(safeGet(ONBOARDING_KEY,'')) return;
   onboardingStep=0;
   showOnboardingStep(0);
 }
@@ -3131,7 +3398,7 @@ function showOnboardingStep(i){
   const s=ONBOARDING_STEPS[i];
   if(!s){
     document.getElementById('onboarding-ov').classList.remove('show');
-    localStorage.setItem(ONBOARDING_KEY,'1');
+    safeSet(ONBOARDING_KEY,'1');
     return;
   }
   document.getElementById('ob-emoji').textContent=s.emoji;
@@ -3147,7 +3414,7 @@ function nextOnboarding(){
   onboardingStep++;
   if(onboardingStep>=ONBOARDING_STEPS.length){
     document.getElementById('onboarding-ov').classList.remove('show');
-    localStorage.setItem(ONBOARDING_KEY,'1');
+    safeSet(ONBOARDING_KEY,'1');
   } else {
     showOnboardingStep(onboardingStep);
   }
@@ -3158,6 +3425,19 @@ function showScreen(id){
   const current = [...document.querySelectorAll('.screen')].find(s=>!s.classList.contains('hidden'));
   if(current) _prevScreen = current.id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden',s.id!==id));
+  // Theme canvas visible on menu, game, and skins-screen (for theme preview)
+  const tc = document.getElementById('theme-canvas');
+  if(tc) tc.style.opacity = (id==='menu'||id==='game'||id==='skins-screen') ? '1' : '0';
+  // Skins screen: transparent when showing themes tab so canvas is visible
+  const ss = document.getElementById('skins-screen');
+  if(ss && id==='skins-screen'){
+    // Check current active tab
+    const themesActive = document.getElementById('sktab-body-themes') && 
+      !document.getElementById('sktab-body-themes').classList.contains('hidden');
+    ss.style.background = themesActive ? 'transparent' : '';
+  } else if(ss && id!=='skins-screen'){
+    ss.style.background = '';
+  }
 }
 function goBack(){
   // Умный возврат: если пришли из игры — в игру, иначе в меню
@@ -3325,42 +3605,55 @@ function restartGame(){
 
 /* ══ SKINS SYSTEM ══ */
 const SKINS = [
-  { id:'default', name:'Классика',  free:true,
-    colors:['#FF3535','#FF8500','#FFD300','#2ECC44','#0DBBD8','#3366FF','#9922CC','#EE0E88','#18A880','#66BB00'] },
-  { id:'neon',    name:'Неон',      free:true,
-    colors:['#FF006E','#FB5607','#FFBE0B','#8338EC','#3A86FF','#06D6A0','#FF006E','#F72585','#00F5D4','#ADFF2F'] },
-  { id:'pastel',  name:'Пастель',   free:false,
-    colors:['#FFB3C1','#FFD6A5','#FDFFB6','#CAFFBF','#9BF6FF','#A0C4FF','#BDB2FF','#FFC6FF','#B5EAD7','#E2F0CB'] },
-  { id:'dark',    name:'Тёмный',    free:false,
-    colors:['#7B0000','#7B3D00','#7B6D00','#004D00','#004D4D','#003D7B','#4D007B','#7B0044','#005533','#3D5500'] },
-  { id:'ocean',   name:'Океан',     free:false,
-    colors:['#03045E','#023E8A','#0077B6','#0096C7','#00B4D8','#48CAE4','#90E0EF','#ADE8F4','#CAF0F8','#023E8A'] },
-  { id:'fire',    name:'Огонь',     free:false,
-    colors:['#D00000','#E85D04','#F48C06','#FAA307','#FFBA08','#DC2F02','#9D0208','#6A040F','#370617','#F3722C'] },
+  { id:'default', name:'Классика',  free:true,  icon:'🎮',
+    desc:'Яркие насыщенные блоки',
+    colors:['#FF3535','#FF8500','#FFD300','#2ECC44','#0DBBD8','#3366FF','#9922CC','#EE0E88','#18A880','#66BB00'],
+    effect:'none' },
+  { id:'neon',    name:'Неон',      free:true,  icon:'⚡',
+    desc:'Светящиеся блоки в темноте',
+    colors:['#FF006E','#FB5607','#FFBE0B','#8338EC','#3A86FF','#06D6A0','#FF006E','#F72585','#00F5D4','#ADFF2F'],
+    effect:'glow' },
+  { id:'pastel',  name:'Пастель',   free:false, icon:'🌸',
+    desc:'Нежные пастельные тона',
+    colors:['#FFB3C1','#FFD6A5','#FDFFB6','#CAFFBF','#9BF6FF','#A0C4FF','#BDB2FF','#FFC6FF','#B5EAD7','#E2F0CB'],
+    effect:'soft' },
+  { id:'dark',    name:'Тёмный',    free:false, icon:'🌑',
+    desc:'Тёмные глубокие оттенки',
+    colors:['#7B0000','#7B3D00','#7B6D00','#004D00','#004D4D','#003D7B','#4D007B','#7B0044','#005533','#3D5500'],
+    effect:'dark' },
+  { id:'ocean',   name:'Океан',     free:false, icon:'🌊',
+    desc:'Оттенки глубокого моря',
+    colors:['#03045E','#023E8A','#0077B6','#0096C7','#00B4D8','#48CAE4','#90E0EF','#ADE8F4','#CAF0F8','#023E8A'],
+    effect:'wave' },
+  { id:'fire',    name:'Огонь',     free:false, icon:'🔥',
+    desc:'Раскалённые огненные блоки',
+    colors:['#D00000','#E85D04','#F48C06','#FAA307','#FFBA08','#DC2F02','#9D0208','#6A040F','#370617','#F3722C'],
+    effect:'fire' },
+  { id:'gold',    name:'Золото',    free:false, icon:'👑',
+    desc:'Роскошные золотые оттенки',
+    colors:['#FFD700','#FFA500','#FF8C00','#DAA520','#B8860B','#FFD700','#FFEAA7','#F9CA24','#F0932B','#EE5A24'],
+    effect:'shine' },
+  { id:'galaxy',  name:'Галактика', free:false, icon:'🌌',
+    desc:'Космические блоки со звёздами',
+    colors:['#667eea','#764ba2','#f093fb','#a8edea','#fed6e3','#96e6a1','#d299c2','#ffecd2','#a1c4fd','#fddb92'],
+    effect:'galaxy' },
 ];
 
-let currentSkin = localStorage.getItem('bfm_skin') || 'default';
-let currentTheme = localStorage.getItem('bfm_bg_theme') || 'default';
+let currentSkin = safeGet('bfm_skin','default');
+let currentTheme = safeGet('bfm_bg_theme','default');
 
 // ─── БАНК + СПИН разблокируются на уровне 7 БП
 const BANK_SPIN_LVL = 7;
 
 function isBankSpinUnlocked(){
-  return bpGetLevel() >= BANK_SPIN_LVL || localStorage.getItem('bfm_bank_spin')==='1';
+  return bpGetLevel() >= BANK_SPIN_LVL || safeGet('bfm_bank_spin','')==='1';
 }
 
 function isBgThemeUnlocked(id){
-  if(id==='default') return true;
-  return localStorage.getItem('bfm_bg_theme_'+id)==='1';
+  return true; // TEST MODE — все темы разблокированы
 }
 
-function applyBgTheme(id){
-  document.body.classList.remove('theme-cosmos','theme-ocean','theme-sunset');
-  if(id==='cosmos')  document.body.classList.add('theme-cosmos');
-  else if(id==='ocean')  document.body.classList.add('theme-ocean');
-  else if(id==='sunset') document.body.classList.add('theme-sunset');
-  currentTheme = id;
-}
+/* applyBgTheme defined below */
 
 function updateRotBtn(){
   const btn=document.getElementById('btn-rot');
@@ -3402,11 +3695,14 @@ function getSkinColors() {
 }
 
 function isSkinUnlocked(skinId) {
+  return true; // TEST MODE — все скины разблокированы
+  /*
   if(bpIsSkinUnlocked && bpIsSkinUnlocked(skinId)) return true;
   const s = SKINS.find(s=>s.id===skinId);
   if(!s) return false;
   if(s.free) return true;
-  return localStorage.getItem('bfm_skin_'+skinId) === '1';
+  return safeGet('bfm_skin_'+skinId,'')==='1';
+  */
 }
 
 function showSkins() {
@@ -3416,21 +3712,65 @@ function showSkins() {
 }
 
 function renderSkinsScreen() {
-  // Preview
+  // Preview bar — current skin blocks
   const preview = document.getElementById('sk-preview');
-  preview.innerHTML = getSkinColors().slice(0,5).map(c=>
-    `<div class="sk-preview-block" style="background:${c};box-shadow:inset 0 3px 0 rgba(255,255,255,.3),0 4px 8px rgba(0,0,0,.4)"></div>`
+  const activeSkinData = SKINS.find(s=>s.id===currentSkin)||SKINS[0];
+  const previewExtras = {
+    'neon':   'box-shadow:0 0 12px 3px currentColor,0 0 24px 6px currentColor;',
+    'fire':   'animation:skinFireFlicker 1.2s ease-in-out infinite alternate;',
+    'ocean':  'animation:skinWave 2.5s ease-in-out infinite;',
+    'gold':   'animation:skinShine 1.8s ease-in-out infinite;',
+    'galaxy': 'animation:skinGalaxy 3s ease-in-out infinite;',
+    'dark':   'filter:brightness(.7) saturate(1.3);',
+    'pastel': 'filter:saturate(0.7) brightness(1.1);opacity:0.9;',
+  };
+  const prevExtra = previewExtras[activeSkinData.id] || '';
+  preview.innerHTML = activeSkinData.colors.slice(0,6).map((c,i)=>
+    `<div class="sk-preview-block" style="background:${c};${prevExtra}box-shadow:inset 0 3px 0 rgba(255,255,255,.3),0 4px 8px rgba(0,0,0,.4);animation-delay:${i*0.12}s"></div>`
   ).join('');
 
-  // Grid
+  // Skin grid with unique per-skin visuals
   const grid = document.getElementById('sk-grid');
   grid.innerHTML = SKINS.map(sk => {
     const unlocked = isSkinUnlocked(sk.id);
     const active = sk.id === currentSkin;
-    return `<div class="sk-card${active?' active':''}" onclick="selectSkin('${sk.id}')">
-      <div class="sk-swatches">${sk.colors.slice(0,5).map(c=>`<div class="sk-swatch" style="background:${c}"></div>`).join('')}</div>
+    
+    // Unique card background per skin effect
+    const cardBg = {
+      'default': 'background:linear-gradient(135deg,rgba(255,53,53,.12),rgba(51,102,255,.12));',
+      'neon':    'background:linear-gradient(135deg,rgba(255,0,110,.15),rgba(58,134,255,.15));box-shadow:0 0 20px rgba(255,0,110,.12),inset 0 0 20px rgba(58,134,255,.06);',
+      'pastel':  'background:linear-gradient(135deg,rgba(255,179,193,.18),rgba(160,196,255,.18));',
+      'dark':    'background:linear-gradient(135deg,rgba(20,0,0,.6),rgba(0,0,30,.6));border-color:rgba(100,0,100,.4)!important;',
+      'ocean':   'background:linear-gradient(135deg,rgba(0,100,200,.2),rgba(0,180,216,.1));',
+      'fire':    'background:linear-gradient(135deg,rgba(208,0,0,.2),rgba(255,186,8,.12));',
+      'gold':    'background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(218,165,32,.12));box-shadow:0 0 16px rgba(255,215,0,.15);',
+      'galaxy':  'background:linear-gradient(135deg,rgba(102,126,234,.2),rgba(118,75,162,.2));',
+    }[sk.id] || '';
+    
+    // Swatch style per effect
+    const swatchStyle = {
+      'neon':   (c)=>`background:${c};box-shadow:0 0 8px ${c},0 0 14px ${c}40;`,
+      'fire':   (c)=>`background:${c};border-radius:3px 10px 10px 3px;`,
+      'ocean':  (c)=>`background:${c};border-radius:50%;`,
+      'gold':   (c)=>`background:${c};border:1.5px solid rgba(255,215,0,.5);`,
+      'galaxy': (c)=>`background:radial-gradient(circle at 30% 30%,white 0%,${c} 60%);`,
+      'pastel': (c)=>`background:${c};border:1.5px solid rgba(255,255,255,.5);border-radius:50%;`,
+      'dark':   (c)=>`background:${c};border:1px solid rgba(255,0,100,.3);border-radius:2px;`,
+      'default':(c)=>`background:${c};border-radius:6px;`,
+    }[sk.id] || ((c)=>`background:${c};`);
+    
+    const swatches = sk.colors.slice(0,5).map(c=>
+      `<div class="sk-swatch" style="${swatchStyle(c)}"></div>`
+    ).join('');
+    
+    const animClass = sk.effect !== 'none' ? `sk-card-${sk.effect}` : '';
+    
+    return `<div class="sk-card ${animClass}${active?' active':''}" onclick="selectSkin('${sk.id}')" style="${cardBg}">
+      <div class="sk-card-icon">${sk.icon||'🎨'}</div>
+      <div class="sk-swatches">${swatches}</div>
       <div class="sk-name">${sk.name}</div>
-      <div class="sk-badge ${unlocked?'free':'locked'}">${unlocked?(active?'✅ Активен':'Доступен'):'🔒 Скоро'}</div>
+      <div class="sk-card-desc">${sk.desc||''}</div>
+      <div class="sk-badge ${unlocked?'free':'locked'}">${unlocked?(active?'✅ Активен':'Доступен'):'🔒 БП'}</div>
     </div>`;
   }).join('');
 }
@@ -3442,7 +3782,7 @@ function selectSkin(id) {
     return;
   }
   currentSkin = id;
-  localStorage.setItem('bfm_skin', id);
+  safeSet('bfm_skin', id);
   vibrate('line');
   const colors = getSkinColors();
   colors.forEach((c,i) => {
@@ -3458,41 +3798,573 @@ function selectSkin(id) {
   renderSkinsScreen();
 }
 
-function renderThemesInSkins(){
-  // Темы поля — показываем на экране скинов как дополнительную секцию
-  const THEMES_DATA=[
-    {id:'default',  name:'Классика',  ico:'🎮',free:true},
-    {id:'cosmos',   name:'Космос',    ico:'🌌',free:false},
-    {id:'ocean_bg', name:'Океан',     ico:'🌊',free:false},
-    {id:'sunset',   name:'Закат',     ico:'🌅',free:false},
-  ];
-  const cont=document.getElementById('sk-themes');
-  if(!cont)return;
-  const themesGrid = THEMES_DATA.map(th=>{
-    const unlocked=isBgThemeUnlocked(th.id)||th.free;
-    const active=th.id===currentTheme;
-    return `<div class="sk-card${active?' active':''}" onclick="selectTheme('${th.id}')">
-      <div style="font-size:28px;line-height:1;margin-bottom:6px">${th.ico}</div>
-      <div class="sk-name">${th.name}</div>
-      <div class="sk-badge ${unlocked?'free':'locked'}">${unlocked?(active?'✅ Активна':'Доступна'):'🔒 БП'}</div>
-    </div>`;
-  }).join('');
-  cont.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;">🖼 Тема поля</div><div class="sk-grid">${themesGrid}</div>`;
+function applyBgTheme(id){
+  const ALL_THEMES=['cosmos','cyberpunk','hell','ice','retro','nature','sakura'];
+  document.body.classList.remove(...ALL_THEMES.map(t=>'theme-'+t));
+  if(ALL_THEMES.includes(id)) document.body.classList.add('theme-'+id);
+  currentTheme = id||'default';
+  safeSet('bfm_bg_theme', currentTheme);
+  // start/stop animated backgrounds
+  startThemeAnim(id);
 }
 
-function selectTheme(id){
-  if(!isBgThemeUnlocked(id)&&id!=='default'){
-    vibrate('go');
-    tg?.showPopup?.({title:'🔒 Тема недоступна',message:'Открой в Боевом Пропуске!',buttons:[{id:'ok',type:'ok'}]});
-    return;
-  }
-  currentTheme=id;
-  localStorage.setItem('bfm_theme',id);
-  applyBgTheme(id);
-  localStorage.setItem('bfm_bg_theme',id);
-  vibrate('line');
-  renderThemesInSkins();
+function startThemeAnim(id){
+  const old = document.getElementById('theme-canvas');
+  if(old) old.remove();
+  if(id==='cosmos')      animCosmos();
+  else if(id==='cyberpunk') animCyberpunk();
+  else if(id==='hell')   animHell();
+  else if(id==='ice')    animIce();
+  else if(id==='nature') animNature();
+  else if(id==='sakura') animSakura();
+  else if(id==='retro')  animRetro();
 }
+
+/* makeThemeCanvas defined below */
+
+function animCosmos(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const nebulae=[
+    {x:W*.2,y:H*.3,r:W*.35,col:'rgba(80,0,180,.07)'},
+    {x:W*.8,y:H*.7,r:W*.3,col:'rgba(0,60,180,.06)'},
+    {x:W*.5,y:H*.15,r:W*.2,col:'rgba(120,0,255,.05)'},
+  ];
+  const moon={x:W*.78,y:H*.12,r:Math.min(W,H)*.08};
+  const bgStars=Array.from({length:120},()=>({
+    x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,
+    phase:Math.random()*Math.PI*2,speed:Math.random()*.6+.3
+  }));
+  const sparkles=Array.from({length:18},()=>({
+    x:Math.random()*W,y:Math.random()*H,
+    size:Math.random()*4+2,
+    phase:Math.random()*Math.PI*2,speed:Math.random()*1.2+.7,
+    col:Math.random()>.5?'#fff':'#aaddff'
+  }));
+  // Pre-draw nebulae + moon to offscreen (static)
+  const bg=document.createElement('canvas');bg.width=W;bg.height=H;
+  const bgCtx=bg.getContext('2d');
+  nebulae.forEach(n=>{
+    const g=bgCtx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+    g.addColorStop(0,n.col);g.addColorStop(1,'transparent');
+    bgCtx.fillStyle=g;bgCtx.beginPath();bgCtx.arc(n.x,n.y,n.r,0,Math.PI*2);bgCtx.fill();
+  });
+  const mg=bgCtx.createRadialGradient(moon.x,moon.y,moon.r*.5,moon.x,moon.y,moon.r*2.5);
+  mg.addColorStop(0,'rgba(200,220,255,.18)');mg.addColorStop(1,'transparent');
+  bgCtx.fillStyle=mg;bgCtx.beginPath();bgCtx.arc(moon.x,moon.y,moon.r*2.5,0,Math.PI*2);bgCtx.fill();
+  bgCtx.fillStyle='#d0deff';bgCtx.beginPath();bgCtx.arc(moon.x,moon.y,moon.r,0,Math.PI*2);bgCtx.fill();
+  [[-.3,-.2,.25],[.2,.3,.15],[-.1,.35,.1]].forEach(([dx,dy,cr])=>{
+    bgCtx.fillStyle='rgba(150,170,220,.4)';bgCtx.beginPath();
+    bgCtx.arc(moon.x+moon.r*dx,moon.y+moon.r*dy,moon.r*cr,0,Math.PI*2);bgCtx.fill();
+  });
+  function drawSparkle(ctx,x,y,size,alpha){
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.strokeStyle='#fff';ctx.lineWidth=.8;
+    [-1,0,1].forEach(rot=>{
+      ctx.save();ctx.translate(x,y);ctx.rotate(rot*Math.PI/4);
+      ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(0,size);
+      ctx.moveTo(-size*.4,0);ctx.lineTo(size*.4,0);
+      ctx.stroke();ctx.restore();
+    });
+    ctx.fillStyle='#fff';ctx.globalAlpha=alpha*.9;
+    ctx.beginPath();ctx.arc(x,y,size*.3,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+  let t=0,shootX=0,shootY=0,shootActive=false,shootTimer=0;
+  let lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    // 30 FPS cap
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;
+    ctx.clearRect(0,0,W,H);
+    t+=.033;
+    ctx.drawImage(bg,0,0);
+    bgStars.forEach(s=>{
+      const a=.3+Math.sin(s.phase+t*s.speed)*.25;
+      ctx.globalAlpha=a;ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+    });
+    sparkles.forEach(s=>{
+      const a=Math.max(0,.5+Math.sin(s.phase+t*s.speed)*.5);
+      const sz=s.size*(0.5+a*.5);
+      drawSparkle(ctx,s.x,s.y,sz,a*.8);
+    });
+    shootTimer++;
+    if(shootTimer>180&&!shootActive){
+      shootActive=true;shootX=Math.random()*W*.5;shootY=Math.random()*H*.3;shootTimer=0;
+    }
+    if(shootActive){
+      ctx.globalAlpha=.7;ctx.strokeStyle='#aef';ctx.lineWidth=1.5;
+      const len=60;const prog=(shootTimer%60)/60;
+      ctx.beginPath();ctx.moveTo(shootX+prog*len,shootY+prog*len*.5);
+      ctx.lineTo(shootX+prog*len+20,shootY+prog*len*.5+10);ctx.stroke();
+      if(shootTimer>55)shootActive=false;
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function animCyberpunk(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const FS=14, COL_W=FS;
+  const COLS=Math.floor(W/COL_W);
+  const KATAKANA='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+  const SYMBOLS='01234567890!@#$%^&*()[]{}|<>';
+  const CHARS=KATAKANA+SYMBOLS;
+  const drops=Array.from({length:COLS},(_,i)=>({
+    y: -(Math.random()*H*1.5),
+    speed: Math.random()*2+0.8,
+    len: Math.floor(Math.random()*25)+10,
+    glitch: Math.random()>0.6,
+    chars: Array.from({length:40},()=>CHARS[Math.floor(Math.random()*CHARS.length)])
+  }));
+  let frame=0,lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;
+    frame++;
+    ctx.fillStyle='rgba(0,0,0,0.07)';
+    ctx.fillRect(0,0,W,H);
+    ctx.font=FS+'px monospace';ctx.textAlign='center';ctx.shadowBlur=0;
+    drops.forEach((d)=>{
+      const x=d.x_px||(d.x_px=Math.random()*W); // cache x
+      if(d.glitch&&frame%6===0){
+        const ri=Math.floor(Math.random()*d.chars.length);
+        d.chars[ri]=CHARS[Math.floor(Math.random()*CHARS.length)];
+      }
+      for(let i=0;i<d.len;i++){
+        const yPos=d.y-i*FS;
+        if(yPos<-FS||yPos>H+FS)continue;
+        if(i===0){ctx.globalAlpha=0.9;ctx.fillStyle='#ccffcc';}
+        else if(i<4){ctx.globalAlpha=0.75-i*0.06;ctx.fillStyle='#00dd35';}
+        else if(i<12){ctx.globalAlpha=0.5-i*0.02;ctx.fillStyle='#009920';}
+        else{ctx.globalAlpha=Math.max(0.04,0.3-i*0.018);ctx.fillStyle='#004d10';}
+        ctx.fillText(d.chars[i%d.chars.length],x,yPos);
+      }
+      ctx.globalAlpha=1;
+      d.y+=d.speed;
+      if(d.y-d.len*FS>H){
+        d.y=-(Math.random()*H*0.5+FS*5);
+        d.speed=Math.random()*2+0.8;
+        d.len=Math.floor(Math.random()*25)+10;
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  requestAnimationFrame(draw);
+}
+
+function animHell(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const particles=Array.from({length:40},()=>({
+    x:Math.random()*W,y:H*.88-Math.random()*H*.3,
+    vx:(Math.random()-.5)*2,vy:-(Math.random()*2.5+1),
+    life:Math.random(),size:Math.random()*5+2,
+    col:Math.random()>.5?'#ff4400':'#ff8800'
+  }));
+  const lavaPoints=Array.from({length:20},(_,i)=>({x:i*W/19,y:H*.88+Math.random()*10}));
+  // Pre-render static lava glow to offscreen
+  const bgLava=document.createElement('canvas');bgLava.width=W;bgLava.height=H;
+  const bgCtx=bgLava.getContext('2d');
+  const lg=bgCtx.createLinearGradient(0,H*.75,0,H);
+  lg.addColorStop(0,'transparent');lg.addColorStop(.6,'rgba(180,30,0,.18)');lg.addColorStop(1,'rgba(255,80,0,.35)');
+  bgCtx.fillStyle=lg;bgCtx.fillRect(0,H*.75,W,H*.25);
+  let t=0,lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;
+    ctx.clearRect(0,0,W,H);t+=.03;
+    ctx.drawImage(bgLava,0,0);
+    // lava surface wave
+    ctx.beginPath();ctx.moveTo(0,H);
+    lavaPoints.forEach((p,i)=>{p.y=H*.88+Math.sin(t+i*.5)*6;i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+    ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+    ctx.fillStyle='rgba(220,50,0,.35)';ctx.fill();
+    // fire particles — simple arc, no createRadialGradient
+    particles.forEach(p=>{
+      p.x+=p.vx+Math.sin(t+p.y*.02)*.5;p.y+=p.vy;p.life-=.007;
+      if(p.life<=0){p.x=Math.random()*W;p.y=H*.88;p.life=1;p.vy=-(Math.random()*2.5+1);}
+      ctx.globalAlpha=p.life*.5;
+      ctx.fillStyle=p.col;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*2,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function animIce(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const crystals=Array.from({length:18},()=>({
+    x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.3,vy:Math.random()*.3+.1,
+    size:Math.random()*10+5,rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.015,
+    alpha:Math.random()*.35+.1
+  }));
+  function drawCrystal(ctx,x,y,size,rot){
+    ctx.save();ctx.translate(x,y);ctx.rotate(rot);
+    ctx.strokeStyle='rgba(150,230,255,.7)';ctx.lineWidth=1;
+    for(let a=0;a<6;a++){
+      const angle=a*Math.PI/3;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(angle)*size,Math.sin(angle)*size);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(Math.cos(angle)*size*.5,Math.sin(angle)*size*.5);
+      ctx.lineTo(Math.cos(angle+.5)*size*.3,Math.sin(angle+.5)*size*.3);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // Pre-render static elements (frost + snowmen) to offscreen
+  const bgIce=document.createElement('canvas');bgIce.width=W;bgIce.height=H;
+  const bgCtx=bgIce.getContext('2d');
+  const frostTop=Array.from({length:30},(_,i)=>({x:i*W/29,y:20+Math.random()*30}));
+  bgCtx.fillStyle='rgba(180,240,255,.1)';
+  bgCtx.beginPath();bgCtx.moveTo(0,0);frostTop.forEach(f=>bgCtx.lineTo(f.x,f.y));
+  bgCtx.lineTo(W,0);bgCtx.closePath();bgCtx.fill();
+  function drawSnowman(ctx,x,y,scale){
+    const s=scale;ctx.save();ctx.globalAlpha=0.22;
+    ctx.fillStyle='rgba(200,240,255,.9)';ctx.strokeStyle='rgba(120,200,255,.5)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(x,y,s*28,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.arc(x,y-s*50,s*20,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.arc(x,y-s*82,s*14,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='rgba(0,80,120,.8)';
+    ctx.beginPath();ctx.arc(x-s*5,y-s*86,s*2.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+s*5,y-s*86,s*2.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,140,0,.8)';
+    ctx.beginPath();ctx.moveTo(x,y-s*82);ctx.lineTo(x+s*12,y-s*81);ctx.lineTo(x,y-s*79);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(20,50,80,.85)';
+    ctx.fillRect(x-s*12,y-s*100,s*24,s*6);ctx.fillRect(x-s*9,y-s*120,s*18,s*22);
+    ctx.strokeStyle='rgba(100,70,30,.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x-s*20,y-s*50);ctx.lineTo(x-s*38,y-s*35);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+s*20,y-s*50);ctx.lineTo(x+s*38,y-s*35);ctx.stroke();
+    ctx.restore();
+  }
+  drawSnowman(bgCtx,W*.5,H*.75,1);drawSnowman(bgCtx,W*.82,H*.82,.55);
+  let t=0,lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;t+=.033;
+    ctx.clearRect(0,0,W,H);ctx.drawImage(bgIce,0,0);
+    crystals.forEach(cr=>{
+      cr.x+=cr.vx;cr.y+=cr.vy;cr.rot+=cr.rotV;
+      if(cr.y>H+20){cr.y=-20;cr.x=Math.random()*W;}
+      ctx.globalAlpha=cr.alpha;
+      drawCrystal(ctx,cr.x,cr.y,cr.size,cr.rot);
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+function animNature(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const leaves=Array.from({length:25},()=>({
+    x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.7,vy:Math.random()*.5+.25,
+    rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.035,
+    size:Math.random()*7+4,alpha:Math.random()*.4+.15,
+    col:['#4ade80','#22c55e','#86efac','#a3e635'][Math.floor(Math.random()*4)]
+  }));
+  // Pre-render static trees + ground glow to offscreen
+  const bgN=document.createElement('canvas');bgN.width=W;bgN.height=H;
+  const bgCtx=bgN.getContext('2d');
+  function drawTree(ctx,x,y,len,angle,depth){
+    if(depth===0)return;
+    ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+    ctx.strokeStyle=`rgba(34,${80+depth*20},34,${.15+depth*.04})`;
+    ctx.lineWidth=depth*.8;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-len);ctx.stroke();
+    drawTree(ctx,0,-len,len*.68,-.45,depth-1);
+    drawTree(ctx,0,-len,len*.68,.45,depth-1);
+    ctx.restore();
+  }
+  bgCtx.save();drawTree(bgCtx,W*.1,H,H*.22,0,7);bgCtx.restore();
+  bgCtx.save();drawTree(bgCtx,W*.9,H,H*.18,0,6);bgCtx.restore();
+  const gg=bgCtx.createLinearGradient(0,H*.8,0,H);
+  gg.addColorStop(0,'transparent');gg.addColorStop(1,'rgba(30,100,10,.2)');
+  bgCtx.fillStyle=gg;bgCtx.fillRect(0,H*.8,W,H*.2);
+  let t=0,lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;t+=.033;
+    ctx.clearRect(0,0,W,H);ctx.drawImage(bgN,0,0);
+    leaves.forEach(l=>{
+      l.x+=l.vx+Math.sin(t+l.y*.02)*.3;l.y+=l.vy;l.rot+=l.rotV;
+      if(l.y>H+20){l.y=-10;l.x=Math.random()*W;}
+      ctx.save();ctx.translate(l.x,l.y);ctx.rotate(l.rot);
+      ctx.globalAlpha=l.alpha;ctx.fillStyle=l.col;
+      ctx.beginPath();ctx.ellipse(0,0,l.size,l.size*.5,0,0,Math.PI*2);
+      ctx.fill();ctx.restore();
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function animSakura(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const petals=Array.from({length:28},()=>({
+    x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.9,vy:Math.random()*.55+.2,
+    rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.03,
+    size:Math.random()*6+3,alpha:Math.random()*.4+.15,
+    col:['#fda4af','#f9a8d4','#fbcfe8','#fce7f3'][Math.floor(Math.random()*4)]
+  }));
+  // Pre-render static trees + ground to offscreen
+  const bgS=document.createElement('canvas');bgS.width=W;bgS.height=H;
+  const bgCtx=bgS.getContext('2d');
+  function drawSakuraTree(ctx,x,y,len,angle,depth){
+    if(depth===0)return;
+    ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+    ctx.strokeStyle=`rgba(120,50,60,${.12+depth*.03})`;
+    ctx.lineWidth=depth*.7;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-len);ctx.stroke();
+    if(depth<=2){ctx.fillStyle='rgba(253,164,175,.2)';ctx.beginPath();ctx.arc(0,-len,8,0,Math.PI*2);ctx.fill();}
+    drawSakuraTree(ctx,0,-len,len*.65,-.4,depth-1);
+    drawSakuraTree(ctx,0,-len,len*.65,.4,depth-1);
+    ctx.restore();
+  }
+  bgCtx.save();drawSakuraTree(bgCtx,W*.12,H,H*.2,0,7);bgCtx.restore();
+  bgCtx.save();drawSakuraTree(bgCtx,W*.88,H,H*.17,0,6);bgCtx.restore();
+  const sg=bgCtx.createLinearGradient(0,H*.85,0,H);
+  sg.addColorStop(0,'transparent');sg.addColorStop(1,'rgba(200,80,120,.1)');
+  bgCtx.fillStyle=sg;bgCtx.fillRect(0,H*.85,W,H*.15);
+  let t=0,lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;t+=.033;
+    ctx.clearRect(0,0,W,H);ctx.drawImage(bgS,0,0);
+    petals.forEach(p=>{
+      p.x+=p.vx+Math.sin(t+p.y*.015)*.4;p.y+=p.vy;p.rot+=p.rotV;
+      if(p.y>H+20){p.y=-10;p.x=Math.random()*W;}
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+      ctx.globalAlpha=p.alpha;ctx.fillStyle=p.col;
+      ctx.beginPath();
+      for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;const bx=Math.cos(a)*p.size,by=Math.sin(a)*p.size;i===0?ctx.moveTo(bx,by):ctx.lineTo(bx,by);}
+      ctx.closePath();ctx.fill();ctx.restore();
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function animRetro(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  const PX=3;
+
+  // Pre-render static brick wall + CRT overlay to offscreen (HUGE win — was redrawn every frame)
+  const bgRetro=document.createElement('canvas');bgRetro.width=W;bgRetro.height=H;
+  const bgCtx=bgRetro.getContext('2d');
+  const BW=32,BH=16;
+  for(let row=0;row<Math.ceil(H/BH)+1;row++){
+    const offset=row%2===0?0:BW/2;
+    for(let col=-1;col<Math.ceil(W/BW)+1;col++){
+      const bx=col*BW+offset,by=row*BH;
+      bgCtx.globalAlpha=0.18;bgCtx.fillStyle='#8B2500';bgCtx.fillRect(bx+1,by+1,BW-2,BH-2);
+      bgCtx.globalAlpha=0.07;bgCtx.fillStyle='#ff6030';bgCtx.fillRect(bx+2,by+2,BW-4,3);
+      bgCtx.globalAlpha=0.08;bgCtx.fillStyle='#222';bgCtx.fillRect(bx,by,BW,1);bgCtx.fillRect(bx,by,1,BH);
+    }
+  }
+  // CRT scanlines (static overlay)
+  bgCtx.globalAlpha=.04;bgCtx.fillStyle='#000';
+  for(let y=0;y<H;y+=4)bgCtx.fillRect(0,y,W,1);
+  // Phosphor dots
+  bgCtx.globalAlpha=.03;bgCtx.fillStyle='#00ff41';
+  for(let x=0;x<W;x+=20)for(let y=0;y<H;y+=20)bgCtx.fillRect(x,y,1,1);
+  // CRT corner brackets
+  bgCtx.globalAlpha=.12;bgCtx.strokeStyle='#00ff41';bgCtx.lineWidth=2;
+  [[0,0,1,1],[W,0,-1,1],[0,H,1,-1],[W,H,-1,-1]].forEach(([x,y,sx,sy])=>{
+    bgCtx.beginPath();bgCtx.moveTo(x+sx*24,y);bgCtx.lineTo(x,y);bgCtx.lineTo(x,y+sy*24);bgCtx.stroke();
+  });
+  bgCtx.globalAlpha=1;
+
+  const LANES=[H*.2,H*.45,H*.72];
+  const tanks=LANES.map((lane,i)=>({
+    x:i%2===0?-60:W+60,y:lane,
+    dir:i%2===0?1:-1,
+    speed:Math.random()*.7+.5,
+    col:i===0?'#00ff41':i===1?'#ffd700':'#ff4444',
+    shootTimer:Math.floor(Math.random()*80)
+  }));
+  const bullets=[];
+
+  function drawTank(x,y,dir,col){
+    const p=PX;
+    ctx.globalAlpha=0.3;ctx.fillStyle='rgba(0,0,0,.3)';
+    ctx.fillRect(x-7*p+2,y+3*p+2,14*p,4*p);
+    ctx.fillStyle=col==='#ffd700'?'#806000':col==='#00ff41'?'#005018':'#801010';
+    ctx.globalAlpha=0.7;ctx.fillRect(x-8*p,y+2*p,16*p,3*p);
+    [-5,-1,3].forEach(wx=>{ctx.fillStyle='#111';ctx.fillRect(x+wx*p,y+3*p,3*p,2*p);});
+    ctx.fillStyle=col;ctx.globalAlpha=0.8;
+    ctx.fillRect(x-5*p,y-3*p,10*p,6*p);
+    ctx.beginPath();ctx.arc(x,y-p,3*p,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(x-3*p,y-4*p,3*p,2*p);
+    ctx.fillStyle=col;ctx.globalAlpha=0.85;
+    ctx.fillRect(dir>0?x+2*p:x-8*p,y-p,6*p,2*p);
+    ctx.globalAlpha=1;
+  }
+
+  let lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    lastFrame=ts;
+    ctx.clearRect(0,0,W,H);
+    ctx.drawImage(bgRetro,0,0);
+    tanks.forEach(tank=>{
+      tank.x+=tank.dir*tank.speed;
+      if(tank.x>W+80){tank.x=W+80;tank.dir=-1;}
+      if(tank.x<-80){tank.x=-80;tank.dir=1;}
+      tank.shootTimer++;
+      if(tank.shootTimer>120+Math.random()*60){
+        bullets.push({x:tank.x+(tank.dir>0?22:-22),y:tank.y-PX,dir:tank.dir,col:tank.col,life:1});
+        tank.shootTimer=0;
+      }
+      drawTank(tank.x,tank.y,tank.dir,tank.col);
+    });
+    ctx.shadowBlur=0;
+    for(let i=bullets.length-1;i>=0;i--){
+      const b=bullets[i];
+      b.x+=b.dir*6;b.life-=.025;
+      if(b.life<=0||b.x<-20||b.x>W+20){bullets.splice(i,1);continue;}
+      ctx.globalAlpha=b.life*.8;ctx.fillStyle=b.col;
+      ctx.fillRect(b.x-4,b.y-2,8,4);
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function makeThemeCanvas(){
+  const c=document.createElement('canvas');
+  c.id='theme-canvas';
+  c.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;';
+  document.body.prepend(c);
+  c.width=window.innerWidth; c.height=window.innerHeight;
+  return c;
+}
+
+/* ══ THEME UI FUNCTIONS ══ */
+function selectTheme(id){
+  applyBgTheme(id==='default'?'':id);
+  document.querySelectorAll('.sp-theme-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.theme===id);
+  });
+}
+
+function renderThemesInSkins(){ renderThemeGrid(); }
+function renderThemeGrid(){
+  const THEMES=[
+    {id:'default',   emoji:'🎮', name:'Дефолт',   desc:'Чистый фон',
+     bg:'background:linear-gradient(135deg,#1a1640,#0d1c3a);',
+     border:'rgba(100,100,200,.3)', glow:''},
+    {id:'cosmos',    emoji:'🌌', name:'Космос',   desc:'Звёзды и туманности',
+     bg:'background:radial-gradient(ellipse at 30% 20%,rgba(80,0,180,.5) 0%,#04020f 70%);',
+     border:'rgba(120,60,255,.5)', glow:'0 0 20px rgba(100,0,255,.3)'},
+    {id:'cyberpunk', emoji:'💻', name:'Матрица',  desc:'Цифровой дождь 0101',
+     bg:'background:linear-gradient(135deg,rgba(0,255,65,.12) 0%,rgba(0,100,30,.2) 50%,#000 100%);',
+     border:'rgba(0,255,65,.45)', glow:'0 0 20px rgba(0,255,65,.3)'},
+    {id:'hell',      emoji:'🔥', name:'Ад',       desc:'Лава и огонь',
+     bg:'background:radial-gradient(ellipse at 50% 100%,rgba(255,60,0,.4) 0%,#0f0000 65%);',
+     border:'rgba(255,80,0,.5)', glow:'0 0 20px rgba(255,60,0,.3)'},
+    {id:'ice',       emoji:'❄️', name:'Лёд',      desc:'Снеговик и снежинки',
+     bg:'background:radial-gradient(ellipse at 50% 0%,rgba(0,180,255,.25) 0%,#000d18 70%);',
+     border:'rgba(0,200,255,.4)', glow:'0 0 18px rgba(0,200,255,.25)'},
+    {id:'retro',     emoji:'🪖', name:'Ретро',    desc:'Пиксельные танки',
+     bg:'background:linear-gradient(135deg,rgba(0,255,80,.1) 0%,#000 100%);',
+     border:'rgba(0,255,80,.38)', glow:'0 0 16px rgba(0,255,80,.2)'},
+    {id:'nature',    emoji:'🌿', name:'Природа',  desc:'Деревья и листья',
+     bg:'background:radial-gradient(ellipse at 50% 100%,rgba(20,120,10,.4) 0%,#010f02 65%);',
+     border:'rgba(60,200,40,.42)', glow:'0 0 18px rgba(40,180,20,.22)'},
+    {id:'sakura',    emoji:'🌸', name:'Сакура',   desc:'Цветение и лепестки',
+     bg:'background:radial-gradient(ellipse at 50% 0%,rgba(220,80,160,.3) 0%,#0f0008 65%);',
+     border:'rgba(255,100,180,.48)', glow:'0 0 20px rgba(255,80,160,.25)'},
+  ];
+  const grid=document.getElementById('sk-theme-grid');
+  if(!grid)return;
+  const active=currentTheme||'default';
+  grid.innerHTML=THEMES.map(t=>{
+    const isAct=active===t.id||(t.id==='default'&&(!active||active==='default'));
+    return `<div class="sk-theme-card${isAct?' active':''}"
+      style="${t.bg}border-color:${t.border};${isAct?'box-shadow:'+t.glow+',inset 0 0 30px rgba(255,255,255,.03);':''}"
+      onclick="selectThemeCard('${t.id}')">
+      <span class="th-emoji">${t.emoji}</span>
+      <span class="th-name">${t.name}</span>
+      <span class="th-desc">${t.desc}</span>
+      ${isAct?'<span class="th-active-badge">✅ Активна</span>':''}
+    </div>`;
+  }).join('');
+}
+function selectThemeCard(id){
+  const themeId = id==='default' ? '' : id;
+  applyBgTheme(themeId);
+  // Show canvas on skins-screen when theme is active
+  const tc=document.getElementById('theme-canvas');
+  if(tc) tc.style.opacity='1';
+  renderThemeGrid();
+}
+
+/* ══ TAB SWITCHER ══ */
+function switchSkTab(tab){
+  document.getElementById('sktab-body-skins').classList.toggle('hidden', tab!=='skins');
+  document.getElementById('sktab-body-themes').classList.toggle('hidden', tab!=='themes');
+  document.getElementById('sktab-skins').classList.toggle('active', tab==='skins');
+  document.getElementById('sktab-themes').classList.toggle('active', tab==='themes');
+  const titleEl=document.getElementById('sk-screen-title');
+  if(titleEl) titleEl.textContent=tab==='skins'?'🎨 СКИНЫ':'🌈 ТЕМЫ';
+  // Transparent background on themes tab so animated canvas shows through
+  const ss=document.getElementById('skins-screen');
+  if(ss) ss.style.background = tab==='themes' ? 'transparent' : '';
+  const tc=document.getElementById('theme-canvas');
+  if(tc) tc.style.opacity = '1';
+  if(tab==='themes') renderThemeGrid();
+  if(tab==='skins') renderSkinsScreen();
+}
+
+/* ══ BATTLE PASS SCREEN ══ */
+/* showBP defined below */
+
+/* ══ ACHIEVEMENTS ══ */
+function showAchievements(){
+  showScreen('achieve-screen');
+  renderAchievements();
+}
+
+/* ══ MODE PICKER ══ */
+/* openModePicker defined below */
+function closeModePicker(){
+  const el=document.getElementById('mode-picker');
+  if(el){el.classList.remove('show');}
+}
+
+/* ══ INIT THEME RESTORE ══ */
+(function(){
+  const saved=safeGet('bfm_bg_theme','default');
+  if(saved&&saved!=='default') applyBgTheme(saved);
+  document.querySelectorAll('.sp-theme-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.theme===(saved||'default'));
+  });
+  // Restore skin body class
+  const savedSkin=safeGet('bfm_skin','default');
+  if(savedSkin&&savedSkin!=='default') document.body.classList.add('skin-'+savedSkin);
+})();
 
 /* ══ ACHIEVEMENTS SYSTEM ══ */
 const ACHIEVEMENTS = [
@@ -3540,8 +4412,8 @@ function getAchStats() {
   return {
     games_played:    parseInt(safeGet('bfm_stat_games','0')),
     best_score:      Math.max(lsG('classic'),lsG('mini'),lsG('speed')),
-    max_combo_ever:  parseInt(localStorage.getItem('bfm_stat_maxcombo')||'0'),
-    total_lines:     parseInt(localStorage.getItem('bfm_stat_lines')||'0'),
+    max_combo_ever:  parseInt(safeGet('bfm_stat_maxcombo','0')),
+    total_lines:     parseInt(safeGet('bfm_stat_lines','0')),
     daily_streak:    parseInt(safeGet('bfm_stat_streak','0')),
     speed_best:      lsG('speed'),
     referral_count:  parseInt(safeGet('bfm_stat_refs','0')),
@@ -3573,11 +4445,11 @@ function checkNewAchievements() {
   const stats = getAchStats();
   let newlyUnlocked = [];
   ACHIEVEMENTS.forEach(a => {
-    const already = localStorage.getItem('bfm_ach_'+a.id);
+    const already = safeGet('bfm_ach_'+a.id,'');
     if(already) return;
     const val = stats[a.key] || 0;
     if(val >= a.max) {
-      localStorage.setItem('bfm_ach_'+a.id, '1');
+      safeSet('bfm_ach_'+a.id, '1');
       newlyUnlocked.push(a);
     }
   });
@@ -3601,10 +4473,7 @@ function showAchUnlock(ach) {
   setTimeout(()=>toast.remove(), 3000);
 }
 
-function showAchievements() {
-  showScreen('achieve-screen');
-  renderAchievements();
-}
+/* showAchievements defined above */
 
 function renderAchievements() {
   const stats = getAchStats();
@@ -3612,7 +4481,7 @@ function renderAchievements() {
   body.innerHTML = ACHIEVEMENTS.map(a => {
     const val = Math.min(stats[a.key]||0, a.max);
     const pct = Math.round(val/a.max*100);
-    const done = localStorage.getItem('bfm_ach_'+a.id);
+    const done = safeGet('bfm_ach_'+a.id,'');
     const counter = done ? '✅' : `${val.toLocaleString()}/${a.max.toLocaleString()}`;
     return `<div class="ach-card${done?' unlocked':''}">
       <div class="ach-icon">${a.icon}</div>
@@ -3661,7 +4530,7 @@ const BP_TOTAL_XP = BP_XP_THRESHOLDS[BP_LEVELS.length]; // 50000+...
 // ─── Storage helpers
 function bpGetXP(){ return +safeGet('bfm_bp_xp','0')||0; }
 function bpSetXP(v,syncCloud=true){
-  try{localStorage.setItem('bfm_bp_xp',v);}catch{}
+  safeSet('bfm_bp_xp',v);
   if(syncCloud) _syncBPKeyToCloud('bfm_bp_xp', String(v));
 }
 function bpGetLevel(){
@@ -3675,15 +4544,15 @@ function bpGetLevel(){
   }
   return level;
 }
-function bpIsClaimed(lvl){ try{const c=JSON.parse(localStorage.getItem('bfm_bp_claimed')||'[]');return c.includes(lvl);}catch{return false;} }
+function bpIsClaimed(lvl){ try{const c=JSON.parse(safeGet('bfm_bp_claimed','[]'));return c.includes(lvl);}catch{return false;} }
 function bpMarkClaimed(lvl){
-  try{const c=JSON.parse(localStorage.getItem('bfm_bp_claimed')||'[]');if(!c.includes(lvl)){c.push(lvl);localStorage.setItem('bfm_bp_claimed',JSON.stringify(c));_syncBPKeyToCloud('bfm_bp_claimed',JSON.stringify(c));}}catch{}
+  try{const c=JSON.parse(safeGet('bfm_bp_claimed','[]'));if(!c.includes(lvl)){c.push(lvl);safeSet('bfm_bp_claimed',JSON.stringify(c));_syncBPKeyToCloud('bfm_bp_claimed',JSON.stringify(c));}}catch{}
 }
 
 // ─── Boost inventory
-function boostGet(id){ try{const b=JSON.parse(localStorage.getItem('bfm_boosts')||'{}');return b[id]||0;}catch{return 0;} }
-function boostAdd(id,n=1){ try{const b=JSON.parse(localStorage.getItem('bfm_boosts')||'{}');b[id]=(b[id]||0)+n;localStorage.setItem('bfm_boosts',JSON.stringify(b));_syncBPKeyToCloud('bfm_boosts',JSON.stringify(b));}catch{} }
-function boostConsume(id){ try{const b=JSON.parse(localStorage.getItem('bfm_boosts')||'{}');if(b[id]>0){b[id]--;localStorage.setItem('bfm_boosts',JSON.stringify(b));_syncBPKeyToCloud('bfm_boosts',JSON.stringify(b));return true;}return false;}catch{return false;} }
+function boostGet(id){ try{const b=JSON.parse(safeGet('bfm_boosts','{}'));return b[id]||0;}catch{return 0;} }
+function boostAdd(id,n=1){ try{const b=JSON.parse(safeGet('bfm_boosts','{}'));b[id]=(b[id]||0)+n;safeSet('bfm_boosts',JSON.stringify(b));_syncBPKeyToCloud('bfm_boosts',JSON.stringify(b));}catch{} }
+function boostConsume(id){ try{const b=JSON.parse(safeGet('bfm_boosts','{}'));if(b[id]>0){b[id]--;safeSet('bfm_boosts',JSON.stringify(b));_syncBPKeyToCloud('bfm_boosts',JSON.stringify(b));return true;}return false;}catch{return false;} }
 
 // ─── CloudStorage sync helpers (BP cross-device) ───
 function _syncBPKeyToCloud(key, val){
@@ -3703,34 +4572,34 @@ async function syncBPFromCloudStorage(){
       // Claimed — union merge
       try{
         const cc=JSON.parse(vals['bfm_bp_claimed']||'[]');
-        const lc=JSON.parse(localStorage.getItem('bfm_bp_claimed')||'[]');
+        const lc=JSON.parse(safeGet('bfm_bp_claimed','[]'));
         const merged=[...new Set([...lc,...cc])];
-        if(merged.length>lc.length) localStorage.setItem('bfm_bp_claimed',JSON.stringify(merged));
+        if(merged.length>lc.length) safeSet('bfm_bp_claimed',JSON.stringify(merged));
       }catch{}
       // Boosts — max of each key
       try{
         const cb=JSON.parse(vals['bfm_boosts']||'{}');
-        const lb=JSON.parse(localStorage.getItem('bfm_boosts')||'{}');
+        const lb=JSON.parse(safeGet('bfm_boosts','{}'));
         let changed=false;
         for(const k in cb){ if((cb[k]||0)>(lb[k]||0)){ lb[k]=cb[k]; changed=true; } }
-        if(changed) localStorage.setItem('bfm_boosts',JSON.stringify(lb));
+        if(changed) safeSet('bfm_boosts',JSON.stringify(lb));
       }catch{}
       resolve();
     });
   });
 }
-function boostGetActive(){ try{return localStorage.getItem('bfm_active_boost')||null;}catch{return null;} }
-function boostSetActive(id){ try{if(id)localStorage.setItem('bfm_active_boost',id);else localStorage.removeItem('bfm_active_boost');}catch{} }
+function boostGetActive(){ return safeGet('bfm_active_boost','')||null; }
+function boostSetActive(id){ try{if(id)safeSet('bfm_active_boost',id);else safeDel('bfm_active_boost');}catch{} }
 
 // Разблокировать скин через BP
 function bpUnlockSkin(skinId){
   try{
-    const arr=JSON.parse(localStorage.getItem('bfm_bp_skins')||'[]');
-    if(!arr.includes(skinId)){arr.push(skinId);localStorage.setItem('bfm_bp_skins',JSON.stringify(arr));}
+    const arr=JSON.parse(safeGet('bfm_bp_skins','[]'));
+    if(!arr.includes(skinId)){arr.push(skinId);safeSet('bfm_bp_skins',JSON.stringify(arr));}
   }catch{}
 }
 function bpIsSkinUnlocked(skinId){
-  try{return JSON.parse(localStorage.getItem('bfm_bp_skins')||'[]').includes(skinId);}catch{return false;}
+  try{return JSON.parse(safeGet('bfm_bp_skins','[]')).includes(skinId);}catch{return false;}
 }
 
 // [FIX] monkey-patch removed — merged into isSkinUnlocked directly;
@@ -3789,9 +4658,9 @@ async function syncBPFromServer(){
     // Синхронизируем claimed — объединяем (union), не перезаписываем
     if(Array.isArray(data.claimed) && data.claimed.length > 0){
       try{
-        const localClaimed = JSON.parse(localStorage.getItem('bfm_bp_claimed')||'[]');
+        const localClaimed = JSON.parse(safeGet('bfm_bp_claimed','[]'));
         const merged = [...new Set([...localClaimed, ...data.claimed])];
-        localStorage.setItem('bfm_bp_claimed', JSON.stringify(merged));
+        safeSet('bfm_bp_claimed', JSON.stringify(merged));
       }catch{}
     }
     // Перерисовываем если были изменения
@@ -3939,7 +4808,7 @@ async function bpClaim(lvlNum){
       }
       // Сервер подтвердил — синхронизируем claimed список с сервером
       if(Array.isArray(data.claimed)){
-        try{ localStorage.setItem('bfm_bp_claimed', JSON.stringify(data.claimed)); }catch{}
+        try{ safeSet('bfm_bp_claimed', JSON.stringify(data.claimed)); }catch{}
       }
     } catch(e){
       // Нет сети — применяем локально (offline-first), синхронизируется потом
@@ -3956,10 +4825,10 @@ async function bpClaim(lvlNum){
   } else if(lv.reward.type==='skin'){
     bpUnlockSkin(lv.reward.id);
   } else if(lv.reward.type==='bg_theme'){
-    localStorage.setItem('bfm_bg_theme_'+lv.reward.id,'1');
+    safeSet('bfm_bg_theme_'+lv.reward.id,'1');
     applyBgTheme(lv.reward.id);
   } else if(lv.reward.type==='feature' && lv.reward.id==='bank_spin'){
-    localStorage.setItem('bfm_bank_spin','1');
+    safeSet('bfm_bank_spin','1');
     updateRotBtn();
     updateBankLock();
   }
@@ -3993,9 +4862,7 @@ function updateMenuBP(){
 function openModePicker(){
   document.getElementById('mode-picker').classList.add('show');
 }
-function closeModePicker(){
-  document.getElementById('mode-picker').classList.remove('show');
-}
+/* closeModePicker defined above */
 
 
 /* ════════════════════════════════════════════════════════════════
@@ -4225,7 +5092,7 @@ document.addEventListener('visibilitychange',()=>{
   const el=document.getElementById('daily-date-desc');
   if(el) el.textContent=`${dateStr} · ${t('dailyDesc')}`;
   const badge=document.getElementById('daily-badge');
-  if(localStorage.getItem(getDailyKey())&&badge) badge.textContent='✅ DONE';
+  if(safeGet(getDailyKey(),'')&&badge) badge.textContent='✅ DONE';
 })();
 applyLang();
 initMenuBg();
