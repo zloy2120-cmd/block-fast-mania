@@ -1266,6 +1266,7 @@ body[class*="theme-"] .g-header {
         <div class="m-title">BLOCK FAST<br>MANIA</div>
       </div>
       <div class="m-sub">Puzzle · Telegram · 2026</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:1px;">v69</div>
     </div>
 
     <!-- Battle Pass button -->
@@ -1623,7 +1624,7 @@ body[class*="theme-"] .g-header {
   </div>
 </div>
 
-<script src="sounds.js"></script>
+<script src="sounds.js" onerror="console.warn('sounds.js failed to load')"></script>
 <script>
 
 /* ── Default twinkling stars for menu/leaderboard ── */
@@ -1679,6 +1680,12 @@ setTimeout(initDefaultStars, 500);
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
 if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;});}
+
+/* ══ GLOBAL ERROR CATCHER — debug only ══ */
+window.onerror=function(msg,src,line){
+  console.error('BFM JS ERROR:',msg,'at',src,line);
+  return false; // don't suppress
+};
 
 /* ══ SETTINGS ══ */
 let snd=true,vib=true;
@@ -5110,6 +5117,8 @@ applyBgTheme(currentTheme);
 updateRotBtn();
 updateBankLock();
 showScreen('menu');
+// JS-run indicator: version badge turns visible when JS executes
+(function(){ const v=document.querySelector('.m-sub + div'); if(v) v.style.color='rgba(100,255,150,.5)'; })();
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
 // Prefetch leaderboard data in background after 1.5s for fast open
