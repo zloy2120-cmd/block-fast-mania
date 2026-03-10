@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="77">
+<meta name="version" content="81">
 <title>⚡ Block Fast Mania</title>
+<!-- Yandex RTB — загружается один раз -->
+<script>window.yaContextCb=window.yaContextCb||[]</script>
+<script src="https://yandex.ru/ads/system/context.js" async></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
@@ -183,14 +186,11 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .mb-tab.t-speed.active{background:rgba(220,38,38,.55);color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.4);}
 
 /* Panel */
-.mb-panel{width:100%;border-radius:18px;overflow:hidden;background:rgba(12,11,32,.7);border:1px solid rgba(255,255,255,.08);}
+.mb-panel{display:none!important;}
 
 /* My score — top bar */
 .mb-myscore{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;
-  background:linear-gradient(90deg,rgba(34,211,238,.12),rgba(34,211,238,.04));
-  border-bottom:1px solid rgba(255,255,255,.07);
+  display:none;
 }
 .mb-myscore-left{display:flex;align-items:center;gap:8px;}
 .mb-myscore-icon{width:28px;height:28px;border-radius:8px;background:rgba(34,211,238,.15);display:flex;align-items:center;justify-content:center;font-size:14px;}
@@ -460,21 +460,19 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    outline задаётся ТОЛЬКО через анимацию (без статичного цвета → нет синей рамки)
    filter:drop-shadow composited на GPU */
 @keyframes glowC{
-  0%  {outline:3px solid #00e5ff;filter:drop-shadow(0 0 12px #00e5ff);}
-  33% {outline:3px solid #ffe600;filter:drop-shadow(0 0 12px #ffe600);}
-  66% {outline:3px solid #ff3cac;filter:drop-shadow(0 0 12px #ff3cac);}
-  100%{outline:3px solid #00e5ff;filter:drop-shadow(0 0 12px #00e5ff);}
+  0%  {outline:3px solid #00e5ff;}
+  33% {outline:3px solid #ffe600;}
+  66% {outline:3px solid #ff3cac;}
+  100%{outline:3px solid #00e5ff;}
 }
 .cell.line-ready{
   animation:glowC 1.8s linear infinite !important;
   outline-offset:0px;
-  will-change:filter;
   z-index:2;
 }
 .cell.line-ready.ok{
   animation:glowC 1.8s linear infinite !important;
   outline-offset:0px;
-  will-change:filter;
 }
 /* Line glow — через outline на ячейках, overlay не используется */
 #line-glows{display:none;}
@@ -777,7 +775,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 #ad-ov.show{display:flex;}
 .ad-cnt-wrap{position:absolute;top:16px;right:16px;}
 .ad-cnt{background:rgba(255,255,255,.1);border-radius:8px;padding:5px 14px;font-weight:900;font-size:16px;}
-.ad-box{width:min(320px,90vw);height:180px;background:linear-gradient(145deg,#0f0c29,#302b63,#1e1e4a);border-radius:18px;border:2px solid rgba(99,102,241,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 50px rgba(99,102,241,.3);}
+.ad-box{width:min(340px,92vw);background:linear-gradient(145deg,#0f0c29,#302b63,#1e1e4a);border-radius:18px;border:2px solid rgba(99,102,241,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 12px;box-shadow:0 0 50px rgba(99,102,241,.3);}
 .skip-btn{padding:13px 32px;background:#6366f1;border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;cursor:pointer;display:none;}
 
 /* ═══ FX ═══ */
@@ -1157,8 +1155,8 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 }
 #settings-panel.show{display:block;}
 .sp-boost-section{margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px;}
-.sp-boost-title{font-size:10px;font-weight:900;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;}
-.sp-no-boosts{font-size:11px;color:rgba(255,255,255,.3);text-align:center;padding:6px 0;}
+.sp-boost-title{font-size:12px;font-weight:900;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;}
+.sp-no-boosts{font-size:12px;color:rgba(255,255,255,.3);text-align:center;padding:6px 0;}
 /* sp-boost 2-column grid */
 .sp-boost-list{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
 .sp-boost-item{
@@ -1167,11 +1165,11 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
   cursor:pointer;transition:all .15s;
 }
-.sp-boost-ico{font-size:18px;}
+.sp-boost-ico{font-size:22px;}
 .sp-boost-info{min-width:0;width:100%;}
-.sp-boost-name{font-size:9.5px;font-weight:900;color:#fff;text-align:center;}
-.sp-boost-cnt{font-size:8px;color:rgba(255,255,255,.45);text-align:center;}
-.sp-boost-check{font-size:11px;opacity:0;position:absolute;}
+.sp-boost-name{font-size:11px;font-weight:900;color:#fff;text-align:center;}
+.sp-boost-cnt{font-size:10px;color:rgba(255,255,255,.45);text-align:center;}
+.sp-boost-check{font-size:13px;opacity:0;position:absolute;}
 .sp-boost-item.sp-active .sp-boost-check{opacity:1;}
 .sp-boost-item.sp-active{
   background:rgba(34,211,238,.15);
@@ -1181,15 +1179,15 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 .sp-boost-item:active{transform:scale(.97);}
 
 /* sp-title fix */
-.sp-title{font-family:'Bungee',cursive;font-size:13px;color:rgba(255,255,255,.85);
+.sp-title{font-family:'Bungee',cursive;font-size:15px;color:rgba(255,255,255,.85);
   letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;
   border-bottom:1px solid rgba(255,255,255,.1);}
 .sp-row{display:flex;align-items:center;justify-content:space-between;
   margin-bottom:10px;}
-.sp-lbl{font-size:13px;color:rgba(255,255,255,.7);font-weight:700;}
+.sp-lbl{font-size:15px;color:rgba(255,255,255,.7);font-weight:700;}
 .sp-menu-btn{border:1px solid rgba(255,255,255,.15);border-radius:10px;
-  padding:8px 6px;background:rgba(255,255,255,.07);
-  color:rgba(255,255,255,.7);font-size:12px;font-family:'Nunito',sans-serif;
+  padding:9px 6px;background:rgba(255,255,255,.07);
+  color:rgba(255,255,255,.7);font-size:14px;font-family:'Nunito',sans-serif;
   font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
 .sp-menu-btn:active{transform:scale(.96);}
 /* Toggle button */
@@ -1490,7 +1488,7 @@ body[class*="theme-"] .g-header {
         <div class="m-title">BLOCK FAST<br>MANIA</div>
       </div>
       <div class="m-sub">Puzzle · Telegram · 2026</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:1px;">v77</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:1px;">v81</div>
     </div>
 
     <!-- Battle Pass button -->
@@ -1798,11 +1796,10 @@ body[class*="theme-"] .g-header {
 
 <!-- AD -->
 <div id="ad-ov">
-  <div class="ad-cnt-wrap"><div class="ad-cnt" id="ad-cnt">5</div></div>
+  <div class="ad-cnt-wrap"><div class="ad-cnt" id="ad-cnt">10</div></div>
   <div class="ad-box">
-    <div style="font-size:40px">🚀</div>
-    <div style="font-family:'Bungee',cursive;font-size:17px;color:#a5b4fc">ПАРТНЁР ИГРЫ</div>
-    <div style="font-size:12px;color:#818cf8;text-align:center" id="ad-label">Досмотри бесплатно!</div>
+    <div style="font-family:'Bungee',cursive;font-size:13px;color:#a5b4fc;margin-bottom:6px" id="ad-label">Досмотри — получи продолжение!</div>
+    <div id="yandex_rtb_R-A-18894418-2" style="width:100%;min-height:90px;display:flex;align-items:center;justify-content:center;"></div>
   </div>
   <button class="skip-btn" id="skip-ad">✅ Получить награду</button>
 </div>
@@ -2309,7 +2306,7 @@ async function submitScore(modeKey, scoreVal){
 /* Загрузить лидерборд с сервера */
 /* Кеш лидерборда — не грузим повторно 60 секунд */
 const boardCache = {};
-const CACHE_TTL = 30000; // 30 sec cache (was 3 min)
+const CACHE_TTL = 60000; // 60 sec cache
 let _boardReqId = 0; // [FIX] токен отмены — предотвращает async race при быстром переключении вкладок
 
 async function fetchLeaderboard(m){
@@ -2510,9 +2507,16 @@ function renderMenuPanel(m){
 let activeBoardTab='classic';
 function showBoard(m){
   activeBoardTab=m;showScreen('board');
-  // Force invalidate cache при каждом открытии экрана — данные должны быть свежими
-  delete boardCache[m];
-  renderBoardTab(m);
+  // Показываем кэш мгновенно, если есть — потом тихо обновляем в фоне
+  if(boardCache[m]){
+    renderBoardRows(boardCache[m].data);
+    // Фоновое обновление если кэш старше 30 сек
+    if(Date.now()-boardCache[m].ts > 30000){
+      fetchLeaderboard(m).then(data=>{if(data)renderBoardRows(data);});
+    }
+  } else {
+    renderBoardTab(m);
+  }
 }
 function switchBoardTab(m){
   activeBoardTab=m;
@@ -2528,7 +2532,7 @@ async function renderBoardTab(m){
     // Skeleton loader rows
     table.innerHTML=Array.from({length:8},(_,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);opacity:${1-i*.1}"><span style="width:24px;height:16px;background:rgba(255,255,255,.1);border-radius:4px;flex-shrink:0"></span><span style="width:32px;height:32px;background:rgba(255,255,255,.08);border-radius:50%;flex-shrink:0"></span><span style="flex:1;height:14px;background:rgba(255,255,255,.08);border-radius:4px"></span><span style="width:60px;height:14px;background:rgba(255,255,255,.1);border-radius:4px"></span></div>`).join('');
   }
-  const ts=document.getElementById('trophy-stars');if(ts){ts.innerHTML='';for(let i=0;i<20;i++){const s=document.createElement('div');s.className='tsb';const sz=1+Math.random()*2;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${1.5+Math.random()*2}s;animation-delay:${-Math.random()*2}s;`;ts.appendChild(s);}}
+  const ts=document.getElementById('trophy-stars');if(ts&&!ts.dataset.init){ts.dataset.init='1';for(let i=0;i<20;i++){const s=document.createElement('div');s.className='tsb';const sz=1+Math.random()*2;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${1.5+Math.random()*2}s;animation-delay:${-Math.random()*2}s;`;ts.appendChild(s);}}
   const data=await fetchLeaderboard(m);
   renderBoardRows(data);
 }
@@ -2555,8 +2559,8 @@ function renderBoardRows(data){
   if(podium && entries.length>=2){
     const podOrder=[1,0,2].filter(i=>entries[i]);
     const podClass=['pod-2','pod-1','pod-3'];
-    // Цвета корон: золото, серебро, бронза
-    const crownColors=['#c0c0c0','#FFD700','#cd7c43']; // порядок: 2й, 1й, 3й
+    // CSS классы корон: silver(2й), gold(1й), bronze(3й)
+    const crownClass=['silver','gold','bronze'];
     podOrder.forEach((ei,pi)=>{
       const e=entries[ei];
       if(!e)return;
@@ -2565,14 +2569,13 @@ function renderBoardRows(data){
       const name=esc(e.first_name||e.name||'Игрок');
       const avatarContent=avatarHtml(e,isMe,'👤');
       const score=(e.score||0).toLocaleString();
-      const crownColor=crownColors[pi];
       const slot=document.createElement('div');
       slot.className=`podium-slot ${podClass[pi]}`;
       slot.innerHTML=`
         <div class="pod-avatar">${avatarContent}</div>
         <div class="pod-name">${name}${isMe?' (ты)':''}</div>
         <div class="pod-score">${score}</div>
-        <div class="pod-bar"><span style="font-size:26px;filter:drop-shadow(0 0 6px ${crownColor});animation:crownFloat ${1.8+pi*.4}s ease-in-out infinite ${pi*.2}s">👑</span></div>`;
+        <div class="pod-bar"><span class="pod-crown ${crownClass[pi]}">👑</span></div>`;
       podium.appendChild(slot);
     });
   }
@@ -3403,7 +3406,10 @@ function checkGO(){
   setTimeout(()=>{_goScheduled=false;showGO();},500);
 }
 function showGO(){
-  if(dead)return;dead=true;if(timIv){clearInterval(timIv);timIv=null;}
+  // Не показывать game over если игрок уже вышел с игрового экрана
+  if(dead)return;
+  if(document.getElementById('game').classList.contains('hidden'))return;
+  dead=true;if(timIv){clearInterval(timIv);timIv=null;}
   document.getElementById('go-score').textContent=score.toLocaleString();
   document.getElementById('go-lines').textContent=lines;
   document.getElementById('go-lvl').textContent=lvl;
@@ -3597,8 +3603,20 @@ function showFakeAd(type){
     ?'Досмотри — получи <strong style="color:#fff">+10 секунд!</strong>'
     :'Досмотри — получи продолжение<br><strong style="color:#fff">бесплатно!</strong>';
   ov.classList.add('show');sk.style.display='none';
-  // [FIX BUG-D] переименовано в adTimer — не затеняет i18n-функцию t()
-  let adTimer=5;tc.textContent=adTimer;
+  // Рендерим Яндекс баннер R-A-18894418-2
+  const yDiv=document.getElementById('yandex_rtb_R-A-18894418-2');
+  if(yDiv){yDiv.innerHTML='';} // очищаем предыдущий
+  try{
+    window.yaContextCb=window.yaContextCb||[];
+    window.yaContextCb.push(()=>{
+      Ya.Context.AdvManager.render({
+        blockId:'R-A-18894418-2',
+        renderTo:'yandex_rtb_R-A-18894418-2'
+      });
+    });
+  }catch(e){console.warn('Yandex ad render error',e);}
+  // Таймер 10 сек
+  let adTimer=10;tc.textContent=adTimer;
   const iv=setInterval(()=>{adTimer--;tc.textContent=adTimer;if(adTimer<=0){clearInterval(iv);tc.textContent='✓';sk.style.display='block';}},1000);
   sk.onclick=()=>{ov.classList.remove('show');giveAdReward(type);};
 }
@@ -3782,7 +3800,7 @@ function showScreen(id){
   // Ad banner: only on menu, game, board
   const banner = document.getElementById('ad-banner');
   if(banner){
-    const adsAllowed = ['game','board'];
+    const adsAllowed = ['game'];
     if(adsAllowed.includes(id)){
       banner.style.display='flex';
       document.getElementById('game')?.classList.add('ads-active');
@@ -3804,6 +3822,9 @@ function goBack(){
   }
 }
 function goMenu(){
+  // Принудительно завершаем игру — чтобы отложенные таймер-коллбэки не вызвали showGO
+  dead=true;
+  _goScheduled=false;
   if(timIv){clearInterval(timIv);timIv=null;}
   document.getElementById('go').classList.remove('show');
   document.getElementById('ad-ov').classList.remove('show');
@@ -5950,60 +5971,39 @@ function streakMult(){ return _streakActive?1.5:1; }
 async function initSmartBanner(){
   const banner = document.getElementById('ad-banner');
   if(!banner) return;
+  if(banner.dataset.loaded) return;
   banner.dataset.loaded = 'true';
-  const inner = document.getElementById('ad-banner-inner');
 
-  let country = 'US';
+  let country = 'RU'; // по умолчанию RU — на случай если Worker недоступен
   try {
-    // Пробуем получить страну из Cloudflare Worker (cf-ipcountry)
     const resp = await fetch(API + '/init', {signal: AbortSignal.timeout(3000)});
-    if(resp.ok){
-      const data = await resp.json();
-      country = data.country || 'US';
-    }
+    if(resp.ok){ const data = await resp.json(); country = data.country || 'RU'; }
   } catch(e) {
-    // Фолбэк: язык системы
-    const lang = tg?.initDataUnsafe?.user?.language_code || navigator.language || 'en';
+    const lang = tg?.initDataUnsafe?.user?.language_code || navigator.language || 'ru';
     if(/^ru|^be|^kk|^uk/.test(lang)) country = 'RU';
   }
 
   const cisCountries = ['RU','BY','KZ','UZ','AM','UA','AZ','GE','MD','TJ','TM','KG'];
-
   if(cisCountries.includes(country)){
-    // ── Яндекс РСЯ ──
-    // Раскомментировать когда получишь блок-ID в кабинете РСЯ:
-    /*
-    const yadScript = document.createElement('script');
-    yadScript.src = 'https://yandex.ru/ads/system/context.js';
-    yadScript.async = true;
-    yadScript.onload = ()=>{
-      window.yaContextCb = window.yaContextCb || [];
+    // ── Яндекс РСЯ Floor Ad R-A-18894418-1 ──
+    // Яндекс floorAd рендерится сам как плавающий баннер — контейнер не нужен
+    try{
+      window.yaContextCb=window.yaContextCb||[];
       window.yaContextCb.push(()=>{
         Ya.Context.AdvManager.render({
-          renderTo: 'ad-banner-inner',
-          blockId: 'R-A-XXXXXX-X' // ← ВСТАВЬ СВОЙ ID ИЗ РСЯ
+          blockId:'R-A-18894418-1',
+          type:'floorAd',
+          platform:'touch'
         });
       });
-    };
-    document.head.appendChild(yadScript);
-    */
-    // Временная cross-promo заглушка для СНГ
-    inner.innerHTML = `<div onclick="tg?.openLink?.('https://t.me/your_channel_here')"
-      style="display:flex;align-items:center;gap:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:0 12px;width:100%;">
-      <span style="font-size:20px;">🚀</span>
-      <div><div style="color:#ffd600;">Block Fast Mania</div>
-      <div style="font-size:9px;opacity:.55;">РЕКЛАМА · нажми чтобы узнать больше</div></div>
-    </div>`;
-  } else {
-    // ── Global (RichAds / Adsgram / Cross-promo) ──
-    inner.innerHTML = `<div onclick="tg?.openLink?.('https://t.me/your_channel_here')"
-      style="display:flex;align-items:center;gap:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:0 12px;width:100%;">
-      <span style="font-size:20px;">⚡</span>
-      <div><div style="color:#22d3ee;">Block Fast Mania</div>
-      <div style="font-size:9px;opacity:.55;">AD · tap to learn more</div></div>
-    </div>`;
+      // Скрываем наш кастомный баннер — Яндекс показывает свой overlay
+      banner.style.display='none';
+    }catch(e){console.warn('Yandex floorAd error',e);}
   }
+  // Для не-СНГ стран — баннер скрыт до появления другой сети
 }
+
+
 
 /* ══ DAILY LOGIN BONUS ══ */
 const DAILY_REWARDS = [
