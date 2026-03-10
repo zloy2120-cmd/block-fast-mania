@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="70">
+<meta name="version" content="77">
 <title>⚡ Block Fast Mania</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet">
@@ -94,8 +94,8 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .mbtn-ico-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 3px 8px rgba(0,0,0,.3);}
 .mbtn-ico{font-size:22px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.4));}
 .mbtn-texts{flex:1;}
-.mbtn-name{font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;color:#fff;letter-spacing:.2px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
-.mbtn-desc{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px;}
+.mbtn-name{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:#fff;letter-spacing:.2px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
+.mbtn-desc{font-size:13px;color:rgba(255,255,255,.65);margin-top:2px;}
 .mbtn-arrow{font-size:16px;color:rgba(255,255,255,.35);flex-shrink:0;transition:transform .2s,color .2s;}
 .mbtn:active .mbtn-arrow{transform:translateX(3px);color:rgba(255,255,255,.7);}
 
@@ -245,8 +245,8 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .mlb-left{display:flex;align-items:center;gap:13px;padding:15px 18px;flex:1;}
 .mlb-icon{width:44px;height:44px;border-radius:13px;background:linear-gradient(145deg,rgba(251,191,36,.28),rgba(245,158,11,.18));border:1px solid rgba(251,191,36,.4);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);}
 .mlb-texts{flex:1;}
-.mlb-title{font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:var(--gold);}
-.mlb-sub{font-size:10px;color:rgba(255,200,50,.55);margin-top:2px;}
+.mlb-title{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:var(--gold);}
+.mlb-sub{font-size:12px;color:rgba(255,200,50,.55);margin-top:2px;}
 .mlb-arrow{font-size:22px;color:rgba(251,191,36,.55);padding-right:18px;}
 
 /* ══ GAME OVER — redesigned ══ */
@@ -285,8 +285,8 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
    GAME
 ══════════════════════════════ */
 #game{justify-content:flex-start;padding:calc(env(safe-area-inset-top,0px)+5px) 10px calc(env(safe-area-inset-bottom,0px)+5px);gap:4px;}
-/* Spacer under header so bonus-pills (fixed) never overlap grid */
-.game-bonus-spacer{height:28px;width:100%;flex-shrink:0;}
+/* Spacer under header — reduced */
+.game-bonus-spacer{height:6px;width:100%;flex-shrink:0;}
 
 /* HEADER */
 .g-head{width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:start;flex-shrink:0;gap:4px;padding:4px 12px 0;}
@@ -353,7 +353,7 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .timer-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),#eab308,#ef4444);transition:width .95s linear;}
 
 /* GRID */
-#grid-wrap{position:relative;flex-shrink:0;margin-bottom:56px;}
+#grid-wrap{position:relative;flex-shrink:0;margin-bottom:6px;}
 #grid{
   display:grid;
   background:rgba(10,9,38,.25);
@@ -416,6 +416,20 @@ body.theme-sakura #menu { background:radial-gradient(ellipse at 50% 0%,rgba(200,
 body.theme-sakura #game  { background:radial-gradient(ellipse at 70% 30%,rgba(180,40,100,.15) 0%,#0f0008 70%); }
 body.theme-sakura .card,.theme-sakura .g-panel,.theme-sakura #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
 body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rgba(60,10,35,.25)); border-color:rgba(255,150,200,.45); box-shadow:0 12px 44px rgba(180,40,100,.35),0 0 30px rgba(255,100,180,.15); }
+
+/* --- OCEAN_BG --- */
+body.theme-ocean_bg { --bg:#000d22; --bg2:#001530; --card-bg:rgba(0,15,45,.9); --card-border:rgba(0,160,255,.3); }
+body.theme-ocean_bg #menu { background:radial-gradient(ellipse at 50% 100%,rgba(0,80,180,.35) 0%,#000d22 65%); }
+body.theme-ocean_bg #game  { background:radial-gradient(ellipse at 30% 60%,rgba(0,60,150,.25) 0%,#000d22 70%); }
+body.theme-ocean_bg .card,.theme-ocean_bg .g-panel,.theme-ocean_bg #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-ocean_bg #grid  { background:linear-gradient(160deg,rgba(0,20,60,.35),rgba(0,40,80,.25)); border-color:rgba(0,160,255,.4); box-shadow:0 12px 44px rgba(0,80,200,.4),0 0 30px rgba(0,140,255,.2); }
+
+/* --- SUNSET --- */
+body.theme-sunset { --bg:#0d0518; --bg2:#180a28; --card-bg:rgba(30,8,20,.92); --card-border:rgba(255,140,0,.35); }
+body.theme-sunset #menu { background:linear-gradient(180deg,#0d0518 0%,rgba(120,20,60,.5) 40%,rgba(255,100,0,.35) 80%,rgba(255,160,0,.2) 100%); }
+body.theme-sunset #game  { background:linear-gradient(180deg,#0d0518 0%,rgba(80,10,40,.4) 50%,rgba(200,60,0,.3) 100%); }
+body.theme-sunset .card,.theme-sunset .g-panel,.theme-sunset #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
+body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%,rgba(50,8,18,.35) 100%); border-color:rgba(255,120,0,.5); box-shadow:0 12px 44px rgba(200,60,0,.4),0 0 30px rgba(255,100,0,.25); }
 
 
 .cell{
@@ -556,16 +570,21 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
 #hold:active{transform:scale(.96);}
 .hold-lbl{font-size:8px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 
-/* ROT row — below tray+bank, aligned to right */
-.rot-row{width:100%;display:flex;flex-shrink:0;justify-content:flex-end;}
+/* ROT row — removed, SPIN is now above BANK in .bank-col */
+.bank-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
 #btn-rot{
   width:var(--bank-w);
-  border:none;border-radius:10px;padding:8px 4px;
+  border:none;border-radius:10px;padding:7px 4px;
   background:linear-gradient(135deg,rgba(99,102,241,.9),rgba(79,70,229,.9));
   border:1px solid rgba(165,180,252,.3);
   color:#fff;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;
   cursor:pointer;transition:transform .15s,opacity .2s;
-  display:flex;align-items:center;justify-content:center;gap:3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  flex-shrink:0;
+}
+/* Spin counter badge inside button */
+#spin-count-badge{
+  font-size:9px;font-weight:700;opacity:.75;letter-spacing:.3px;
 }
 #btn-rot:active{transform:scale(.95);}
 #btn-rot.disabled{opacity:.28;pointer-events:none;}
@@ -977,7 +996,12 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
 .boost-count{font-size:11px;color:var(--muted);margin-top:1px;}
 .boost-card.active-boost .boost-count{color:#22d3ee;font-weight:800;}
 /* Активный буст — индикатор в шапке игры */
-#active-boost-tag{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:rgba(34,211,238,.25);border:1px solid rgba(34,211,238,.5);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:800;color:#22d3ee;pointer-events:none;display:none;letter-spacing:.5px;}
+#active-boost-tag{
+  background:rgba(34,211,238,.2);border:1px solid rgba(34,211,238,.45);
+  border-radius:14px;padding:2px 7px;font-size:9px;font-weight:800;
+  color:#22d3ee;pointer-events:none;display:none;letter-spacing:.3px;
+  margin-top:2px;white-space:nowrap;
+}
 
 /* ══ XP EARNED in Game Over ══ */
 .go-xp-section{margin:8px 0 4px;padding:10px 14px;background:rgba(124,58,237,.15);border-radius:14px;border:1px solid rgba(167,139,250,.3);}
@@ -1000,8 +1024,8 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
 .m-bp-btn:active{transform:scale(.97);}
 .m-bp-ico{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#22d3ee);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 3px 12px rgba(109,40,217,.5);}
 .m-bp-texts{flex:1;}
-.m-bp-name{font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:#fff;}
-.m-bp-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;}
+.m-bp-name{font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:#fff;}
+.m-bp-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
 .m-bp-level{font-family:'Bungee',cursive;font-size:18px;color:var(--gold);flex-shrink:0;}
 .m-bp-xp-bar{height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1);}
 .m-bp-xp-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#a78bfa,#22d3ee);transition:width .5s ease;}
@@ -1042,20 +1066,21 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
   pointer-events:none;
 }
 /* Баннер активной кристальной силы */
-/* ── Общий бонус-бар: один ряд по центру ── */
+/* ── Бонус-бар: левый край, под шапкой ── */
 #bonus-bar{
   position:fixed;
-  top:54px;left:50%;transform:translateX(-50%);
+  top:44px;left:6px;
   z-index:520;
-  display:flex;align-items:center;justify-content:center;
-  gap:7px;pointer-events:none;
+  display:flex;flex-direction:column;align-items:flex-start;
+  gap:4px;pointer-events:none;
 }
 .bonus-pill{
-  display:none;align-items:center;gap:4px;
-  border-radius:16px;padding:3px 9px;
-  font-family:'Bungee',cursive;font-size:12px;color:#fff;
+  display:none;align-items:center;gap:3px;
+  border-radius:12px;padding:2px 7px;
+  font-family:'Bungee',cursive;font-size:10px;color:#fff;
   white-space:nowrap;
-  box-shadow:0 2px 10px rgba(0,0,0,.5);
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+  opacity:.92;
 }
 .bonus-pill.show{display:flex;}
 /* 💎 Кристалл */
@@ -1079,8 +1104,8 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
   background:linear-gradient(135deg,rgba(180,35,0,.95),rgba(255,95,0,.85));
   border:1.5px solid rgba(255,110,20,.5);
 }
-.crystal-hud-ico{font-size:15px;}
-.crystal-hud-txt{font-size:12px;}
+.crystal-hud-ico{font-size:12px;}
+.crystal-hud-txt{font-size:10px;}
 
 /* ══ ⚡ ЦЕПОЧКИ (CHAIN CELLS) ══ */
 .cell.chain-cell{
@@ -1131,7 +1156,32 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
   max-height:100vh;overflow-y:auto;
 }
 #settings-panel.show{display:block;}
-.sp-title{font-family:'Bungee',cursive;font-size:14px;color:rgba(255,255,255,.85);
+.sp-boost-section{margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px;}
+.sp-boost-title{font-size:10px;font-weight:900;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;}
+.sp-no-boosts{font-size:11px;color:rgba(255,255,255,.3);text-align:center;padding:6px 0;}
+/* sp-boost 2-column grid */
+.sp-boost-list{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.sp-boost-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  border-radius:9px;padding:6px 4px;text-align:center;
+  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
+  cursor:pointer;transition:all .15s;
+}
+.sp-boost-ico{font-size:18px;}
+.sp-boost-info{min-width:0;width:100%;}
+.sp-boost-name{font-size:9.5px;font-weight:900;color:#fff;text-align:center;}
+.sp-boost-cnt{font-size:8px;color:rgba(255,255,255,.45);text-align:center;}
+.sp-boost-check{font-size:11px;opacity:0;position:absolute;}
+.sp-boost-item.sp-active .sp-boost-check{opacity:1;}
+.sp-boost-item.sp-active{
+  background:rgba(34,211,238,.15);
+  border-color:rgba(34,211,238,.55);
+  box-shadow:0 0 10px rgba(34,211,238,.2);
+}
+.sp-boost-item:active{transform:scale(.97);}
+
+/* sp-title fix */
+.sp-title{font-family:'Bungee',cursive;font-size:13px;color:rgba(255,255,255,.85);
   letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;
   border-bottom:1px solid rgba(255,255,255,.1);}
 .sp-row{display:flex;align-items:center;justify-content:space-between;
@@ -1253,6 +1303,180 @@ body[class*="theme-"] #score-row,
 body[class*="theme-"] .g-header {
   background: rgba(0,0,0,.2) !important;
 }
+/* ══ CASE CARDS in BP ══ */
+.bp-card.case-card{
+  border-color:rgba(251,146,60,.4);
+  background:linear-gradient(135deg,rgba(251,146,60,.07),rgba(239,68,68,.05));
+}
+.bp-card.case-card.current{
+  border-color:rgba(251,146,60,.7);
+  box-shadow:0 0 18px rgba(251,146,60,.18);
+}
+.bp-card.case-card.unlocked{
+  border-color:rgba(251,146,60,.5);
+  background:rgba(251,146,60,.08);
+}
+.bp-case-lbl{
+  display:inline-block;font-size:9px;font-weight:900;letter-spacing:.5px;
+  background:linear-gradient(90deg,#f97316,#ef4444);
+  color:#fff;border-radius:4px;padding:1px 5px;margin-top:3px;
+}
+
+/* ══ CASE OPEN OVERLAY ══ */
+#case-open-ov{
+  display:none;
+  position:fixed;inset:0;z-index:2100;
+  background:rgba(5,5,22,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  flex-direction:column;align-items:center;justify-content:center;gap:0;
+}
+#case-open-ov.show{display:flex;}
+
+.case-ov-title{
+  font-family:'Bungee',cursive;font-size:18px;color:#fff;
+  letter-spacing:1px;margin-bottom:6px;text-align:center;
+}
+.case-ov-subtitle{
+  font-size:12px;color:rgba(255,255,255,.5);margin-bottom:28px;text-align:center;
+}
+
+/* Сундук */
+.case-chest-wrap{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;margin-bottom:12px;
+}
+.case-chest{
+  font-size:90px;line-height:1;
+  transition:filter .3s;
+  filter:drop-shadow(0 0 28px rgba(251,146,60,.8));
+  animation:chestFloat 2.2s ease-in-out infinite;
+}
+@keyframes chestFloat{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+.case-chest.opening{
+  animation:chestOpen .5s ease forwards;
+}
+@keyframes chestOpen{
+  0%{transform:scale(1) rotate(0deg);}
+  30%{transform:scale(1.2) rotate(-8deg);}
+  60%{transform:scale(1.3) rotate(6deg);}
+  100%{transform:scale(0) rotate(20deg);opacity:0;}
+}
+
+/* Частицы при открытии */
+.case-particle{
+  position:absolute;
+  width:8px;height:8px;border-radius:50%;
+  animation:caseParticle .7s ease-out forwards;
+}
+@keyframes caseParticle{
+  0%{opacity:1;transform:translate(0,0) scale(1);}
+  100%{opacity:0;transform:var(--tx,0) var(--ty,0) scale(0);}
+}
+
+/* Результат */
+.case-result-wrap{
+  display:none;flex-direction:column;align-items:center;gap:8px;
+  animation:caseResultIn .4s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.case-result-wrap.show{display:flex;}
+@keyframes caseResultIn{
+  from{opacity:0;transform:scale(.5) translateY(20px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+.case-result-ico{
+  font-size:64px;
+  filter:drop-shadow(0 0 20px rgba(251,191,36,.8));
+}
+.case-result-rarity{
+  font-family:'Bungee',cursive;font-size:13px;letter-spacing:1px;
+  padding:3px 12px;border-radius:20px;
+}
+.case-result-rarity.rarity-common{ background:rgba(156,163,175,.2);color:#9ca3af; }
+.case-result-rarity.rarity-rare{   background:rgba(96,165,250,.2);color:#60a5fa;  }
+.case-result-rarity.rarity-epic{   background:rgba(167,139,250,.2);color:#a78bfa; }
+.case-result-rarity.rarity-legend{ background:rgba(251,191,36,.2);color:#fbbf24;  }
+
+.case-result-name{
+  font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:#fff;text-align:center;
+}
+.case-result-desc{
+  font-size:12px;color:rgba(255,255,255,.55);text-align:center;max-width:240px;
+}
+.case-result-btn{
+  margin-top:16px;
+  border:none;border-radius:12px;padding:12px 32px;
+  background:linear-gradient(135deg,#f97316,#ef4444);
+  font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:#fff;
+  cursor:pointer;transition:transform .15s;
+}
+.case-result-btn:active{transform:scale(.96);}
+
+/* Кнопка "Открыть кейс" */
+.bp-claim-btn.case-btn{
+  background:linear-gradient(135deg,#f97316,#ef4444) !important;
+  font-size:10px;
+}
+
+#ad-banner{
+  position:fixed;bottom:0;left:0;width:100%;height:60px;
+  background:rgba(0,0,0,.85);
+  border-top:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  z-index:2000;
+  display:none; /* JS управляет: flex или none */
+  align-items:center;justify-content:center;
+  overflow:hidden;
+}
+/* Game screen gets padding so tray isn't hidden under banner */
+#game.ads-active{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px) + 5px);}
+
+/* ══ CHEST OPEN BUTTON ══ */
+.chest-open-btn{
+  padding:13px 40px;
+  font-family:'Bungee',cursive;font-size:16px;letter-spacing:.5px;
+  border:none;border-radius:14px;cursor:pointer;
+  background:linear-gradient(135deg,#f59e0b,#d97706);
+  color:#1a0a00;
+  box-shadow:0 4px 20px rgba(245,158,11,.5);
+  transition:transform .15s;
+}
+.chest-open-btn:active{transform:scale(.95);}
+.chest-open-btn:disabled{opacity:.4;cursor:default;}
+
+/* ══ DAILY BONUS OVERLAY ══ */
+#daily-ov{
+  display:none;position:fixed;inset:0;z-index:2200;
+  background:rgba(5,5,22,.93);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  flex-direction:column;align-items:center;justify-content:center;padding:16px;
+}
+#daily-ov.show{display:flex;}
+.daily-inner{
+  width:100%;max-width:360px;
+  background:linear-gradient(160deg,rgba(40,30,80,.9),rgba(20,15,50,.95));
+  border:1px solid rgba(255,214,0,.25);border-radius:22px;padding:20px 16px 16px;
+  display:flex;flex-direction:column;align-items:center;
+  box-shadow:0 0 40px rgba(255,214,0,.12);
+}
+.daily-title{font-family:'Bungee',cursive;font-size:17px;color:#ffd600;letter-spacing:1px;margin-bottom:3px;text-align:center;}
+.daily-subtitle{font-size:11px;color:rgba(255,255,255,.45);margin-bottom:14px;text-align:center;}
+.daily-streak{font-size:10px;font-weight:900;color:rgba(255,214,0,.7);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;}
+.daily-days{display:flex;gap:4px;width:100%;margin-bottom:16px;}
+.daily-day-card{flex:1;min-width:0;border-radius:10px;padding:7px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+.daily-day-card.past{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);opacity:.7;}
+.daily-day-card.current{background:linear-gradient(160deg,rgba(255,214,0,.18),rgba(251,146,60,.12));border-color:rgba(255,214,0,.55);box-shadow:0 0 10px rgba(255,214,0,.2);transform:scale(1.06);}
+.daily-day-card.future{opacity:.4;}
+.daily-day-num{font-size:8px;font-weight:900;color:rgba(255,255,255,.4);letter-spacing:.5px;}
+.daily-day-card.current .daily-day-num{color:rgba(255,214,0,.9);}
+.daily-day-ico{font-size:17px;line-height:1.2;}
+.daily-day-name{font-size:7px;font-weight:800;color:rgba(255,255,255,.55);text-align:center;line-height:1.2;padding:0 1px;}
+.daily-day-card.current .daily-day-name{color:#fff;}
+.daily-claim-btn{width:100%;padding:12px 0;font-family:'Bungee',cursive;font-size:14px;letter-spacing:.5px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a0a00;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 16px rgba(245,158,11,.4);transition:transform .15s;}
+.daily-claim-btn:active{transform:scale(.96);}
+.daily-claim-btn:disabled{opacity:.4;background:rgba(255,255,255,.1);color:rgba(255,255,255,.4);box-shadow:none;cursor:default;}
+.daily-close-btn{margin-top:10px;font-size:11px;color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;padding:4px 12px;}
 </style>
 <body>
 
@@ -1266,7 +1490,7 @@ body[class*="theme-"] .g-header {
         <div class="m-title">BLOCK FAST<br>MANIA</div>
       </div>
       <div class="m-sub">Puzzle · Telegram · 2026</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:1px;">v70</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:1px;">v77</div>
     </div>
 
     <!-- Battle Pass button -->
@@ -1348,6 +1572,7 @@ body[class*="theme-"] .g-header {
         <span class="g-rec-lbl">Рекорд</span>
       </div>
       <div class="g-rec-val" id="gs-best">0</div>
+      <div id="active-boost-tag" style="display:none;"></div>
     </div>
     <div class="g-center">
       <div class="g-score-num" id="gs-score">0</div>
@@ -1360,7 +1585,6 @@ body[class*="theme-"] .g-header {
     </div>
     <div class="g-right">
       <div class="g-mode-tag" id="g-mode-tag">10×10</div>
-      <div id="active-boost-tag" style="display:none;position:static;transform:none;"></div>
       <button class="g-settings-btn" onclick="openSettings()">⚙️</button>
     </div>
   </div>
@@ -1378,23 +1602,21 @@ body[class*="theme-"] .g-header {
 
   <div id="grid-wrap"><div id="grid"></div><div id="line-glows"></div></div>
 
-  <!-- TRAY ROW: tray + bank side by side -->
+  <!-- TRAY ROW: tray + bank-col (spin above bank) side by side -->
   <div class="tray-row">
     <div id="tray">
       <div class="slot" id="sl-0"></div>
       <div class="slot" id="sl-1"></div>
       <div class="slot" id="sl-2"></div>
     </div>
-    <div id="hold">
-      <div id="hold-inner"></div>
-      <div class="hold-lbl">БАНК</div>
-      <div id="hold-bp-lock" style="display:none"><span>🔒</span><small>БП УР.7</small></div>
+    <div class="bank-col">
+      <button id="btn-rot" class="disabled" onclick="rotHeld()">↻ СПИН<span id="spin-count-badge"></span></button>
+      <div id="hold">
+        <div id="hold-inner"></div>
+        <div class="hold-lbl">БАНК</div>
+        <div id="hold-bp-lock" style="display:none"><span>🔒</span><small>БП УР.7</small></div>
+      </div>
     </div>
-  </div>
-
-  <!-- ROT row: aligned right (bank-w wide) -->
-  <div class="rot-row">
-    <button id="btn-rot" class="disabled" onclick="rotHeld()">↻ СПИН</button>
   </div>
 </div>
 
@@ -1454,9 +1676,33 @@ body[class*="theme-"] .g-header {
   <div class="sp-title">⚙ НАСТРОЙКИ</div>
   <div class="sp-row"><span class="sp-lbl">🔊 Звук</span><button class="toggle on" id="t-sound" onclick="toggleSetting('sound')"></button></div>
   <div class="sp-row"><span class="sp-lbl">📳 Вибрация</span><button class="toggle on" id="t-vibro" onclick="toggleSetting('vibro')"></button></div>
-  <button class="sp-skin-btn" onclick="closeSettings();showSkins()">🎨 Скины и Темы</button>
+  <!-- ⚡ IN-GAME BOOSTS -->
+  <div class="sp-boost-section">
+    <div class="sp-boost-title">⚡ ТВОИ БУСТЫ</div>
+    <div class="sp-boost-list" id="sp-boost-list"></div>
+  </div>
+  <button class="sp-skin-btn" style="margin-top:10px;" onclick="closeSettings();showSkins()">🎨 Скины и Темы</button>
   <button class="sp-skin-btn" style="background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(34,211,238,.2));border-color:rgba(167,139,250,.4);color:#c4b5fd;margin-top:8px;" onclick="closeSettings();showBP()">⚡ Battle Pass</button>
   <button class="sp-achieve-btn" onclick="closeSettings();showAchievements()">🏅 Ачивменты</button>
+  <!-- 🧪 ТЕСТ (временно) -->
+  <div style="margin-top:10px;border-top:1px solid rgba(255,100,100,.2);padding-top:9px;">
+    <div style="font-size:9px;font-weight:900;color:rgba(255,120,120,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;">🧪 ТЕСТ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px;margin-bottom:4px;">
+      <button onclick="testOpenCase('starter')"  style="font-size:8px;padding:3px 2px;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;border-radius:5px;cursor:pointer;">📦 New</button>
+      <button onclick="testOpenCase('themes')"   style="font-size:8px;padding:3px 2px;background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;border-radius:5px;cursor:pointer;">🌌 Тем</button>
+      <button onclick="testOpenCase('rare')"     style="font-size:8px;padding:3px 2px;background:rgba(249,115,22,.2);border:1px solid rgba(249,115,22,.3);color:#fdba74;border-radius:5px;cursor:pointer;">🎁 Ред</button>
+      <button onclick="testOpenCase('themes2')"  style="font-size:8px;padding:3px 2px;background:rgba(244,114,182,.2);border:1px solid rgba(244,114,182,.3);color:#f9a8d4;border-radius:5px;cursor:pointer;">🌸 Dlx</button>
+      <button onclick="testOpenCase('mid')"      style="font-size:8px;padding:3px 2px;background:rgba(251,146,60,.2);border:1px solid rgba(251,146,60,.3);color:#fed7aa;border-radius:5px;cursor:pointer;">🗡️ Hnt</button>
+      <button onclick="testOpenCase('themes3')"  style="font-size:8px;padding:3px 2px;background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.3);color:#fde68a;border-radius:5px;cursor:pointer;">🌅 Hor</button>
+      <button onclick="testOpenCase('legend')"   style="font-size:8px;padding:3px 2px;background:rgba(255,215,0,.2);border:1px solid rgba(255,215,0,.35);color:#ffd700;border-radius:5px;cursor:pointer;">🏆 Leg</button>
+      <button onclick="testOpenCase('season')"   style="font-size:8px;padding:3px 2px;background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.3);color:#c4b5fd;border-radius:5px;cursor:pointer;">🌟 Sea</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+      <button onclick="testBPMaxXP()" style="font-size:8px;padding:4px 2px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;border-radius:5px;cursor:pointer;">⚡ MAX XP</button>
+      <button onclick="testBPReset()" style="font-size:8px;padding:4px 2px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:5px;cursor:pointer;">🔄 Сброс BP</button>
+    </div>
+    <button onclick="testDailyBonus()" style="font-size:8px;padding:4px 2px;width:100%;margin-top:3px;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.25);color:#fde68a;border-radius:5px;cursor:pointer;">📅 Тест Daily Bonus</button>
+  </div>
   <div style="display:flex;gap:8px;margin-top:8px;">
     <button class="sp-menu-btn" style="flex:1;" onclick="closeSettings()">✕ Продолжить</button>
     <button class="sp-menu-btn" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171;" onclick="closeSettings();goMenu()">🏠 Меню</button>
@@ -1697,16 +1943,58 @@ function toggleSetting(k){if(k==='sound'){snd=!snd;document.getElementById('t-so
 function openSettings(){
   document.getElementById('settings-panel').classList.add('show');
   document.getElementById('settings-backdrop').classList.add('show');
-  // [FIX] Паузируем таймер в Speedrun пока открыты настройки
   if(mode==='speed'&&timIv){clearInterval(timIv);timIv=null;}
+  renderSpBoosts(); // ← свежий список бустов при каждом открытии
 }
 function closeSettings(){
   document.getElementById('settings-panel').classList.remove('show');
   document.getElementById('settings-backdrop').classList.remove('show');
-  // [FIX] Возобновляем таймер если игра активна
-  // [FIX BUG-B] Возобновляем таймер только если время ещё есть (timSec>0)
   if(mode==='speed'){if(!dead&&timSec>0){if(!timIv)resumeTimer();}}
 }
+
+/* ── Рендер бустов в панели настроек ── */
+const SP_BOOSTS_DEF = [
+  {id:'score2x',  name:'×2 Очки',      ico:'⚡', desc:'1 игра'},
+  {id:'score3x',  name:'×3 Очки',      ico:'🔥', desc:'1 игра'},
+  {id:'xp2x',     name:'×2 XP',        ico:'💎', desc:'3 игры'},
+  {id:'combo_shield', name:'Щит Комбо',ico:'🛡️', desc:'1 сброс'},
+];
+function renderSpBoosts(){
+  const list   = document.getElementById('sp-boost-list');
+  if(!list) return;
+  const active = boostGetActive();
+  list.innerHTML = '';
+  let any = false;
+  SP_BOOSTS_DEF.forEach(b=>{
+    const cnt = boostGet(b.id);
+    if(cnt === 0) return;
+    any = true;
+    const isActive = active === b.id;
+    const el = document.createElement('div');
+    el.className = 'sp-boost-item' + (isActive?' sp-active':'');
+    el.onclick = ()=>{ spToggleBoost(b.id); };
+    el.style.position='relative';
+    el.innerHTML = `<span class="sp-boost-ico">${b.ico}</span>
+      <div class="sp-boost-info">
+        <div class="sp-boost-name">${b.name}</div>
+        <div class="sp-boost-cnt">${isActive?'✓ Активен':'×'+cnt+' '+b.desc}</div>
+      </div>
+      ${isActive?'<span style="position:absolute;top:4px;right:5px;font-size:10px;">✓</span>':''}`;
+    list.appendChild(el);
+  });
+  if(!any){
+    list.innerHTML = '<div class="sp-no-boosts" style="grid-column:1/-1">Нет бустов · получи в Battle Pass</div>';
+  }
+}
+function spToggleBoost(id){
+  const current = boostGetActive();
+  boostSetActive(current===id ? null : id);
+  vibrate(6);
+  renderSpBoosts();   // обновить панель настроек
+  renderBPBoosts();   // синхронизировать экран BP
+  updateActiveBoostTag(); // обновить HUD в игре
+}
+
 
 /* ══ HAPTIC — Telegram API + fallback ══ */
 function vibrate(type){
@@ -1812,18 +2100,18 @@ function bcStyle(c,i){
   const face   = c.b;
   const hiTop  = lighten(face,.56);   // верхний highlight — самый яркий
   const hiLeft = lighten(face,.32);   // левый highlight — чуть темнее
-  const shBot  = darken(face,.38);    // нижняя тень — основная
-  const shRig  = darken(face,.24);    // правая тень — чуть мягче
+  const shBot  = darken(face,.20);    // нижняя тень — СНИЖЕНО с .38 → .20 чтобы не жгло глаза
+  const shRig  = darken(face,.12);    // правая тень — СНИЖЕНО с .24 → .12
   const gradT  = lighten(face,.28);   // верх грани
-  const gradB  = darken(face,.18);    // низ грани
+  const gradB  = darken(face,.12);    // низ грани
   return `.bc${i}{
     background:linear-gradient(165deg,${gradT} 0%,${face} 52%,${gradB} 100%);
     border-top:   6px solid ${hiTop};
     border-left:  5px solid ${hiLeft};
-    border-bottom:7px solid ${shBot};
-    border-right: 5px solid ${shRig};
+    border-bottom:5px solid ${shBot};
+    border-right: 4px solid ${shRig};
     border-radius:2px;
-    box-shadow:0 3px 9px rgba(0,0,0,.52);
+    box-shadow:0 3px 9px rgba(0,0,0,.45);
     box-sizing:border-box;
   }`;
 }
@@ -1848,10 +2136,10 @@ function applyBlockFlat(el,ci,ps=40){
   const face   = c.b;
   const hiTop  = lighten(face,.56);
   const hiLeft = lighten(face,.32);
-  const shBot  = darken(face,.38);
-  const shRig  = darken(face,.24);
+  const shBot  = darken(face,.20);
+  const shRig  = darken(face,.12);
   const gradT  = lighten(face,.28);
-  const gradB  = darken(face,.18);
+  const gradB  = darken(face,.12);
   // Масштабируем border пропорционально размеру ячейки в трее
   const sc=Math.min(1,ps/40);
   const bT=Math.max(2,Math.round(4*sc));
@@ -2075,7 +2363,7 @@ const T={
     newGame:'🔄 Новая игра',share:'📤 Поделиться',backMenu:'← Выбор режима',
     records:'🏅 Рекорды',back:'← Назад',
     dailyDesc:'одинаково для всех!',
-    timeUp:'Время вышло!',level:'Уровень',
+    timeUp:'Время вышло!',
   },
   en:{
     classic:'Classic',mini:'Mini',speed:'Speed',daily:'Daily',
@@ -2091,7 +2379,7 @@ const T={
     newGame:'🔄 New Game',share:'📤 Share Result',backMenu:'← Mode Select',
     records:'🏅 Records',back:'← Back',
     dailyDesc:'same for everyone!',
-    timeUp:'Time\'s Up!',level:'Level',
+    timeUp:'Time\'s Up!',
   }
 };
 function t(key){return T[LANG][key]||T.ru[key]||key;}
@@ -2409,7 +2697,21 @@ function renderHold(){
 }
 
 /* ══ ROTATE (bank only) ══ */
-function rotHeld(){if(!held)return;held.shape=rotateCW(held.shape);vibrate(6);playSound('rotate');renderHold();if(sel==='h')clearHL();}
+function rotHeld(){
+  if(!held)return;
+  // Вращение бесплатное — счётчик тратится при помещении фигуры в банк (tapHold)
+  if(isBankSpinUnlocked()){
+    if(getSpinLeft()<=0){
+      vibrate('go');
+      tg?.showPopup?.({title:'🌙 Спины закончились',message:'Бесплатные спины кончились на сегодня. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+      return;
+    }
+  }
+  held.shape=rotateCW(held.shape);
+  vibrate(6);playSound('rotate');
+  renderHold();
+  if(sel==='h')clearHL();
+}
 
 /* ══ SELECTION ══ */
 function tapSlot(i){if(dead||locked||!pieces[i])return;sel=(sel===i)?-1:i;clearHL();renderPieces();renderHold();if(sel===i)playSound('menu');}
@@ -2418,11 +2720,29 @@ function tapHold(){
   if(sel>=0&&sel<3&&pieces[sel]){
     const isCrystalSlot=(_crystalPiece===sel);
     const heldWasCrystal=(held&&held.crystal);
+    // Спин-счётчик: тратим 1 когда новая фигура заходит в банк (из трея)
+    if(isBankSpinUnlocked() && !held){
+      // Первая фигура заходит в банк
+      if(getSpinLeft()<=0){
+        vibrate('go');
+        tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит фигур для сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+        return;
+      }
+      addSpinUse();
+    } else if(isBankSpinUnlocked() && held){
+      // Меняем банковую фигуру на тройную — тратим 1
+      if(getSpinLeft()<=0){
+        vibrate('go');
+        tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит фигур для сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+        return;
+      }
+      addSpinUse();
+    }
     const prev=dc(held);held=dc(pieces[sel]);pieces[sel]=prev;
-    // [FIX BUG1] Синхронизируем _crystalPiece и .crystal при свапе
     if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
     else if(heldWasCrystal){_crystalPiece=sel;if(pieces[sel])pieces[sel].crystal=false;if(held)held.crystal=false;}
     sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
+    updateRotBtn();
   }
   else if(sel==='h'){sel=-1;renderHold();}
   else if(held){sel='h';renderHold();}
@@ -2431,11 +2751,20 @@ function doHoldSwapDrag(si){
   if(si==='h')return;const p=pieces[si];if(!p)return;
   const isCrystalSlot=(_crystalPiece===si);
   const heldWasCrystal=(held&&held.crystal);
+  // Спин-счётчик: тратим 1 при свапе через drag
+  if(isBankSpinUnlocked()){
+    if(getSpinLeft()<=0){
+      vibrate('go');
+      tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит фигур для сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+      return;
+    }
+    addSpinUse();
+  }
   const prev=dc(held);held=dc(p);pieces[si]=prev;
-  // [FIX BUG1] Синхронизируем _crystalPiece и .crystal при свапе из drag
   if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
   else if(heldWasCrystal){_crystalPiece=si;if(pieces[si])pieces[si].crystal=false;if(held)held.crystal=false;}
   sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
+  updateRotBtn();
 }
 
 /* ══ PLACEMENT ══ */
@@ -3061,7 +3390,7 @@ function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
 let _currentGameId=null; // уникальный ID текущей игры
 let _lastComboLv=2; // уровень комбо для звука — защита от повторной отправки XP
-function _generateGameId(){return Date.now()+'-'+Math.random().toString(36).substring(2,11);}
+function _generateGameId(){const uid=MY_TG_ID()||'0';return `${uid}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;}
 let _animTimers=[]; // копим setTimeout-ы анимаций для очистки при startGame
 function _anim(fn,ms){const id=setTimeout(()=>{_animTimers=_animTimers.filter(x=>x!==id);fn();},ms);_animTimers.push(id);return id;}
 function resetMechanics(){crystalReset();chainReset();streakReset();}
@@ -3444,12 +3773,24 @@ function showScreen(id){
   // Skins screen: transparent when showing themes tab so canvas is visible
   const ss = document.getElementById('skins-screen');
   if(ss && id==='skins-screen'){
-    // Check current active tab
     const themesActive = document.getElementById('sktab-body-themes') && 
       !document.getElementById('sktab-body-themes').classList.contains('hidden');
     ss.style.background = themesActive ? 'transparent' : '';
   } else if(ss && id!=='skins-screen'){
     ss.style.background = '';
+  }
+  // Ad banner: only on menu, game, board
+  const banner = document.getElementById('ad-banner');
+  if(banner){
+    const adsAllowed = ['game','board'];
+    if(adsAllowed.includes(id)){
+      banner.style.display='flex';
+      document.getElementById('game')?.classList.add('ads-active');
+      if(!banner.dataset.loaded) initSmartBanner();
+    } else {
+      banner.style.display='none';
+      document.getElementById('game')?.classList.remove('ads-active');
+    }
   }
 }
 function goBack(){
@@ -3628,27 +3969,27 @@ const SKINS = [
     effect:'glow' },
   { id:'pastel',  name:'Пастель',   free:false, icon:'🌸',
     desc:'Нежные пастельные тона',
-    colors:['#FFB3C1','#FFD6A5','#FDFFB6','#CAFFBF','#9BF6FF','#A0C4FF','#BDB2FF','#FFC6FF','#B5EAD7','#E2F0CB'],
+    colors:['#FF85A1','#FFB347','#FFE066','#7BEA80','#5BC8E8','#7BA7F5','#C97BF5','#F57BE8','#5BE8C8','#B5E87B'],
     effect:'soft' },
   { id:'dark',    name:'Тёмный',    free:false, icon:'🌑',
     desc:'Тёмные глубокие оттенки',
-    colors:['#7B0000','#7B3D00','#7B6D00','#004D00','#004D4D','#003D7B','#4D007B','#7B0044','#005533','#3D5500'],
+    colors:['#C0392B','#E67E22','#C0A000','#1A7A2E','#1A6B7A','#1A3A8C','#6B1A8C','#8C1A5A','#1A6B4A','#3D5500'],
     effect:'dark' },
   { id:'ocean',   name:'Океан',     free:false, icon:'🌊',
     desc:'Оттенки глубокого моря',
-    colors:['#03045E','#023E8A','#0077B6','#0096C7','#00B4D8','#48CAE4','#90E0EF','#ADE8F4','#CAF0F8','#023E8A'],
+    colors:['#0077B6','#0096C7','#00B4D8','#48CAE4','#90E0EF','#0077B6','#023E8A','#48CAE4','#00B4D8','#90E0EF'],
     effect:'wave' },
   { id:'fire',    name:'Огонь',     free:false, icon:'🔥',
     desc:'Раскалённые огненные блоки',
-    colors:['#D00000','#E85D04','#F48C06','#FAA307','#FFBA08','#DC2F02','#9D0208','#6A040F','#370617','#F3722C'],
+    colors:['#FF4500','#FF6B00','#FF8C00','#FFA500','#FFD000','#FF2200','#FF6B00','#FF4500','#FF8C00','#FFAE00'],
     effect:'fire' },
   { id:'gold',    name:'Золото',    free:false, icon:'👑',
     desc:'Роскошные золотые оттенки',
-    colors:['#FFD700','#FFA500','#FF8C00','#DAA520','#B8860B','#FFD700','#FFEAA7','#F9CA24','#F0932B','#EE5A24'],
+    colors:['#FFD700','#FFC107','#FFAB00','#FF9500','#FFA000','#FFD700','#FFCA28','#FFB300','#FF9800','#FFCC02'],
     effect:'shine' },
   { id:'galaxy',  name:'Галактика', free:false, icon:'🌌',
     desc:'Космические блоки со звёздами',
-    colors:['#667eea','#764ba2','#f093fb','#a8edea','#fed6e3','#96e6a1','#d299c2','#ffecd2','#a1c4fd','#fddb92'],
+    colors:['#7C3AED','#6D28D9','#A855F7','#C084FC','#4F46E5','#818CF8','#38BDF8','#7C3AED','#A855F7','#6D28D9'],
     effect:'galaxy' },
 ];
 
@@ -3656,17 +3997,41 @@ let currentSkin = safeGet('bfm_skin','default');
 let currentTheme = safeGet('bfm_bg_theme','default');
 
 // ─── БАНК + СПИН разблокируются на уровне 7 БП
-const BANK_SPIN_LVL = 7;
+const BANK_SPIN_LVL = 6;
 
 function isBankSpinUnlocked(){
   return bpGetLevel() >= BANK_SPIN_LVL || safeGet('bfm_bank_spin','')==='1';
 }
 
 function isBgThemeUnlocked(id){
-  return true; // TEST MODE — все темы разблокированы
+  if(!id || id==='default') return true;
+  // Темы, не требующие BP — всегда доступны
+  const FREE_THEMES = ['cyberpunk','hell','ice','nature','sakura','retro'];
+  if(FREE_THEMES.includes(id)) return true;
+  // BP-темы: проверяем localStorage (открыто через кейс) ИЛИ BP-уровень
+  if(safeGet('bfm_bg_theme_'+id,'')==='1') return true;
+  // Автоматически разблокируем по BP уровню
+  const BP_THEME_LVL = {cosmos:5, ocean_bg:9, sunset:13}; // уровни кейсов тем
+  const myLvl = bpGetLevel();
+  if(BP_THEME_LVL[id] && myLvl >= BP_THEME_LVL[id]){
+    safeSet('bfm_bg_theme_'+id,'1'); // сохраняем чтобы не проверять каждый раз
+    return true;
+  }
+  return false;
 }
 
 /* applyBgTheme defined below */
+
+/* ══ SPIN DAILY LIMIT ══ */
+const SPIN_DAILY_LIMIT = 5;
+function _getSpinDateKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function getSpinUsesToday(){
+  const today=_getSpinDateKey();
+  if(safeGet('bfm_spin_date','')!==today){ safeSet('bfm_spin_date',today); safeSet('bfm_spin_uses','0'); return 0; }
+  return parseInt(safeGet('bfm_spin_uses','0'))||0;
+}
+function addSpinUse(){ safeSet('bfm_spin_uses', String(getSpinUsesToday()+1)); }
+function getSpinLeft(){ return Math.max(0, SPIN_DAILY_LIMIT - getSpinUsesToday()); }
 
 function updateRotBtn(){
   const btn=document.getElementById('btn-rot');
@@ -3674,13 +4039,27 @@ function updateRotBtn(){
   const unlocked = isBankSpinUnlocked();
   if(!unlocked){
     btn.className='bp-locked';
-    btn.innerHTML='🔒 СПИН <span style="font-size:9px;opacity:.7">БП '+BANK_SPIN_LVL+'</span>';
+    btn.innerHTML='🔒 СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.7;display:block">БП '+BANK_SPIN_LVL+'</span>';
     btn.onclick=()=>{ vibrate('go'); tg?.showPopup?.({title:'🔒 СПИН заблокирован',message:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне '+BANK_SPIN_LVL+'!',buttons:[{id:'ok',type:'ok'}]}); };
   } else {
-    btn.innerHTML='↻ СПИН';
+    const left=getSpinLeft();
+    btn.innerHTML='↻ СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.75;display:block">'+(left>0?left+'/'+SPIN_DAILY_LIMIT+' ост.':'Завтра 🌙')+'</span>';
     btn.onclick=rotHeld;
-    // состояние disabled управляется отдельно через renderHold
+    // disabled state managed by renderHold (no held piece) OR no spins left
   }
+}
+
+function renderHold(){
+  const holdEl=document.getElementById('hold');
+  renderPieceInto(document.getElementById('hold-inner'),held,BANK_W-20,false);
+  let hc=held?'filled':'';
+  if(sel==='h') hc+=' selected';
+  else if(sel>=0&&sel<3&&pieces[sel]) hc+=' piece-selected';
+  holdEl.className=hc.trim();
+  // Disable spin if no piece held OR spins exhausted
+  const noSpins = isBankSpinUnlocked() && getSpinLeft()<=0;
+  document.getElementById('btn-rot').className=(held&&!noSpins)?'':'disabled';
+  updateRotBtn(); // refresh spin counter display
 }
 
 function updateBankLock(){
@@ -3708,14 +4087,11 @@ function getSkinColors() {
 }
 
 function isSkinUnlocked(skinId) {
-  return true; // TEST MODE — все скины разблокированы
-  /*
   if(bpIsSkinUnlocked && bpIsSkinUnlocked(skinId)) return true;
   const s = SKINS.find(s=>s.id===skinId);
   if(!s) return false;
   if(s.free) return true;
   return safeGet('bfm_skin_'+skinId,'')==='1';
-  */
 }
 
 function showSkins() {
@@ -3812,7 +4188,7 @@ function selectSkin(id) {
 }
 
 function applyBgTheme(id){
-  const ALL_THEMES=['cosmos','cyberpunk','hell','ice','retro','nature','sakura'];
+  const ALL_THEMES=['cosmos','cyberpunk','hell','ice','retro','nature','sakura','ocean_bg','sunset'];
   document.body.classList.remove(...ALL_THEMES.map(t=>'theme-'+t));
   if(ALL_THEMES.includes(id)) document.body.classList.add('theme-'+id);
   currentTheme = id||'default';
@@ -3831,6 +4207,8 @@ function startThemeAnim(id){
   else if(id==='nature') animNature();
   else if(id==='sakura') animSakura();
   else if(id==='retro')  animRetro();
+  else if(id==='ocean_bg') animOceanBg();
+  else if(id==='sunset') animSunset();
 }
 
 /* makeThemeCanvas defined below */
@@ -4265,6 +4643,208 @@ function animRetro(){
   requestAnimationFrame(draw);
 }
 
+
+function animOceanBg(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+  // Pre-draw static background: deep ocean gradient + moon reflection
+  const bg=document.createElement('canvas');bg.width=W;bg.height=H;
+  const bCtx=bg.getContext('2d');
+  const grad=bCtx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(0,10,40,.0)');
+  grad.addColorStop(0.4,'rgba(0,30,80,.06)');
+  grad.addColorStop(1,'rgba(0,60,120,.12)');
+  bCtx.fillStyle=grad;bCtx.fillRect(0,0,W,H);
+  // Moon glow on water surface
+  const mg=bCtx.createRadialGradient(W*.5,H*.15,0,W*.5,H*.15,W*.3);
+  mg.addColorStop(0,'rgba(150,200,255,.12)');mg.addColorStop(1,'transparent');
+  bCtx.fillStyle=mg;bCtx.fillRect(0,0,W,H);
+
+  // Wave layers: deep, mid, surface
+  const waves=[
+    {y:H*.65,amp:18,freq:.012,speed:.4,  col:'rgba(0,80,180,.12)'},
+    {y:H*.72,amp:14,freq:.018,speed:.65, col:'rgba(0,100,200,.10)'},
+    {y:H*.80,amp:10,freq:.025,speed:.9,  col:'rgba(0,140,230,.13)'},
+    {y:H*.88,amp:7, freq:.035,speed:1.3, col:'rgba(0,180,255,.10)'},
+  ];
+  // Bubbles
+  const bubbles=Array.from({length:22},()=>({
+    x:Math.random()*W, y:H*.5+Math.random()*H*.5,
+    r:1+Math.random()*3, speed:.3+Math.random()*.8,
+    phase:Math.random()*Math.PI*2
+  }));
+  let t=0,lastFrame=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c)return;
+    if(ts-lastFrame<40){requestAnimationFrame(draw);return;}
+    lastFrame=ts;t+=.025;
+    ctx.clearRect(0,0,W,H);
+    ctx.drawImage(bg,0,0);
+    // Moonlight shimmer on water
+    const shimX=W*.5+Math.sin(t*.3)*W*.08;
+    const shim=ctx.createLinearGradient(shimX-30,H*.3,shimX+30,H*.9);
+    shim.addColorStop(0,'rgba(150,210,255,.0)');
+    shim.addColorStop(0.5,'rgba(150,210,255,.06)');
+    shim.addColorStop(1,'rgba(150,210,255,.0)');
+    ctx.fillStyle=shim;ctx.fillRect(0,0,W,H);
+    // Waves
+    waves.forEach(w=>{
+      ctx.beginPath();ctx.moveTo(0,H);
+      for(let x=0;x<=W;x+=4){
+        const y=w.y+Math.sin(x*w.freq+t*w.speed)*w.amp+Math.sin(x*w.freq*.7+t*w.speed*.8)*w.amp*.4;
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+      ctx.fillStyle=w.col;ctx.fill();
+    });
+    // Bubbles
+    bubbles.forEach(b=>{
+      b.y-=b.speed;b.x+=Math.sin(b.phase+t)*0.5;
+      if(b.y<H*.4){b.y=H*.9+Math.random()*H*.1;b.x=Math.random()*W;}
+      const a=Math.max(0,(b.y-H*.4)/(H*.5))*.5;
+      ctx.globalAlpha=a;ctx.strokeStyle='rgba(150,220,255,.8)';ctx.lineWidth=.8;
+      ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.stroke();
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function animSunset(){
+  const c=makeThemeCanvas(),ctx=c.getContext('2d');
+  const W=c.width,H=c.height;
+
+  // Горизонт — Y позиция солнца (60% от верха экрана)
+  const HY = H * 0.62;
+
+  // Статичный фон: небо + горизонт
+  const bgC=document.createElement('canvas'); bgC.width=W; bgC.height=H;
+  const bx=bgC.getContext('2d');
+
+  // Небо: от тёмно-фиолетового вверху к оранжево-красному у горизонта
+  const sky=bx.createLinearGradient(0,0,0,HY);
+  sky.addColorStop(0,   'rgba(15,5,40,1)');
+  sky.addColorStop(0.35,'rgba(60,10,80,.95)');
+  sky.addColorStop(0.65,'rgba(180,30,40,.9)');
+  sky.addColorStop(0.85,'rgba(240,80,0,.85)');
+  sky.addColorStop(1,   'rgba(255,160,20,.8)');
+  bx.fillStyle=sky; bx.fillRect(0,0,W,HY);
+
+  // "Земля" / море внизу — тёмно-фиолетовое с отражением
+  const land=bx.createLinearGradient(0,HY,0,H);
+  land.addColorStop(0,  'rgba(80,20,0,.95)');
+  land.addColorStop(0.3,'rgba(30,5,20,.97)');
+  land.addColorStop(1,  'rgba(10,2,18,1)');
+  bx.fillStyle=land; bx.fillRect(0,HY,W,H-HY);
+
+  // Солнечный диск на горизонте
+  const SX=W*0.5, SY=HY;
+  const sunR=Math.min(W,H)*0.06;
+  const sunGrd=bx.createRadialGradient(SX,SY,0,SX,SY,sunR*2.2);
+  sunGrd.addColorStop(0,   'rgba(255,250,200,1)');
+  sunGrd.addColorStop(0.25,'rgba(255,200,50,1)');
+  sunGrd.addColorStop(0.6, 'rgba(255,100,0,.7)');
+  sunGrd.addColorStop(1,   'transparent');
+  bx.fillStyle=sunGrd; bx.fillRect(0,0,W,H);
+
+  // Горизонтальная линия — чёткий горизонт
+  bx.strokeStyle='rgba(255,180,60,.4)';
+  bx.lineWidth=1.5;
+  bx.beginPath(); bx.moveTo(0,HY); bx.lineTo(W,HY); bx.stroke();
+
+  // Засветка горизонта
+  const halo=bx.createRadialGradient(SX,HY,0,SX,HY,W*0.45);
+  halo.addColorStop(0,  'rgba(255,150,0,.25)');
+  halo.addColorStop(0.4,'rgba(255,80,0,.1)');
+  halo.addColorStop(1,  'transparent');
+  bx.fillStyle=halo; bx.fillRect(0,H*0.3,W,H*0.6);
+
+  // Отражение в воде (вертикальные полосы)
+  const refH=H-HY;
+  const refGrd=bx.createLinearGradient(SX-sunR,HY,SX+sunR,HY);
+  refGrd.addColorStop(0,'transparent');
+  refGrd.addColorStop(0.5,'rgba(255,160,20,.18)');
+  refGrd.addColorStop(1,'transparent');
+  bx.fillStyle=refGrd; bx.fillRect(SX-sunR*3,HY,sunR*6,refH*0.6);
+
+  // Облака: несколько рядов
+  const cloudRows=[
+    {y:HY*0.22, count:3, col:'rgba(100,20,60,.7)',  wF:0.28, hF:0.04},
+    {y:HY*0.44, count:4, col:'rgba(180,50,20,.65)', wF:0.22, hF:0.035},
+    {y:HY*0.66, count:5, col:'rgba(220,90,10,.55)', wF:0.18, hF:0.03},
+  ];
+  const clouds=[];
+  cloudRows.forEach(row=>{
+    for(let i=0;i<row.count;i++){
+      clouds.push({
+        x:Math.random()*W, y:row.y,
+        w:W*row.wF*(0.6+Math.random()*.8),
+        h:H*row.hF*(0.6+Math.random()*.8),
+        speed:(0.04+Math.random()*0.08),
+        col:row.col,
+        phase:Math.random()*Math.PI*2
+      });
+    }
+  });
+
+  let t=0, lastTs=0;
+  function draw(ts){
+    if(document.getElementById('theme-canvas')!==c) return;
+    if(ts-lastTs<33){requestAnimationFrame(draw);return;}
+    lastTs=ts; t+=0.012;
+
+    ctx.clearRect(0,0,W,H);
+    ctx.drawImage(bgC,0,0);
+
+    // Пульсирующий солнечный блик
+    const pulse=0.08+Math.sin(t*0.7)*0.04;
+    const sunPls=ctx.createRadialGradient(SX,SY,0,SX,SY,sunR*1.8);
+    sunPls.addColorStop(0,  `rgba(255,240,160,${0.22+Math.sin(t)*0.06})`);
+    sunPls.addColorStop(0.5,`rgba(255,120,0,${pulse})`);
+    sunPls.addColorStop(1,  'transparent');
+    ctx.fillStyle=sunPls; ctx.fillRect(SX-sunR*2,SY-sunR*2,sunR*4,sunR*4);
+
+    // Облака
+    clouds.forEach(cl=>{
+      cl.x+=cl.speed; if(cl.x>W+cl.w) cl.x=-cl.w;
+      const a=0.5+Math.sin(t*0.3+cl.phase)*0.15;
+      ctx.globalAlpha=a;
+      ctx.fillStyle=cl.col;
+      ctx.beginPath();
+      ctx.ellipse(cl.x,cl.y,cl.w,cl.h,0,0,Math.PI*2);
+      ctx.fill();
+    });
+
+    // Мерцающие звёзды в верхней части
+    ctx.globalAlpha=1;
+    const starCount=20;
+    for(let i=0;i<starCount;i++){
+      const sx=(i*W/starCount+W*0.05)%W;
+      const sy=(i*H*0.004+H*0.02+(i*7)%100/100*H*0.28);
+      if(sy>HY*0.5) continue;
+      const sa=Math.max(0,Math.sin(t*0.8+i*1.3))*(0.2+i%3*0.1);
+      if(sa<0.03) continue;
+      ctx.globalAlpha=sa;
+      ctx.fillStyle='rgba(255,220,180,1)';
+      ctx.beginPath(); ctx.arc(sx,sy,1,0,Math.PI*2); ctx.fill();
+    }
+
+    // Рябь на воде
+    ctx.globalAlpha=0.06;
+    for(let ri=0;ri<4;ri++){
+      const ry=HY+20+ri*20+Math.sin(t*0.5+ri)*4;
+      const ra=0.5+ri*0.1;
+      ctx.strokeStyle=`rgba(255,140,0,${0.35-ri*0.07})`;
+      ctx.lineWidth=1.5-ri*0.3;
+      ctx.beginPath(); ctx.moveTo(SX-60-ri*10,ry); ctx.lineTo(SX+60+ri*10,ry); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
 function makeThemeCanvas(){
   const c=document.createElement('canvas');
   c.id='theme-canvas';
@@ -4285,47 +4865,62 @@ function selectTheme(id){
 function renderThemesInSkins(){ renderThemeGrid(); }
 function renderThemeGrid(){
   const THEMES=[
-    {id:'default',   emoji:'🎮', name:'Дефолт',   desc:'Чистый фон',
+    {id:'default',   emoji:'🎮', name:'Дефолт',   desc:'Чистый фон',              bp:false,
      bg:'background:linear-gradient(135deg,#1a1640,#0d1c3a);',
      border:'rgba(100,100,200,.3)', glow:''},
-    {id:'cosmos',    emoji:'🌌', name:'Космос',   desc:'Звёзды и туманности',
-     bg:'background:radial-gradient(ellipse at 30% 20%,rgba(80,0,180,.5) 0%,#04020f 70%);',
-     border:'rgba(120,60,255,.5)', glow:'0 0 20px rgba(100,0,255,.3)'},
-    {id:'cyberpunk', emoji:'💻', name:'Матрица',  desc:'Цифровой дождь 0101',
+    {id:'cyberpunk', emoji:'💻', name:'Матрица',  desc:'Цифровой дождь 0101',     bp:false,
      bg:'background:linear-gradient(135deg,rgba(0,255,65,.12) 0%,rgba(0,100,30,.2) 50%,#000 100%);',
      border:'rgba(0,255,65,.45)', glow:'0 0 20px rgba(0,255,65,.3)'},
-    {id:'hell',      emoji:'🔥', name:'Ад',       desc:'Лава и огонь',
+    {id:'hell',      emoji:'🔥', name:'Ад',       desc:'Лава и огонь',             bp:false,
      bg:'background:radial-gradient(ellipse at 50% 100%,rgba(255,60,0,.4) 0%,#0f0000 65%);',
      border:'rgba(255,80,0,.5)', glow:'0 0 20px rgba(255,60,0,.3)'},
-    {id:'ice',       emoji:'❄️', name:'Лёд',      desc:'Снеговик и снежинки',
+    {id:'ice',       emoji:'❄️', name:'Лёд',      desc:'Снежинки и иней',          bp:false,
      bg:'background:radial-gradient(ellipse at 50% 0%,rgba(0,180,255,.25) 0%,#000d18 70%);',
      border:'rgba(0,200,255,.4)', glow:'0 0 18px rgba(0,200,255,.25)'},
-    {id:'retro',     emoji:'🪖', name:'Ретро',    desc:'Пиксельные танки',
+    {id:'retro',     emoji:'🪖', name:'Ретро',    desc:'Пиксельные танки',         bp:false,
      bg:'background:linear-gradient(135deg,rgba(0,255,80,.1) 0%,#000 100%);',
      border:'rgba(0,255,80,.38)', glow:'0 0 16px rgba(0,255,80,.2)'},
-    {id:'nature',    emoji:'🌿', name:'Природа',  desc:'Деревья и листья',
+    {id:'nature',    emoji:'🌿', name:'Природа',  desc:'Деревья и листья',         bp:false,
      bg:'background:radial-gradient(ellipse at 50% 100%,rgba(20,120,10,.4) 0%,#010f02 65%);',
      border:'rgba(60,200,40,.42)', glow:'0 0 18px rgba(40,180,20,.22)'},
-    {id:'sakura',    emoji:'🌸', name:'Сакура',   desc:'Цветение и лепестки',
+    {id:'sakura',    emoji:'🌸', name:'Сакура',   desc:'Цветение и лепестки',      bp:false,
      bg:'background:radial-gradient(ellipse at 50% 0%,rgba(220,80,160,.3) 0%,#0f0008 65%);',
      border:'rgba(255,100,180,.48)', glow:'0 0 20px rgba(255,80,160,.25)'},
+    {id:'cosmos',    emoji:'🌌', name:'Космос',   desc:'Звёзды и туманности',      bp:true, bpLvl:8,
+     bg:'background:radial-gradient(ellipse at 30% 20%,rgba(80,0,180,.5) 0%,#04020f 70%);',
+     border:'rgba(120,60,255,.5)', glow:'0 0 20px rgba(100,0,255,.3)'},
+    {id:'ocean_bg',  emoji:'🌊', name:'Океан',    desc:'Волны и глубина',          bp:true, bpLvl:10,
+     bg:'background:radial-gradient(ellipse at 50% 100%,rgba(0,100,220,.4) 0%,#000d22 65%);',
+     border:'rgba(0,150,255,.45)', glow:'0 0 20px rgba(0,120,255,.3)'},
+    {id:'sunset',    emoji:'🌅', name:'Закат',    desc:'Золотые облака',           bp:true, bpLvl:12,
+     bg:'background:radial-gradient(ellipse at 50% 100%,rgba(255,120,0,.45) 0%,rgba(100,0,80,.5) 50%,#0a0015 100%);',
+     border:'rgba(255,140,0,.5)', glow:'0 0 20px rgba(255,100,0,.3)'},
   ];
   const grid=document.getElementById('sk-theme-grid');
   if(!grid)return;
   const active=currentTheme||'default';
   grid.innerHTML=THEMES.map(t=>{
     const isAct=active===t.id||(t.id==='default'&&(!active||active==='default'));
-    return `<div class="sk-theme-card${isAct?' active':''}"
-      style="${t.bg}border-color:${t.border};${isAct?'box-shadow:'+t.glow+',inset 0 0 30px rgba(255,255,255,.03);':''}"
+    const unlocked=isBgThemeUnlocked(t.id);
+    const lockBadge=(!unlocked)?`<span style="position:absolute;top:4px;right:6px;font-size:9px;font-weight:900;color:rgba(255,200,100,.9)">🔒 БП${t.bpLvl}</span>`:'';
+    const activeBadge=isAct?'<span class="th-active-badge">✅ Активна</span>':'';
+    return `<div class="sk-theme-card${isAct?' active':''}${!unlocked?' locked':''}"
+      style="${t.bg}border-color:${t.border};${isAct?'box-shadow:'+t.glow+',inset 0 0 30px rgba(255,255,255,.03);':''}${!unlocked?'opacity:.65;':''}position:relative;"
       onclick="selectThemeCard('${t.id}')">
+      ${lockBadge}
       <span class="th-emoji">${t.emoji}</span>
       <span class="th-name">${t.name}</span>
       <span class="th-desc">${t.desc}</span>
-      ${isAct?'<span class="th-active-badge">✅ Активна</span>':''}
+      ${activeBadge}
     </div>`;
   }).join('');
 }
 function selectThemeCard(id){
+  if(!isBgThemeUnlocked(id)){
+    vibrate('go');
+    tg?.showPopup?.({title:'🔒 Тема заблокирована',message:'Разблокируй эту тему в Боевом Пропуске!',buttons:[{id:'ok',type:'ok'}]});
+    return;
+  }
   const themeId = id==='default' ? '' : id;
   applyBgTheme(themeId);
   // Show canvas on skins-screen when theme is active
@@ -4514,22 +5109,150 @@ function renderAchievements() {
    ══════════════════════════════════════════════════════════════════════ */
 
 // ─── Конфигурация уровней (прогрессивные требования XP)
+/* ══════════════════════════════════════════
+ * CASES — лут-таблицы кейсов BP
+ * weight — относительный вес (сумма любая)
+ * ══════════════════════════════════════════ */
+const CASES = {
+  'starter': {
+    name:'Кейс Новичка', ico:'📦', color:'#60a5fa',
+    chest:{lid:'#4f94ea',main:'#2563eb',band:'rgba(0,0,0,.3)',glow:'rgba(96,165,250,.4)',btnA:'#3b82f6',btnB:'#1d4ed8',btnText:'#fff',shadow:'rgba(59,130,246,.5)'},
+    items:[
+      { weight:40, type:'boost',    id:'score2x',     name:'×2 Очки',     ico:'⚡', desc:'Двойные очки — 1 игра',        rarity:'common' },
+      { weight:30, type:'boost',    id:'combo_shield',name:'Щит Комбо',    ico:'🛡️', desc:'Комбо не сбрасывается 1 раз',  rarity:'common' },
+      { weight:20, type:'skin',     id:'neon',        name:'Скин Неон',    ico:'🌈', desc:'Разблокирован навсегда',        rarity:'rare'   },
+      { weight:10, type:'skin',     id:'pastel',      name:'Скин Пастель', ico:'🎨', desc:'Разблокирован навсегда',        rarity:'rare'   },
+    ]
+  },
+  'themes': {
+    name:'Кейс Тем', ico:'🌌', color:'#a78bfa',
+    chest:{lid:'#9c6ef5',main:'#7c3aed',band:'rgba(0,0,0,.3)',glow:'rgba(167,139,250,.4)',btnA:'#a78bfa',btnB:'#7c3aed',btnText:'#fff',shadow:'rgba(124,58,237,.5)'},
+    items:[
+      { weight:35, type:'bg_theme', id:'cyberpunk',  name:'Тема: Киберпанк',ico:'🔮', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:35, type:'bg_theme', id:'hell',       name:'Тема: Ад',       ico:'🔥', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:20, type:'bg_theme', id:'cosmos',     name:'Тема: Космос',   ico:'🌌', desc:'Фон игры — навсегда',  rarity:'epic'   },
+      { weight:10, type:'boost',    id:'xp2x',       name:'×2 XP',         ico:'💎', desc:'Двойной XP — 3 игры',  rarity:'common' },
+    ]
+  },
+  'rare': {
+    name:'Кейс Редкий', ico:'🎁', color:'#f97316',
+    chest:{lid:'#ea6006',main:'#c2410c',band:'rgba(0,0,0,.3)',glow:'rgba(249,115,22,.4)',btnA:'#f97316',btnB:'#c2410c',btnText:'#fff',shadow:'rgba(249,115,22,.5)'},
+    items:[
+      { weight:40, type:'skin',     id:'dark',       name:'Скин Тёмный',   ico:'🌑', desc:'Разблокирован навсегда', rarity:'rare'   },
+      { weight:35, type:'skin',     id:'ocean',      name:'Скин Океан',    ico:'🐚', desc:'Разблокирован навсегда', rarity:'epic'   },
+      { weight:25, type:'boost',    id:'score3x',    name:'×3 Очки',       ico:'🔥', desc:'Тройные очки — 1 игра', rarity:'common' },
+    ]
+  },
+  'themes2': {
+    name:'Кейс Тем Deluxe', ico:'🌸', color:'#f472b6',
+    chest:{lid:'#ec4899',main:'#be185d',band:'rgba(0,0,0,.3)',glow:'rgba(244,114,182,.4)',btnA:'#f472b6',btnB:'#be185d',btnText:'#fff',shadow:'rgba(236,72,153,.5)'},
+    items:[
+      { weight:35, type:'bg_theme', id:'ice',        name:'Тема: Лёд',     ico:'❄️', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:30, type:'bg_theme', id:'sakura',     name:'Тема: Сакура',  ico:'🌸', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:25, type:'bg_theme', id:'ocean_bg',   name:'Тема: Океан',   ico:'🌊', desc:'Фон игры — навсегда',  rarity:'epic'   },
+      { weight:10, type:'boost',    id:'xp2x',       name:'×2 XP',         ico:'💎', desc:'Двойной XP — 3 игры',  rarity:'common' },
+    ]
+  },
+  'mid': {
+    name:'Кейс Охотника', ico:'🗡️', color:'#fb923c',
+    chest:{lid:'#cd6a20',main:'#92400e',band:'rgba(0,0,0,.3)',glow:'rgba(180,83,9,.45)',btnA:'#d97706',btnB:'#92400e',btnText:'#fff',shadow:'rgba(180,83,9,.5)'},
+    items:[
+      { weight:35, type:'skin',     id:'gold',       name:'Скин Золото',   ico:'💛', desc:'Роскошные золотые блоки', rarity:'epic'   },
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',    ico:'🔥', desc:'Эксклюзив — навсегда',    rarity:'epic'   },
+      { weight:20, type:'boost',    id:'score3x',    name:'×3 Очки',       ico:'🔥', desc:'Тройные очки — 1 игра',   rarity:'common' },
+      { weight:15, type:'boost',    id:'xp2x',       name:'×2 XP',         ico:'💎', desc:'Двойной XP — 3 игры',     rarity:'common' },
+    ]
+  },
+  'themes3': {
+    name:'Кейс Горизонта', ico:'🌅', color:'#fbbf24',
+    chest:{lid:'#f59e0b',main:'#d97706',band:'rgba(0,0,0,.3)',glow:'rgba(245,158,11,.4)',btnA:'#fbbf24',btnB:'#d97706',btnText:'#1a0500',shadow:'rgba(245,158,11,.5)'},
+    items:[
+      { weight:40, type:'bg_theme', id:'sunset',     name:'Тема: Закат',   ico:'🌅', desc:'Фон игры — навсегда',  rarity:'epic'   },
+      { weight:35, type:'bg_theme', id:'nature',     name:'Тема: Природа', ico:'🌿', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:25, type:'skin',     id:'ocean',      name:'Скин Океан',    ico:'🐚', desc:'Разблокирован навсегда',rarity:'rare'   },
+    ]
+  },
+  'legend': {
+    name:'Кейс Легенды', ico:'🏆', color:'#fbbf24',
+    chest:{lid:'#FFD700',main:'#B8860B',band:'rgba(255,200,0,.3)',glow:'rgba(255,215,0,.5)',btnA:'#FFD700',btnB:'#B8860B',btnText:'#1a0500',shadow:'rgba(255,215,0,.6)'},
+    items:[
+      { weight:35, type:'bg_theme', id:'sunset',     name:'Тема: Закат',     ico:'🌅', desc:'Фон игры — навсегда',       rarity:'epic'   },
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',      ico:'🔥', desc:'Эксклюзив — навсегда',       rarity:'epic'   },
+      { weight:25, type:'skin',     id:'gold',       name:'Скин Золото',     ico:'💛', desc:'Роскошные блоки навсегда',   rarity:'epic'   },
+      { weight:10, type:'skin',     id:'galaxy',     name:'Скин Галактика 🏆',ico:'🌌',desc:'Легендарный · навсегда',     rarity:'legend' },
+    ]
+  },
+  'season': {
+    name:'Кейс Сезона', ico:'🌟', color:'#a78bfa',
+    chest:{lid:'#8b5cf6',main:'#6d28d9',band:'rgba(139,92,246,.3)',glow:'rgba(139,92,246,.5)',btnA:'#a78bfa',btnB:'#6d28d9',btnText:'#fff',shadow:'rgba(139,92,246,.5)'},
+    items:[
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',      ico:'🔥', desc:'Эксклюзив Сезона 1',         rarity:'epic'   },
+      { weight:25, type:'skin',     id:'gold',       name:'Скин Золото',     ico:'💛', desc:'Роскошные блоки навсегда',   rarity:'epic'   },
+      { weight:25, type:'skin',     id:'ocean',      name:'Скин Океан',      ico:'🐚', desc:'Разблокирован навсегда',      rarity:'epic'   },
+      { weight:20, type:'skin',     id:'galaxy',     name:'Скин Галактика 🏆',ico:'🌌',desc:'Легендарный · навсегда',     rarity:'legend' },
+    ]
+  },
+};
+
+/* Взвешенный рандом */
+function rollCase(caseId){
+  const c = CASES[caseId];
+  if(!c) return null;
+  const total = c.items.reduce((s,i)=>s+i.weight,0);
+  let rnd = Math.random()*total;
+  for(const item of c.items){ rnd-=item.weight; if(rnd<=0) return item; }
+  return c.items[c.items.length-1];
+}
+
+/* ══════════════════════════════════════════════════════════════
+ * BP_LEVELS — 20 уровней, итого 445 000 XP
+ *
+ * Лвл |  xpNeeded | Накопительно | Тип
+ *  1  |     3 000 |        3 000 | boost score2x ×1
+ *  2  |     5 000 |        8 000 | boost combo_shield ×1
+ *  3  |     8 000 |       16 000 | case starter
+ *  4  |    11 000 |       27 000 | boost xp2x ×2
+ *  5  |    14 000 |       41 000 | case themes
+ *  6  |    18 000 |       59 000 | feature bank_spin
+ *  7  |    22 000 |       81 000 | case rare
+ *  8  |    26 000 |      107 000 | boost score2x ×2
+ *  9  |    31 000 |      138 000 | case themes2
+ * 10  |    36 000 |      174 000 | boost score3x ×2
+ * 11  |    41 000 |      215 000 | case mid (Охотника)
+ * 12  |    46 000 |      261 000 | boost xp2x ×3
+ * 13  |    38 000 |      299 000 | case themes3 (Горизонта)
+ * 14  |    32 000 |      331 000 | boost combo_shield ×3
+ * 15  |    28 000 |      359 000 | boost score3x ×3  ← 15-20: подряд
+ * 16  |    25 000 |      384 000 | case legend
+ * 17  |    22 000 |      406 000 | boost score2x ×4
+ * 18  |    19 000 |      425 000 | case season
+ * 19  |    12 000 |      437 000 | boost xp2x ×4
+ * 20  |     8 000 |      445 000 | skin galaxy 🏆 (легенда сезона)
+ * ══════════════════════════════════════════════════════════════ */
 const BP_LEVELS = [
-  { lvl:1,  xpNeeded:800,   reward:{type:'boost',   id:'score2x',    name:'×2 Очки',         ico:'⚡', desc:'Двойные очки — 1 игра'},          rewardIco:'⚡' },
-  { lvl:2,  xpNeeded:1500,  reward:{type:'skin',    id:'neon',       name:'Скин Неон',         ico:'🌈', desc:'Разблокирован навсегда'},          rewardIco:'🌈' },
-  { lvl:3,  xpNeeded:2500,  reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо',        ico:'🛡️', desc:'Комбо не сбрасывается 1 раз'},    rewardIco:'🛡️' },
-  { lvl:4,  xpNeeded:4000,  reward:{type:'boost',   id:'xp2x',      name:'×2 XP',             ico:'💎', desc:'Двойной XP — 3 игры'},            rewardIco:'💎' },
-  { lvl:5,  xpNeeded:6000,  reward:{type:'skin',    id:'pastel',    name:'Скин Пастель',       ico:'🎨', desc:'Разблокирован навсегда'},          rewardIco:'🎨' },
-  { lvl:6,  xpNeeded:9000,  reward:{type:'boost',   id:'score3x',   name:'×3 Очки',           ico:'🔥', desc:'Тройные очки — 1 игра'},          rewardIco:'🔥' },
-  { lvl:7,  xpNeeded:13000, reward:{type:'feature', id:'bank_spin',  name:'БАНК + СПИН',       ico:'🔄', desc:'Сохраняй фигуры и вращай — навсегда'}, rewardIco:'🔄' },
-  { lvl:8,  xpNeeded:18000, reward:{type:'bg_theme',id:'cosmos',    name:'Тема: Космос',       ico:'🌌', desc:'Фон игры — навсегда'},            rewardIco:'🌌' },
-  { lvl:9,  xpNeeded:25000, reward:{type:'skin',    id:'dark',      name:'Скин Тёмный',        ico:'🌑', desc:'Разблокирован навсегда'},          rewardIco:'🌑' },
-  { lvl:10, xpNeeded:33000, reward:{type:'bg_theme',id:'ocean_bg',  name:'Тема: Океан',        ico:'🌊', desc:'Фон игры — навсегда'},            rewardIco:'🌊' },
-  { lvl:11, xpNeeded:43000, reward:{type:'skin',    id:'ocean',     name:'Скин Океан',         ico:'🐚', desc:'Разблокирован навсегда'},          rewardIco:'🐚' },
-  { lvl:12, xpNeeded:55000, reward:{type:'bg_theme',id:'sunset',    name:'Тема: Закат',        ico:'🌅', desc:'Фон игры — навсегда'},            rewardIco:'🌅' },
-  { lvl:13, xpNeeded:68000, reward:{type:'boost',   id:'xp2x',      name:'×2 XP',             ico:'💎', desc:'Двойной XP — 3 игры'},            rewardIco:'💎' },
-  { lvl:14, xpNeeded:85000, reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо ×3',     ico:'🛡️', desc:'3 бесплатных щита комбо'},         rewardIco:'🛡️' },
-  { lvl:15, xpNeeded:105000,reward:{type:'skin',    id:'fire',      name:'Скин Огонь 🏆',      ico:'👑', desc:'Эксклюзив Сезона 1 · навсегда'},  rewardIco:'👑' },
+  { lvl:1,  xpNeeded:800,   reward:{type:'boost',   id:'score2x',     name:'×2 Очки',         ico:'⚡', desc:'Двойные очки — 1 игра',                amt:1}, rewardIco:'⚡' },
+  { lvl:2,  xpNeeded:1500,  reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо',        ico:'🛡️', desc:'Комбо не сбрасывается 1 раз',          amt:2}, rewardIco:'🛡️' },
+  { lvl:3,  xpNeeded:2200,  reward:{type:'case',    id:'starter',     name:'Кейс Новичка',     ico:'📦', desc:'Скин или буст — случайно'},              rewardIco:'📦' },
+  { lvl:4,  xpNeeded:4800,  reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×3',         ico:'💎', desc:'Двойной XP — 3 игры',                  amt:3}, rewardIco:'💎' },
+  { lvl:5,  xpNeeded:8800,  reward:{type:'case',    id:'themes',      name:'Кейс Тем',          ico:'🌌', desc:'Редкая тема — случайно'},               rewardIco:'🌌' },
+  { lvl:6,  xpNeeded:11300, reward:{type:'feature', id:'bank_spin',   name:'БАНК + СПИН',       ico:'🔄', desc:'Сохраняй фигуры и вращай — навсегда'}, rewardIco:'🔄' },
+  { lvl:7,  xpNeeded:16800, reward:{type:'case',    id:'rare',        name:'Кейс Редкий',       ico:'🎁', desc:'Редкий скин — случайно'},               rewardIco:'🎁' },
+  { lvl:8,  xpNeeded:21300, reward:{type:'boost',   id:'score2x',     name:'×2 Очки ×3',        ico:'⚡', desc:'Двойные очки — 3 игры',                amt:3}, rewardIco:'⚡' },
+  { lvl:9,  xpNeeded:31500, reward:{type:'case',    id:'themes2',     name:'Кейс Тем Deluxe',   ico:'🌸', desc:'Редкая тема — случайно'},               rewardIco:'🌸' },
+  { lvl:10, xpNeeded:36000, reward:{type:'boost',   id:'score3x',     name:'×3 Очки ×4',        ico:'🔥', desc:'Тройные очки — 4 игры',                amt:4}, rewardIco:'🔥' },
+  { lvl:11, xpNeeded:41000, reward:{type:'case',    id:'mid',         name:'Кейс Охотника',     ico:'🗡️', desc:'Топ скин — случайно'},                 rewardIco:'🗡️' },
+  { lvl:12, xpNeeded:46000, reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×5',          ico:'💎', desc:'Двойной XP — 5 игр',                   amt:5}, rewardIco:'💎' },
+  { lvl:13, xpNeeded:29000, reward:{type:'case',    id:'themes3',     name:'Кейс Горизонта',    ico:'🌅', desc:'Эпик тема — случайно'},                rewardIco:'🌅' },
+  { lvl:14, xpNeeded:27000, reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо ×5',      ico:'🛡️', desc:'5 бесплатных щитов',                   amt:5}, rewardIco:'🛡️' },
+  { lvl:15, xpNeeded:25000, reward:{type:'boost',   id:'score3x',     name:'×3 Очки ×5',        ico:'🔥', desc:'Тройные очки — 5 игр',                 amt:5}, rewardIco:'🔥' },
+  { lvl:16, xpNeeded:30000, reward:{type:'case',    id:'legend',      name:'Кейс Легенды',      ico:'🏆', desc:'Эпик или легенда — случайно'},
+    bonus:{type:'boost', id:'xp2x', amt:5, name:'×2 XP ×5', ico:'💎'},                                                                                rewardIco:'🏆' },
+  { lvl:17, xpNeeded:29000, reward:{type:'boost',   id:'score2x',     name:'×2 Очки ×5',        ico:'⚡', desc:'Двойные очки — 5 игр',                 amt:5}, rewardIco:'⚡' },
+  { lvl:18, xpNeeded:30000, reward:{type:'case',    id:'season',      name:'Кейс Сезона',       ico:'🌟', desc:'Топ скины сезона — случайно'},
+    bonus:{type:'boost', id:'combo_shield', amt:5, name:'Щит Комбо ×5', ico:'🛡️'},                                                                     rewardIco:'🌟' },
+  { lvl:19, xpNeeded:28000, reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×5',          ico:'💎', desc:'Двойной XP — 5 игр',                   amt:5}, rewardIco:'💎' },
+  { lvl:20, xpNeeded:58000, reward:{type:'skin',    id:'galaxy',      name:'Скин Галактика 🏆',  ico:'🌌', desc:'Легендарный эксклюзив Сезона 1 · навсегда'},
+    bonus:{type:'boost', id:'score3x', amt:5, name:'×3 Очки ×5', ico:'🔥'},                                                                             rewardIco:'👑' },
 ];
 
 // XP который надо набрать ДО начала уровня (кумулятивно)
@@ -4689,7 +5412,6 @@ function renderBP(){
   const totalXP = bpGetXP();
   const level = bpGetLevel();
 
-  // Шкала XP ТЕКУЩЕГО уровня (from → to)
   const from = BP_XP_THRESHOLDS[level] || 0;
   const to   = BP_XP_THRESHOLDS[level+1] || from + 1000;
   const fillPct = level >= BP_LEVELS.length ? 100 : Math.min(100, (totalXP-from)/(to-from)*100);
@@ -4706,34 +5428,48 @@ function renderBP(){
     document.getElementById('bp-xp-next-lbl').textContent = '🏆 Всё собрано';
   }
 
-  // Бусты
   renderBPBoosts();
 
-  // Уровни
   const container = document.getElementById('bp-levels');
   container.innerHTML = '';
   BP_LEVELS.forEach((lv,i)=>{
-    const reached = totalXP >= BP_XP_THRESHOLDS[i+1]; // i+1 = порог для разблокировки уровня i
+    const reached = totalXP >= BP_XP_THRESHOLDS[i+1];
     const claimed = bpIsClaimed(lv.lvl);
-    const isCurrent = (level === i) || (!reached && i===0);
+    const isCase  = lv.reward.type === 'case';
+    const caseConf = isCase ? CASES[lv.reward.id] : null;
     const card = document.createElement('div');
-    card.className = 'bp-card' + (claimed?' unlocked':'') + (reached&&!claimed?' current':'');
+    card.className = 'bp-card'
+      + (isCase ? ' case-card' : '')
+      + (claimed ? ' unlocked' : '')
+      + (reached && !claimed ? ' current' : '');
 
-    // XP прогресс для текущего уровня
     let miniTrack = '';
-    if(reached && !claimed){
-      const from = BP_XP_THRESHOLDS[i+1]||0, to = BP_XP_THRESHOLDS[i+2]||(from+1000);
-      const pct = Math.min(100, (totalXP-from)/(to-from)*100);
-      miniTrack = `<div class="bp-mini-track"><div class="bp-mini-fill" style="width:${pct}%"></div></div>`;
+    if(!reached && !claimed){
+      const progressFrom = BP_XP_THRESHOLDS[i]||0;
+      const progressTo   = BP_XP_THRESHOLDS[i+1]||progressFrom+1000;
+      const pct = Math.max(0,Math.min(100,(totalXP-progressFrom)/(progressTo-progressFrom)*100));
+      if(pct>0) miniTrack=`<div class="bp-mini-track"><div class="bp-mini-fill" style="width:${pct}%"></div></div>`;
     }
 
     const xpDesc = claimed ? '✅ Получено' :
-                   reached ? `Доступно к получению` :
+                   reached ? 'Доступно к получению' :
                    `${BP_XP_THRESHOLDS[i+1].toLocaleString()} XP`;
+
+    // Подпись для кейса: шансы
+    let caseLbl = '';
+    if(isCase && caseConf){
+      caseLbl = `<div class="bp-case-lbl">🎲 КЕЙС · ${caseConf.items.length} вариант${caseConf.items.length===4?'а':'ов'}</div>`;
+    }
+    // Бонусная награда (для уровней 16, 18, 20)
+    let bonusLbl = '';
+    if(lv.bonus){
+      bonusLbl = `<div style="font-size:9px;font-weight:900;color:rgba(255,200,80,.85);margin-top:3px;letter-spacing:.3px">+ ${lv.bonus.ico} ${lv.bonus.name} автоматически</div>`;
+    }
+
     const btnHtml = claimed
       ? `<span class="bp-claim-btn claimed">✓</span>`
       : reached
-        ? `<button class="bp-claim-btn" onclick="bpClaim(${lv.lvl})">Забрать</button>`
+        ? `<button class="bp-claim-btn${isCase?' case-btn':''}" onclick="bpClaim(${lv.lvl})">${isCase?'🎲 Открыть':'Забрать'}</button>`
         : '';
 
     card.innerHTML = `
@@ -4742,6 +5478,7 @@ function renderBP(){
         <div class="bp-card-info">
           <div class="bp-card-title">${lv.reward.name}</div>
           <div class="bp-card-xp">${xpDesc}</div>
+          ${caseLbl}${bonusLbl}
         </div>
         <div class="bp-card-right">
           <span class="bp-reward-ico">${lv.rewardIco}</span>
@@ -4792,15 +5529,12 @@ async function bpClaim(lvlNum){
   const lv = BP_LEVELS.find(l=>l.lvl===lvlNum);
   if(!lv) return;
   const totalXP = bpGetXP();
-  // Локальная проверка перед обращением к серверу
   if(totalXP < BP_XP_THRESHOLDS[lvlNum]) return;
   if(bpIsClaimed(lvlNum)) return;
 
-  // Показываем лоадер на кнопке
   const btn = document.querySelector(`.bp-claim-btn[onclick="bpClaim(${lvlNum})"]`);
   if(btn){ btn.textContent='...'; btn.disabled=true; }
 
-  // Если в Telegram — верифицируем через сервер
   if(tg?.initData){
     try{
       const res = await fetch(`${API}/bp/claim`,{
@@ -4810,30 +5544,46 @@ async function bpClaim(lvlNum){
       });
       const data = await res.json();
       if(!data.ok){
-        // Ошибка сервера — восстанавливаем кнопку
-        if(btn){ btn.textContent='Забрать'; btn.disabled=false; }
-        if(data.error==='Already claimed'){
-          // Расхождение: сервер уже знает — синхронизируем локально
-          bpMarkClaimed(lvlNum);
-        }
+        if(btn){ btn.textContent=lv.reward.type==='case'?'🎲 Открыть':'Забрать'; btn.disabled=false; }
+        if(data.error==='Already claimed') bpMarkClaimed(lvlNum);
         console.warn('BP claim error:', data.error);
         return;
       }
-      // Сервер подтвердил — синхронизируем claimed список с сервером
       if(Array.isArray(data.claimed)){
         try{ safeSet('bfm_bp_claimed', JSON.stringify(data.claimed)); }catch{}
       }
     } catch(e){
-      // Нет сети — применяем локально (offline-first), синхронизируется потом
       console.warn('BP claim offline, applying locally:', e);
     }
   }
 
-  // Применяем локально (после подтверждения сервера или offline)
   bpMarkClaimed(lvlNum);
+
+  // ── Применяем бонус (если есть) — всегда автоматически ──
+  if(lv.bonus){
+    if(lv.bonus.type==='boost') boostAdd(lv.bonus.id, lv.bonus.amt||1);
+    else if(lv.bonus.type==='skin') bpUnlockSkin(lv.bonus.id);
+    renderSpBoosts();
+    updateActiveBoostTag();
+  }
+
+  // ── Применяем основную награду ──
+  if(lv.reward.type === 'case'){
+    const drop = rollCase(lv.reward.id);
+    if(drop) applyBPRewardItem(drop, lv.reward.amt||1);
+    renderBP();
+    openCaseOv(lv.reward.id, drop);
+  } else {
+    applyBPRewardDirect(lv);
+    renderBP();
+    showBPLevelUpToast('Награда: '+lv.reward.name);
+  }
+}
+
+// Применить одиночную фиксированную награду BP
+function applyBPRewardDirect(lv){
+  const amt = lv.reward.amt || 1;
   if(lv.reward.type==='boost'){
-    // [FIX BUG-C] lvl14=combo_shield×3 (по описанию '3 бесплатных щита'); lvl13=xp2x→уже учтён первой ветвью
-    const amt = (lv.reward.id==='xp2x') ? 3 : (lv.reward.id==='combo_shield' && lvlNum===14) ? 3 : 1;
     boostAdd(lv.reward.id, amt);
   } else if(lv.reward.type==='skin'){
     bpUnlockSkin(lv.reward.id);
@@ -4845,8 +5595,121 @@ async function bpClaim(lvlNum){
     updateRotBtn();
     updateBankLock();
   }
-  renderBP();
-  showBPLevelUpToast('Награда: '+lv.reward.name);
+}
+
+// Применить дроп из кейса
+function applyBPRewardItem(item, amt=1){
+  if(item.type==='boost')    boostAdd(item.id, amt);
+  else if(item.type==='skin')    bpUnlockSkin(item.id);
+  else if(item.type==='bg_theme'){ safeSet('bfm_bg_theme_'+item.id,'1'); }
+}
+
+/* ── Анимация открытия кейса ── */
+// Цвета свечения по кейсам (для drop-shadow на emoji)
+const CASE_GLOW_COLOR = {
+  starter:'rgba(96,165,250,.9)',
+  themes: 'rgba(167,139,250,.9)',
+  rare:   'rgba(249,115,22,.9)',
+  themes2:'rgba(244,114,182,.9)',
+  mid:    'rgba(180,83,9,.9)',
+  themes3:'rgba(251,191,36,.9)',
+  legend: 'rgba(255,215,0,1)',
+  season: 'rgba(139,92,246,.9)',
+};
+const CASE_BTN_STYLE = {
+  starter:{ bg:'linear-gradient(135deg,#3b82f6,#1d4ed8)', color:'#fff', shadow:'rgba(59,130,246,.5)' },
+  themes: { bg:'linear-gradient(135deg,#a78bfa,#7c3aed)', color:'#fff', shadow:'rgba(124,58,237,.5)' },
+  rare:   { bg:'linear-gradient(135deg,#f97316,#c2410c)', color:'#fff', shadow:'rgba(249,115,22,.5)' },
+  themes2:{ bg:'linear-gradient(135deg,#f472b6,#be185d)', color:'#fff', shadow:'rgba(236,72,153,.5)' },
+  mid:    { bg:'linear-gradient(135deg,#d97706,#92400e)', color:'#fff', shadow:'rgba(180,83,9,.5)'   },
+  themes3:{ bg:'linear-gradient(135deg,#fbbf24,#d97706)', color:'#1a0500', shadow:'rgba(245,158,11,.5)'},
+  legend: { bg:'linear-gradient(135deg,#FFD700,#B8860B)', color:'#1a0500', shadow:'rgba(255,215,0,.6)' },
+  season: { bg:'linear-gradient(135deg,#a78bfa,#6d28d9)', color:'#fff', shadow:'rgba(139,92,246,.5)' },
+};
+
+function openCaseOv(caseId, drop){
+  const ov      = document.getElementById('case-open-ov');
+  const resWrap = document.getElementById('case-result-wrap');
+  const caseConf = CASES[caseId] || {};
+  const glow = CASE_GLOW_COLOR[caseId] || 'rgba(251,191,36,.9)';
+  const btnSt = CASE_BTN_STYLE[caseId] || CASE_BTN_STYLE.legend;
+
+  // Emoji сундука с цветным свечением
+  const chest = document.getElementById('case-chest');
+  chest.textContent = _caseChestEmoji(caseId);
+  chest.style.filter = `drop-shadow(0 0 30px ${glow}) drop-shadow(0 0 14px ${glow})`;
+  chest.className = 'case-chest';
+
+  // Кнопка "Открыть" в цвете кейса
+  const openBtn = document.getElementById('case-open-btn');
+  openBtn.style.background  = btnSt.bg;
+  openBtn.style.color       = btnSt.color;
+  openBtn.style.boxShadow   = `0 4px 20px ${btnSt.shadow}`;
+  openBtn.textContent = 'Открыть! 🔓';
+  openBtn.disabled = false;
+  openBtn.onclick = ()=> triggerCaseOpen(caseId, drop);
+
+  resWrap.classList.remove('show');
+  document.getElementById('case-chest-wrap').style.visibility = '';
+  document.getElementById('case-ov-title').textContent    = caseConf.name || 'Кейс';
+  document.getElementById('case-ov-subtitle').textContent = 'Нажми кнопку чтобы открыть';
+
+  ov.classList.add('show');
+  vibrate([30,50,30]);
+}
+
+function _caseChestEmoji(id){
+  return {starter:'📦',themes:'🌌',rare:'🎁',themes2:'🌸',mid:'🗡️',themes3:'🌅',legend:'🏆',season:'🌟'}[id]||'📦';
+}
+
+function triggerCaseOpen(caseId, drop){
+  const chest   = document.getElementById('case-chest');
+  const resWrap = document.getElementById('case-result-wrap');
+  const openBtn = document.getElementById('case-open-btn');
+  openBtn.onclick = null;
+  openBtn.disabled = true;
+  chest.classList.add('opening');
+  playSound('levelup');
+  vibrate([20,30,20,80,40]);
+  spawnCaseParticles();
+  setTimeout(()=>{
+    document.getElementById('case-chest-wrap').style.visibility='hidden';
+    document.getElementById('case-ov-subtitle').textContent = 'Ты получил:';
+    if(drop){
+      document.getElementById('case-result-ico').textContent  = drop.ico||'🎁';
+      document.getElementById('case-result-name').textContent = drop.name||'Награда';
+      document.getElementById('case-result-desc').textContent = drop.desc||'';
+      const rarEl = document.getElementById('case-result-rarity');
+      const rarMap = {common:'ОБЫЧНЫЙ',rare:'РЕДКИЙ',epic:'ЭПИЧЕСКИЙ',legend:'ЛЕГЕНДАРНЫЙ'};
+      rarEl.textContent = rarMap[drop.rarity]||'';
+      rarEl.className = 'case-result-rarity rarity-'+(drop.rarity||'common');
+    }
+    resWrap.classList.add('show');
+  }, 520);
+}
+
+function spawnCaseParticles(){
+  const wrap = document.getElementById('case-chest-wrap');
+  const colors = ['#fbbf24','#f97316','#ef4444','#a78bfa','#22d3ee','#4ade80'];
+  for(let i=0;i<12;i++){
+    const p = document.createElement('div');
+    p.className = 'case-particle';
+    const angle = (i/12)*360;
+    const dist  = 60+Math.random()*40;
+    const tx = Math.cos(angle*Math.PI/180)*dist+'px';
+    const ty = Math.sin(angle*Math.PI/180)*dist+'px';
+    p.style.cssText=`background:${colors[i%colors.length]};left:50%;top:50%;`
+      +`--tx:translateX(${tx});--ty:translateY(${ty});`
+      +`transform:translate(-50%,-50%);`;
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(),800);
+  }
+}
+
+function closeCaseOv(){
+  document.getElementById('case-open-ov').classList.remove('show');
+  document.getElementById('case-chest-wrap').style.visibility='';
+  showBPLevelUpToast('Кейс открыт! 🎲');
 }
 
 // ─── Обновить отображение BP в меню
@@ -5083,6 +5946,173 @@ function updateStreakHUD(){
 // Множитель серии
 function streakMult(){ return _streakActive?1.5:1; }
 
+/* ══ AD BANNER: умная геолокация ══ */
+async function initSmartBanner(){
+  const banner = document.getElementById('ad-banner');
+  if(!banner) return;
+  banner.dataset.loaded = 'true';
+  const inner = document.getElementById('ad-banner-inner');
+
+  let country = 'US';
+  try {
+    // Пробуем получить страну из Cloudflare Worker (cf-ipcountry)
+    const resp = await fetch(API + '/init', {signal: AbortSignal.timeout(3000)});
+    if(resp.ok){
+      const data = await resp.json();
+      country = data.country || 'US';
+    }
+  } catch(e) {
+    // Фолбэк: язык системы
+    const lang = tg?.initDataUnsafe?.user?.language_code || navigator.language || 'en';
+    if(/^ru|^be|^kk|^uk/.test(lang)) country = 'RU';
+  }
+
+  const cisCountries = ['RU','BY','KZ','UZ','AM','UA','AZ','GE','MD','TJ','TM','KG'];
+
+  if(cisCountries.includes(country)){
+    // ── Яндекс РСЯ ──
+    // Раскомментировать когда получишь блок-ID в кабинете РСЯ:
+    /*
+    const yadScript = document.createElement('script');
+    yadScript.src = 'https://yandex.ru/ads/system/context.js';
+    yadScript.async = true;
+    yadScript.onload = ()=>{
+      window.yaContextCb = window.yaContextCb || [];
+      window.yaContextCb.push(()=>{
+        Ya.Context.AdvManager.render({
+          renderTo: 'ad-banner-inner',
+          blockId: 'R-A-XXXXXX-X' // ← ВСТАВЬ СВОЙ ID ИЗ РСЯ
+        });
+      });
+    };
+    document.head.appendChild(yadScript);
+    */
+    // Временная cross-promo заглушка для СНГ
+    inner.innerHTML = `<div onclick="tg?.openLink?.('https://t.me/your_channel_here')"
+      style="display:flex;align-items:center;gap:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:0 12px;width:100%;">
+      <span style="font-size:20px;">🚀</span>
+      <div><div style="color:#ffd600;">Block Fast Mania</div>
+      <div style="font-size:9px;opacity:.55;">РЕКЛАМА · нажми чтобы узнать больше</div></div>
+    </div>`;
+  } else {
+    // ── Global (RichAds / Adsgram / Cross-promo) ──
+    inner.innerHTML = `<div onclick="tg?.openLink?.('https://t.me/your_channel_here')"
+      style="display:flex;align-items:center;gap:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:0 12px;width:100%;">
+      <span style="font-size:20px;">⚡</span>
+      <div><div style="color:#22d3ee;">Block Fast Mania</div>
+      <div style="font-size:9px;opacity:.55;">AD · tap to learn more</div></div>
+    </div>`;
+  }
+}
+
+/* ══ DAILY LOGIN BONUS ══ */
+const DAILY_REWARDS = [
+  {day:1, ico:'⚡', type:'boost', id:'score2x',     amt:1, name:'×2 Очки'},
+  {day:2, ico:'🛡️', type:'boost', id:'combo_shield', amt:2, name:'Щит ×2'},
+  {day:3, ico:'💎', type:'boost', id:'xp2x',         amt:2, name:'×2 XP ×2'},
+  {day:4, ico:'🔥', type:'boost', id:'score3x',      amt:1, name:'×3 Очки'},
+  {day:5, ico:'🛡️', type:'boost', id:'combo_shield', amt:3, name:'Щит ×3'},
+  {day:6, ico:'⚡', type:'boost', id:'score2x',      amt:2, name:'×2 Очки ×2'},
+  {day:7, ico:'🥇', type:'case',  id:'legend',                name:'Кейс Легенды'},
+];
+function _dailyTodayStr(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}
+function checkDailyBonus(){
+  const today=_dailyTodayStr();
+  const lastDate=safeGet('bfm_daily_date','');
+  if(safeGet('bfm_daily_claimed_today','')==='1' && lastDate===today) return;
+  if(lastDate && lastDate!==today){
+    try{
+      const last=new Date(lastDate.replace(/-/g,'/'));
+      const now=new Date(today.replace(/-/g,'/'));
+      const diff=Math.round((now-last)/(86400000));
+      if(diff>1){ safeSet('bfm_daily_day','1'); }
+    }catch{}
+  }
+  if(lastDate!==today) safeSet('bfm_daily_claimed_today','');
+  setTimeout(showDailyBonus, 900);
+}
+function showDailyBonus(){
+  const day=Math.min(7, parseInt(safeGet('bfm_daily_day','1'))||1);
+  renderDailyDays(day);
+  document.getElementById('daily-ov').classList.add('show');
+  vibrate([20,30,20]);
+}
+function renderDailyDays(currentDay){
+  const claimed=safeGet('bfm_daily_claimed_today','')==='1';
+  const streak=document.getElementById('daily-streak-label');
+  if(streak) streak.textContent = currentDay>1 ? `🔥 Серия: ${currentDay-1} / 7 дней` : '';
+  const container=document.getElementById('daily-days');
+  if(!container) return;
+  container.innerHTML=DAILY_REWARDS.map(r=>{
+    const isPast=r.day<currentDay||(r.day===currentDay&&claimed);
+    const isCurrent=r.day===currentDay&&!claimed;
+    const isFuture=!isPast&&!isCurrent;
+    return `<div class="daily-day-card ${isPast?'past':''} ${isCurrent?'current':''} ${isFuture?'future':''}">
+      <div class="daily-day-num">День ${r.day}</div>
+      <div class="daily-day-ico">${isPast?'✅':r.ico}</div>
+      <div class="daily-day-name">${r.name}</div>
+    </div>`;
+  }).join('');
+  const btn=document.getElementById('daily-claim-btn');
+  if(btn){btn.textContent=claimed?'Завтра 🌙':'Забрать! 🎁';btn.disabled=claimed;}
+}
+function claimDailyBonus(){
+  const today=_dailyTodayStr();
+  const day=Math.min(7,parseInt(safeGet('bfm_daily_day','1'))||1);
+  const reward=DAILY_REWARDS.find(r=>r.day===day);
+  if(!reward)return;
+  if(reward.type==='boost') boostAdd(reward.id,reward.amt||1);
+  else if(reward.type==='case'){
+    const drop=rollCase(reward.id);
+    if(drop) applyBPRewardItem(drop);
+    setTimeout(()=>{closeDailyBonus();openCaseOv(reward.id,drop);},400);
+  }
+  safeSet('bfm_daily_claimed_today','1');
+  safeSet('bfm_daily_date',today);
+  safeSet('bfm_daily_day',String(day>=7?1:day+1));
+  renderDailyDays(day);
+  if(reward.type!=='case'){
+    vibrate('go');
+    setTimeout(closeDailyBonus,1400);
+    const nt=document.createElement('div');
+    nt.style.cssText='position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a0a00;font-family:Bungee,cursive;font-size:13px;padding:10px 20px;border-radius:12px;z-index:3000;white-space:nowrap;animation:toastIn .4s cubic-bezier(.34,1.56,.64,1)';
+    nt.textContent=`${reward.ico} ${reward.name} — получено!`;
+    document.body.appendChild(nt);
+    setTimeout(()=>nt.remove(),2200);
+  }
+}
+function closeDailyBonus(){ document.getElementById('daily-ov').classList.remove('show'); }
+
+/* ══ TEST HELPERS ══ */
+function testOpenCase(caseId){
+  closeSettings();
+  const drop=rollCase(caseId);
+  if(drop) applyBPRewardItem(drop);
+  setTimeout(()=>openCaseOv(caseId,drop),150);
+}
+function testDailyBonus(){
+  closeSettings();
+  safeDel('bfm_daily_claimed_today');
+  setTimeout(showDailyBonus,200);
+}
+function testBPMaxXP(){
+  bpSetXP(BP_TOTAL_XP,false);
+  closeSettings();
+  setTimeout(()=>{updateMenuBP();renderBP&&renderBP();},100);
+}
+function testBPReset(){
+  safeSet('bfm_bp_xp','0');
+  safeSet('bfm_bp_claimed','[]');
+  safeSet('bfm_bank_spin','');
+  closeSettings();
+  setTimeout(()=>{updateMenuBP();renderBP&&renderBP();updateRotBtn();updateBankLock();},100);
+  const nt=document.createElement('div');
+  nt.style.cssText='position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.9);color:#fff;font-family:Bungee,cursive;font-size:12px;padding:8px 18px;border-radius:10px;z-index:3000;white-space:nowrap;';
+  nt.textContent='BP сброшен ✓';
+  document.body.appendChild(nt);
+  setTimeout(()=>nt.remove(),2000);
+}
+
 /* ══ BOOT ══ */
 restoreCloudScores();
 checkReferral();
@@ -5122,6 +6152,41 @@ syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); upda
 setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1500);
 // Онбординг — только новым игрокам, через секунду после загрузки
 setTimeout(showOnboarding, 1000);
+// Ежедневная награда — через 1.2с
+setTimeout(checkDailyBonus, 1200);
 </script>
+<!-- CASE OPEN OVERLAY -->
+<div id="case-open-ov">
+  <div class="case-ov-title" id="case-ov-title">🎲 Открываем кейс</div>
+  <div class="case-ov-subtitle" id="case-ov-subtitle">Нажми кнопку чтобы открыть</div>
+  <div class="case-chest-wrap" id="case-chest-wrap">
+    <div class="case-chest" id="case-chest">📦</div>
+    <button class="chest-open-btn" id="case-open-btn">Открыть!</button>
+  </div>
+  <div class="case-result-wrap" id="case-result-wrap">
+    <div class="case-result-ico" id="case-result-ico">⚡</div>
+    <div class="case-result-rarity rarity-common" id="case-result-rarity">ОБЫЧНЫЙ</div>
+    <div class="case-result-name" id="case-result-name">Буст</div>
+    <div class="case-result-desc" id="case-result-desc">Описание награды</div>
+    <button class="case-result-btn" onclick="closeCaseOv()">Отлично! 🎉</button>
+  </div>
+</div>
+
+<!-- DAILY BONUS OVERLAY -->
+<div id="daily-ov">
+  <div class="daily-inner">
+    <div class="daily-title">🎁 ЕЖЕДНЕВНАЯ НАГРАДА</div>
+    <div class="daily-subtitle">Заходи каждый день — получай бонусы!</div>
+    <div class="daily-streak" id="daily-streak-label"></div>
+    <div class="daily-days" id="daily-days"></div>
+    <button class="daily-claim-btn" id="daily-claim-btn" onclick="claimDailyBonus()">Забрать! 🎁</button>
+    <button class="daily-close-btn" onclick="closeDailyBonus()">Закрыть</button>
+  </div>
+</div>
+
+<!-- AD BANNER: shown only on menu / game / board -->
+<div id="ad-banner">
+  <div id="ad-banner-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div>
+</div>
 </body>
 </html>
