@@ -17,8 +17,8 @@
   --bank-w:80px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html{height:var(--tg-viewport-stable-height,100%);overflow:hidden;}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:manipulation;overscroll-behavior:none;overflow:hidden;}
+html{width:100%;height:var(--tg-viewport-stable-height,100%);overflow:hidden;background:var(--bg);}
+body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:manipulation;overscroll-behavior:none;overflow:hidden;}
 /* touch-action:none только на игровой сетке — кнопки должны получать tap-события */
 #grid,#tray,#hold{touch-action:none;}
 /* Убираем 300ms задержку на всех кнопках */
@@ -27,7 +27,9 @@ button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small,
 .bp-claim-btn,.g-settings-btn,.g-ach-btn,.boost-card,.sk-card,
 .sp-skin-btn,.sp-achieve-btn,.sk-theme-card,.m-ach-compact-btn{touch-action:manipulation;}
 
-.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;transition:opacity .3s,transform .3s;background:var(--bg);}
+.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;transition:opacity .3s,transform .3s,visibility 0s linear .3s;background:var(--bg);visibility:visible;}
+/* При показе экрана — visibility сразу visible (без задержки) */
+.screen:not(.hidden){transition:opacity .3s,transform .3s,visibility 0s;visibility:visible;}
 #board{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
 #skins-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);transition:background .4s;}
 #skins-screen .sk-head{backdrop-filter:blur(12px);background:rgba(5,4,20,.7);border-bottom:1px solid rgba(255,255,255,.08);width:100%;}
@@ -44,8 +46,7 @@ button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small,
   background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);
   justify-content:flex-start;overflow-y:auto;padding:0;
   -webkit-tap-highlight-color:transparent;
-  /* touch-action наследует manipulation от body — НЕ переопределяем здесь! */
-  /* touch-action:pan-y УБРАН — он блокирует клики на кнопках в Telegram WebView */
+  -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
 }
 .menu-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
@@ -603,7 +604,7 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
 /* BG Themes */
 
 /* LEADERBOARD */
-#board{justify-content:flex-start;padding:14px;gap:0;overflow-y:auto;height:100%;max-height:100vh;}
+#board{justify-content:flex-start;padding:14px;gap:0;overflow-y:auto;height:100%;max-height:100vh;overscroll-behavior:contain;}
 .board-head{width:100%;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:13px;}
 .board-back{border:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
 .board-back:active{transform:scale(.96);}
@@ -955,7 +956,7 @@ body.theme-sakura #grid  { background:linear-gradient(145deg,rgba(40,5,25,.3),rg
 .bp-xp-track{height:10px;background:rgba(255,255,255,.14);border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
 .bp-xp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#7c3aed,#22d3ee);transition:width .6s cubic-bezier(.34,1.36,.64,1);}
 .bp-total-xp{font-family:'Bungee',cursive;font-size:13px;color:var(--cyan);text-align:center;margin-top:4px;}
-.bp-levels{flex:1;overflow-y:auto;padding:0 14px 24px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;}
+.bp-levels{flex:1;overflow-y:auto;padding:0 14px 24px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 /* level card */
 .bp-card{border-radius:16px;border:1.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);transition:all .2s;width:100%;box-sizing:border-box;}
 .bp-card.unlocked{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06);}
@@ -1693,6 +1694,8 @@ setTimeout(initDefaultStars, 500);
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
 if(tg){
+  // КРИТИЧНО: ready() ПЕРВЫМ — убирает лоадер Telegram, иначе белый экран или заблокированные тапы
+  tg.ready();
   tg.expand();
   // КРИТИЧНО для iOS Telegram Bot API 7.7+:
   // без disableVerticalSwipes() свайп-вниз (закрыть) перехватывает ВСЕ вертикальные тапы
@@ -5140,10 +5143,32 @@ showScreen('menu');
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
 // Prefetch leaderboard data in background after 1.5s for fast open
 setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1500);
-// Онбординг — только новым игрокам, через секунду после загрузки
-setTimeout(showOnboarding, 1000);
-// Сигнализируем Telegram что WebApp полностью готов — ТОЛЬКО после showScreen
-if(tg) tg.ready();
+// Онбординг — только новым игрокам
+setTimeout(showOnboarding, 200);
+
+// ══ TELEGRAM TAP FIX ══
+// В Telegram WebView iOS click-синтез из touchend подавляется.
+// Мост: touchend → click, с защитой от двойного срабатывания.
+(function(){
+  let _tsTgt=null,_tsMoved=false,_clickFired=false;
+  // Отслеживаем естественные click события
+  document.addEventListener('click',function(){_clickFired=true;},{capture:true,passive:true});
+  document.addEventListener('touchstart',function(e){
+    _tsTgt=e.target.closest('button,[onclick]');
+    _tsMoved=false;_clickFired=false;
+  },{passive:true});
+  document.addEventListener('touchmove',function(){_tsMoved=true;},{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(_tsMoved||!_tsTgt)return;
+    const el=_tsTgt;_tsTgt=null;
+    // Даём 80ms на естественный click; если не пришёл — форсируем
+    setTimeout(()=>{
+      if(!_clickFired&&el.isConnected){el.click();}
+      _clickFired=false;
+    },80);
+  },{passive:true});
+})();
+// tg.ready() уже вызван в самом начале второго скрипта
 </script>
 </body>
 </html>
