@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta name="version" content="68">
+<meta name="version" content="69">
 <title>⚡ Block Fast Mania</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet">
@@ -19,19 +17,9 @@
   --bank-w:80px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html{width:100%;height:var(--tg-viewport-stable-height,100%);overflow:hidden;background:var(--bg);}
-body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:manipulation;overscroll-behavior:none;overflow:hidden;}
-/* touch-action:none только на игровой сетке — кнопки должны получать tap-события */
-#grid,#tray,#hold{touch-action:none;}
-/* Убираем 300ms задержку на всех кнопках */
-button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small,
-.ob-btn,.ob-skip,.mp-btn,.mp-cancel,.go-btn,.btab,.skip-btn,
-.bp-claim-btn,.g-settings-btn,.g-ach-btn,.boost-card,.sk-card,
-.sp-skin-btn,.sp-achieve-btn,.sk-theme-card,.m-ach-compact-btn{touch-action:manipulation;}
+html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:none;}
 
-.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;transition:opacity .3s,transform .3s,visibility 0s linear .3s;background:var(--bg);visibility:visible;}
-/* При показе экрана — visibility сразу visible (без задержки) */
-.screen:not(.hidden){transition:opacity .3s,transform .3s,visibility 0s;visibility:visible;}
+.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;transition:opacity .3s,transform .3s;}
 #board{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
 #skins-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);transition:background .4s;}
 #skins-screen .sk-head{backdrop-filter:blur(12px);background:rgba(5,4,20,.7);border-bottom:1px solid rgba(255,255,255,.08);width:100%;}
@@ -39,7 +27,7 @@ button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small,
 .sk-theme-grid .sk-theme-card{backdrop-filter:none;background:transparent !important;}
 #achieve-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
 #game{background:var(--bg) !important;}
-.screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);visibility:hidden;}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);}
 
 /* ══════════════════════════════
    MENU — full redesign
@@ -47,9 +35,6 @@ button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small,
 #menu{
   background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);
   justify-content:flex-start;overflow-y:auto;padding:0;
-  -webkit-tap-highlight-color:transparent;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
 }
 .menu-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
 .bg-block{position:absolute;border-radius:8px;opacity:0;animation:bgFloat linear infinite;}
@@ -92,8 +77,6 @@ button,.mbtn,.m-bp-btn,.menu-leaderboard-btn,.m-ach-btn-small,
   border:none;border-radius:20px;padding:0;cursor:pointer;
   position:relative;overflow:visible;transition:transform .15s,box-shadow .15s;
   display:flex;align-items:center;margin-top:10px;
-  pointer-events:all; /* явно для Telegram WebView */
-  -webkit-tap-highlight-color:rgba(255,255,255,.1);
 }
 .mbtn:first-child{margin-top:0;}
 .mbtn:active{transform:scale(.97);}
@@ -1695,18 +1678,7 @@ setTimeout(initDefaultStars, 500);
 <script>
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
-if(tg){
-  // КРИТИЧНО: ready() ПЕРВЫМ — убирает лоадер Telegram, иначе белый экран или заблокированные тапы
-  tg.ready();
-  tg.expand();
-  // КРИТИЧНО для iOS Telegram Bot API 7.7+:
-  // без disableVerticalSwipes() свайп-вниз (закрыть) перехватывает ВСЕ вертикальные тапы
-  tg.disableVerticalSwipes?.();
-  // Цвет хедера под стиль игры
-  tg.setHeaderColor?.('#17162e');
-  tg.setBackgroundColor?.('#17162e');
-  tg.onEvent('viewportChanged',()=>{gridBounds=null;});
-}
+if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;});}
 
 /* ══ SETTINGS ══ */
 let snd=true,vib=true;
@@ -2802,9 +2774,7 @@ document.addEventListener('mousemove',e=>{
   rafDrag=requestAnimationFrame(()=>{rafDrag=null;processDragMove(lastDragX,lastDragY);});
 });
 document.addEventListener('touchmove',e=>{
-  if(!drag)return;dragMoved=true;
-  // preventDefault только в игре — на меню не мешаем скроллу
-  if(document.getElementById('game')&&!document.getElementById('game').classList.contains('hidden')) e.preventDefault();
+  if(!drag)return;dragMoved=true;e.preventDefault();
   const[x,y]=evXY(e);lastDragX=x;lastDragY=y;
   if(rafDrag)return;
   rafDrag=requestAnimationFrame(()=>{rafDrag=null;processDragMove(lastDragX,lastDragY);});
@@ -2833,7 +2803,7 @@ function endDrag(e){
   drag=null;dragMoved=false;
 }
 document.addEventListener('mouseup',endDrag);
-document.addEventListener('touchend',endDrag,{passive:true});
+document.addEventListener('touchend',endDrag,{passive:false});
 function setupDrag(){
   // НЕ сбрасываем cellEls здесь — buildGrid уже заполнил его!
   for(let i=0;i<3;i++){const sl=document.getElementById('sl-'+i);sl.onmousedown=e=>{if(pieces[i])startDrag(i,e);};sl.ontouchstart=e=>{if(pieces[i])startDrag(i,e);};}
@@ -5136,8 +5106,7 @@ document.addEventListener('visibilitychange',()=>{
 applyLang();
 initMenuBg();
 updateMenuBP();
-renderMenuBoards();
-try{ applyBgTheme(currentTheme); }catch(e){ console.warn('theme init error:',e); }
+applyBgTheme(currentTheme);
 updateRotBtn();
 updateBankLock();
 showScreen('menu');
@@ -5145,32 +5114,8 @@ showScreen('menu');
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
 // Prefetch leaderboard data in background after 1.5s for fast open
 setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1500);
-// Онбординг — только новым игрокам
-setTimeout(showOnboarding, 200);
-
-// ══ TELEGRAM TAP FIX ══
-// В Telegram WebView iOS click-синтез из touchend подавляется.
-// Мост: touchend → click, с защитой от двойного срабатывания.
-(function(){
-  let _tsTgt=null,_tsMoved=false,_clickFired=false;
-  // Отслеживаем естественные click события
-  document.addEventListener('click',function(){_clickFired=true;},{capture:true,passive:true});
-  document.addEventListener('touchstart',function(e){
-    _tsTgt=e.target.closest('button,[onclick]');
-    _tsMoved=false;_clickFired=false;
-  },{passive:true});
-  document.addEventListener('touchmove',function(){_tsMoved=true;},{passive:true});
-  document.addEventListener('touchend',function(e){
-    if(_tsMoved||!_tsTgt)return;
-    const el=_tsTgt;_tsTgt=null;
-    // Даём 80ms на естественный click; если не пришёл — форсируем
-    setTimeout(()=>{
-      if(!_clickFired&&el.isConnected){el.click();}
-      _clickFired=false;
-    },80);
-  },{passive:true});
-})();
-// tg.ready() уже вызван в самом начале второго скрипта
+// Онбординг — только новым игрокам, через секунду после загрузки
+setTimeout(showOnboarding, 1000);
 </script>
 </body>
 </html>
