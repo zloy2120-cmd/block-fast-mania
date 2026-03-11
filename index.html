@@ -4,11 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="81">
+<meta name="version" content="87">
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается один раз -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>
+<!-- RichAds TMA SDK -->
+<script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js" async id="richads-sdk"></script>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
@@ -1337,32 +1340,146 @@ body[class*="theme-"] .g-header {
   font-size:12px;color:rgba(255,255,255,.5);margin-bottom:28px;text-align:center;
 }
 
-/* Сундук */
+/* ═══ CS2-Style 3D Case ═══ */
+.cs2-case-wrap{
+  perspective:700px;
+  display:flex;align-items:center;justify-content:center;
+  width:200px;height:190px;position:relative;margin-bottom:4px;
+}
+.cs2-case{
+  width:152px;height:132px;
+  position:relative;transform-style:preserve-3d;
+  transform:rotateX(14deg) rotateY(-20deg);
+  animation:caseHover 3s ease-in-out infinite;
+  cursor:pointer;
+}
+.cs2-case.opening{animation:caseOpenAnim .55s cubic-bezier(.4,0,.2,1) forwards;}
+@keyframes caseHover{
+  0%,100%{transform:rotateX(14deg) rotateY(-20deg) translateY(0);}
+  50%{transform:rotateX(16deg) rotateY(-15deg) translateY(-7px);}
+}
+@keyframes caseOpenAnim{
+  0%{transform:rotateX(14deg) rotateY(-20deg) scale(1);opacity:1;}
+  35%{transform:rotateX(35deg) rotateY(25deg) scale(1.18);opacity:1;}
+  100%{transform:rotateX(90deg) rotateY(50deg) scale(0);opacity:0;}
+}
+/* Передняя грань */
+.cs2-front{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 50%),
+    linear-gradient(160deg,var(--c-top,#1c2f42) 0%,var(--c-mid,#101d2b) 50%,var(--c-bot,#080f17) 100%);
+  border-radius:7px;
+  border:1.5px solid var(--c-border,rgba(255,255,255,.13));
+  overflow:hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -2px 0 rgba(0,0,0,.6),
+    inset 2px 0 0 rgba(255,255,255,.07),
+    0 0 0 1px rgba(0,0,0,.5);
+}
+/* Верхняя цветная полоса */
+.cs2-top-stripe{
+  position:absolute;top:0;left:0;right:0;height:26px;
+  background:linear-gradient(180deg,var(--c-stripe,rgba(96,165,250,.45)) 0%,transparent 100%);
+  border-bottom:1.5px solid var(--c-accent,rgba(96,165,250,.5));
+}
+/* Текстура — сетка */
+.cs2-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:14px 14px;
+}
+/* Горизонтальная полоса замка */
+.cs2-midband{
+  position:absolute;top:50%;left:0;right:0;height:20px;transform:translateY(-50%);
+  background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,var(--c-band,rgba(96,165,250,.18)) 50%,rgba(0,0,0,.5) 100%);
+  border-top:1px solid var(--c-accent,rgba(96,165,250,.4));
+  border-bottom:1px solid var(--c-accent,rgba(96,165,250,.4));
+}
+/* Металлические заклёпки */
+.cs2-rivet{
+  position:absolute;width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#c8cdd2,#6a7078);
+  border:1px solid rgba(0,0,0,.4);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.4);
+}
+.cs2-rivet.r1{top:3px;left:6px;}
+.cs2-rivet.r2{top:3px;right:6px;}
+.cs2-rivet.r3{bottom:3px;left:6px;}
+.cs2-rivet.r4{bottom:3px;right:6px;}
+/* Замок */
+.cs2-lock{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:28px;height:28px;z-index:4;
+  background:radial-gradient(circle at 38% 32%,#dde0e4 0%,#9ca3af 50%,#6b7280 100%);
+  border-radius:50%;
+  border:2px solid rgba(0,0,0,.55);
+  box-shadow:0 2px 10px rgba(0,0,0,.7),inset 0 1px 2px rgba(255,255,255,.45);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+}
+/* Иконка кейса */
+.cs2-icon{
+  position:absolute;top:4px;left:0;right:0;
+  text-align:center;font-size:18px;line-height:1;
+  filter:drop-shadow(0 0 8px var(--c-glow,rgba(96,165,250,.8)));
+}
+/* Название */
+.cs2-label{
+  position:absolute;bottom:7px;left:6px;right:6px;
+  font-family:'Bungee',cursive;font-size:6.5px;letter-spacing:.9px;
+  text-align:center;text-transform:uppercase;
+  color:var(--c-accent-s,#60a5fa);
+  text-shadow:0 0 10px var(--c-glow,rgba(96,165,250,.7));
+  opacity:.95;
+}
+/* Блик */
+.cs2-shine{
+  position:absolute;top:3px;left:10px;width:55px;height:4px;
+  background:rgba(255,255,255,.18);border-radius:2px;filter:blur(.5px);
+}
+/* Правая боковая грань (3D) */
+.cs2-side-r{
+  position:absolute;top:0;right:-19px;width:19px;height:132px;
+  transform-origin:left center;transform:rotateY(90deg);
+  background:linear-gradient(90deg,var(--c-mid,#101d2b) 0%,var(--c-bot,#060c14) 100%);
+  border:1px solid rgba(0,0,0,.6);border-left:none;border-radius:0 5px 5px 0;
+  box-shadow:inset -2px 0 4px rgba(0,0,0,.5);
+}
+/* Нижняя грань (3D) */
+.cs2-bottom{
+  position:absolute;left:0;bottom:-19px;width:152px;height:19px;
+  transform-origin:top center;transform:rotateX(-90deg);
+  background:linear-gradient(180deg,var(--c-bot,#080f17) 0%,#030710 100%);
+  border:1px solid rgba(0,0,0,.5);border-top:none;border-radius:0 0 5px 5px;
+}
+/* Тень под кейсом */
+.cs2-shadow{
+  position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);
+  width:120px;height:18px;
+  background:var(--c-glow,rgba(96,165,250,.4));
+  border-radius:50%;filter:blur(12px);opacity:.6;
+}
+/* Скрываем старые */
+.case-chest{display:none!important;}
+.css-chest{display:none!important;}
 .case-chest-wrap{
   position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:18px;margin-bottom:12px;
+  gap:14px;margin-bottom:4px;
 }
-.case-chest{
-  font-size:90px;line-height:1;
-  transition:filter .3s;
-  filter:drop-shadow(0 0 28px rgba(251,146,60,.8));
-  animation:chestFloat 2.2s ease-in-out infinite;
+/* Частицы при открытии */
+.case-particle{
+  position:absolute;width:8px;height:8px;border-radius:50%;
+  animation:caseParticle .7s ease-out forwards;
 }
-@keyframes chestFloat{
-  0%,100%{transform:translateY(0);}
-  50%{transform:translateY(-8px);}
+@keyframes caseParticle{
+  0%{opacity:1;transform:translate(0,0) scale(1);}
+  100%{opacity:0;transform:var(--tx,0) var(--ty,0) scale(0);}
 }
-.case-chest.opening{
-  animation:chestOpen .5s ease forwards;
-}
-@keyframes chestOpen{
-  0%{transform:scale(1) rotate(0deg);}
-  30%{transform:scale(1.2) rotate(-8deg);}
-  60%{transform:scale(1.3) rotate(6deg);}
-  100%{transform:scale(0) rotate(20deg);opacity:0;}
-}
-
 /* Частицы при открытии */
 .case-particle{
   position:absolute;
@@ -1419,17 +1536,16 @@ body[class*="theme-"] .g-header {
 }
 
 #ad-banner{
-  position:fixed;bottom:0;left:0;width:100%;height:60px;
-  background:rgba(0,0,0,.85);
-  border-top:1px solid rgba(255,255,255,.07);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  position:fixed;bottom:0;left:0;width:100%;height:50px;
+  background:#000;
+  border-top:1px solid rgba(255,255,255,.1);
   z-index:2000;
   display:none; /* JS управляет: flex или none */
   align-items:center;justify-content:center;
   overflow:hidden;
 }
 /* Game screen gets padding so tray isn't hidden under banner */
-#game.ads-active{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px) + 5px);}
+#game.ads-active{padding-bottom:calc(50px + env(safe-area-inset-bottom,0px) + 5px);}
 
 /* ══ CHEST OPEN BUTTON ══ */
 .chest-open-btn{
@@ -1682,25 +1798,7 @@ body[class*="theme-"] .g-header {
   <button class="sp-skin-btn" style="margin-top:10px;" onclick="closeSettings();showSkins()">🎨 Скины и Темы</button>
   <button class="sp-skin-btn" style="background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(34,211,238,.2));border-color:rgba(167,139,250,.4);color:#c4b5fd;margin-top:8px;" onclick="closeSettings();showBP()">⚡ Battle Pass</button>
   <button class="sp-achieve-btn" onclick="closeSettings();showAchievements()">🏅 Ачивменты</button>
-  <!-- 🧪 ТЕСТ (временно) -->
-  <div style="margin-top:10px;border-top:1px solid rgba(255,100,100,.2);padding-top:9px;">
-    <div style="font-size:9px;font-weight:900;color:rgba(255,120,120,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;">🧪 ТЕСТ</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px;margin-bottom:4px;">
-      <button onclick="testOpenCase('starter')"  style="font-size:8px;padding:3px 2px;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;border-radius:5px;cursor:pointer;">📦 New</button>
-      <button onclick="testOpenCase('themes')"   style="font-size:8px;padding:3px 2px;background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;border-radius:5px;cursor:pointer;">🌌 Тем</button>
-      <button onclick="testOpenCase('rare')"     style="font-size:8px;padding:3px 2px;background:rgba(249,115,22,.2);border:1px solid rgba(249,115,22,.3);color:#fdba74;border-radius:5px;cursor:pointer;">🎁 Ред</button>
-      <button onclick="testOpenCase('themes2')"  style="font-size:8px;padding:3px 2px;background:rgba(244,114,182,.2);border:1px solid rgba(244,114,182,.3);color:#f9a8d4;border-radius:5px;cursor:pointer;">🌸 Dlx</button>
-      <button onclick="testOpenCase('mid')"      style="font-size:8px;padding:3px 2px;background:rgba(251,146,60,.2);border:1px solid rgba(251,146,60,.3);color:#fed7aa;border-radius:5px;cursor:pointer;">🗡️ Hnt</button>
-      <button onclick="testOpenCase('themes3')"  style="font-size:8px;padding:3px 2px;background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.3);color:#fde68a;border-radius:5px;cursor:pointer;">🌅 Hor</button>
-      <button onclick="testOpenCase('legend')"   style="font-size:8px;padding:3px 2px;background:rgba(255,215,0,.2);border:1px solid rgba(255,215,0,.35);color:#ffd700;border-radius:5px;cursor:pointer;">🏆 Leg</button>
-      <button onclick="testOpenCase('season')"   style="font-size:8px;padding:3px 2px;background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.3);color:#c4b5fd;border-radius:5px;cursor:pointer;">🌟 Sea</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-      <button onclick="testBPMaxXP()" style="font-size:8px;padding:4px 2px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;border-radius:5px;cursor:pointer;">⚡ MAX XP</button>
-      <button onclick="testBPReset()" style="font-size:8px;padding:4px 2px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:5px;cursor:pointer;">🔄 Сброс BP</button>
-    </div>
-    <button onclick="testDailyBonus()" style="font-size:8px;padding:4px 2px;width:100%;margin-top:3px;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.25);color:#fde68a;border-radius:5px;cursor:pointer;">📅 Тест Daily Bonus</button>
-  </div>
+
   <div style="display:flex;gap:8px;margin-top:8px;">
     <button class="sp-menu-btn" style="flex:1;" onclick="closeSettings()">✕ Продолжить</button>
     <button class="sp-menu-btn" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171;" onclick="closeSettings();goMenu()">🏠 Меню</button>
@@ -2723,20 +2821,12 @@ function tapHold(){
   if(sel>=0&&sel<3&&pieces[sel]){
     const isCrystalSlot=(_crystalPiece===sel);
     const heldWasCrystal=(held&&held.crystal);
-    // Спин-счётчик: тратим 1 когда новая фигура заходит в банк (из трея)
-    if(isBankSpinUnlocked() && !held){
-      // Первая фигура заходит в банк
+    // Спин-счётчик: тратим ТОЛЬКО при извлечении фигуры из банка (held→tray)
+    // Помещение в банк бесплатно, вращение бесплатно
+    if(isBankSpinUnlocked() && held){
       if(getSpinLeft()<=0){
         vibrate('go');
-        tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит фигур для сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
-        return;
-      }
-      addSpinUse();
-    } else if(isBankSpinUnlocked() && held){
-      // Меняем банковую фигуру на тройную — тратим 1
-      if(getSpinLeft()<=0){
-        vibrate('go');
-        tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит фигур для сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+        tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит обменов на сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
         return;
       }
       addSpinUse();
@@ -2754,11 +2844,11 @@ function doHoldSwapDrag(si){
   if(si==='h')return;const p=pieces[si];if(!p)return;
   const isCrystalSlot=(_crystalPiece===si);
   const heldWasCrystal=(held&&held.crystal);
-  // Спин-счётчик: тратим 1 при свапе через drag
-  if(isBankSpinUnlocked()){
+  // Спин-счётчик: тратим только если извлекаем из банка (held существует)
+  if(isBankSpinUnlocked() && held){
     if(getSpinLeft()<=0){
       vibrate('go');
-      tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит фигур для сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+      tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит обменов на сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
       return;
     }
     addSpinUse();
@@ -3544,42 +3634,76 @@ function resumeTimer(){
 }
 
 /* ══ AD / MONETIZATION ══ */
-/* ══ ADSGRAM РЕКЛАМА (официальный партнёр Telegram, работает в РФ) ══ */
-// Твой Block ID — получи на t.me/AdsgramBot после регистрации
-const ADSGRAM_BLOCK_ID = 'ВСТАВЬ_СВОЙ_BLOCK_ID';
-let adCallback=null;
-let AdsgramController=null;
+/* ══════════════════════════════════════════════════════
+ * РЕКЛАМА: RichAds (Rewarded Video) + Adsterra (Bottom Banner)
+ *
+ * ── RichAds ──────────────────────────────────────────
+ * Получи pubId и appId в кабинете publishers.richads.com:
+ *   Profile → My Apps → создай приложение → скопируй ID
+ *
+ * ── Adsterra (нижний баннер) ─────────────────────────
+ * Зарегистрируйся на adsterra.com как Publisher →
+ * Добавь сайт blockfastmania.ru → Banner 320×50 →
+ * Скопируй src из полученного <script src="...">
+ * ════════════════════════════════════════════════════ */
+const RICHADS_PUB_ID  = 'ВСТАВЬ_PUB_ID';   // <-- из кабинета RichAds
+const RICHADS_APP_ID  = 'ВСТАВЬ_APP_ID';   // <-- из кабинета RichAds
+const ADSTERRA_SRC    = 'ВСТАВЬ_ADSTERRA'; // <-- src баннера из Adsterra
 
-// Инициализируем Adsgram при старте
-(function initAdsgram(){
-  if(ADSGRAM_BLOCK_ID==='ВСТАВЬ_СВОЙ_BLOCK_ID') return;
-  const s=document.createElement('script');
-  s.src='https://sad.adsgram.ai/js/sad.min.js';
-  s.async=true;
-  s.onload=()=>{
-    try{
-      AdsgramController=window.Adsgram?.init({blockId:ADSGRAM_BLOCK_ID});
-    }catch(e){ console.warn('Adsgram init error',e); }
+let adCallback = null;
+let _richadsController = null;
+let _richadsReady = false;
+let _adsterraLoaded = false;
+
+// Инициализация RichAds
+(function initRichAds(){
+  const sdk = document.getElementById('richads-sdk');
+  if(!sdk) return;
+  const doInit = () => {
+    if(!window.TelegramAdsController) return;
+    try {
+      _richadsController = new window.TelegramAdsController();
+      _richadsController.initialize({
+        pubId: RICHADS_PUB_ID,
+        appId: RICHADS_APP_ID,
+        debug: false,
+      });
+      _richadsReady = true;
+    } catch(e){ console.warn('RichAds init error', e); }
   };
-  document.head.appendChild(s);
+  sdk.onload = doInit;
+  if(document.readyState === 'complete') doInit();
 })();
 
+// Загрузка Adsterra нижнего баннера
+function loadAdsterraBanner(){
+  if(_adsterraLoaded) return;
+  if(ADSTERRA_SRC === 'ВСТАВЬ_ADSTERRA') return;
+  _adsterraLoaded = true;
+  const inner = document.getElementById('ad-banner-inner');
+  if(!inner) return;
+  const s = document.createElement('script');
+  s.src = ADSTERRA_SRC;
+  s.async = true;
+  s.setAttribute('data-cfasync','false');
+  inner.appendChild(s);
+}
+
 function doAd(type){
-  adCallback=type;
-  if(AdsgramController){
-    AdsgramController.show().then(()=>{
-      giveAdReward(type); // реклама просмотрена
-    }).catch(()=>{
-      showFakeAd(type); // ошибка или нет рекламы — заглушка
-    });
+  adCallback = type;
+  // Пробуем RichAds Rewarded Video
+  if(_richadsReady && _richadsController && RICHADS_PUB_ID !== 'ВСТАВЬ_PUB_ID'){
+    _richadsController.triggerInterstitialVideo()
+      .then(()  => { giveAdReward(type); })
+      .catch(()  => { showFakeAd(type);  });
     return;
   }
-  showFakeAd(type); // заглушка пока нет Block ID
+  // Fallback — оверлей с Яндекс баннером
+  showFakeAd(type);
 }
 
 function goUseContinue(){
   _continueUsedThisGame=true;
-  // [FIX] Consume free_continue boost if it's the active boost
   if(_activeBoostThisGame==='free_continue') boostConsume('free_continue');
   const btn=document.getElementById('go-continue-btn');
   if(btn) btn.closest('.go-section').style.display='none';
@@ -3603,9 +3727,9 @@ function showFakeAd(type){
     ?'Досмотри — получи <strong style="color:#fff">+10 секунд!</strong>'
     :'Досмотри — получи продолжение<br><strong style="color:#fff">бесплатно!</strong>';
   ov.classList.add('show');sk.style.display='none';
-  // Рендерим Яндекс баннер R-A-18894418-2
+  // Рендерим Яндекс баннер R-A-18894418-2 как fallback
   const yDiv=document.getElementById('yandex_rtb_R-A-18894418-2');
-  if(yDiv){yDiv.innerHTML='';} // очищаем предыдущий
+  if(yDiv){yDiv.innerHTML='';}
   try{
     window.yaContextCb=window.yaContextCb||[];
     window.yaContextCb.push(()=>{
@@ -3614,8 +3738,7 @@ function showFakeAd(type){
         renderTo:'yandex_rtb_R-A-18894418-2'
       });
     });
-  }catch(e){console.warn('Yandex ad render error',e);}
-  // Таймер 10 сек
+  }catch(e){}
   let adTimer=10;tc.textContent=adTimer;
   const iv=setInterval(()=>{adTimer--;tc.textContent=adTimer;if(adTimer<=0){clearInterval(iv);tc.textContent='✓';sk.style.display='block';}},1000);
   sk.onclick=()=>{ov.classList.remove('show');giveAdReward(type);};
@@ -4045,6 +4168,11 @@ function isBgThemeUnlocked(id){
 
 /* ══ SPIN DAILY LIMIT ══ */
 const SPIN_DAILY_LIMIT = 5;
+// Лимит спинов с учётом стрика: 5 базовых + 3 за каждый день стрика (с 2-го)
+function getSpinDailyLimit(){
+  const streak = Math.max(1, parseInt(safeGet('bfm_daily_day','1'))||1);
+  return SPIN_DAILY_LIMIT + Math.max(0, streak-1)*3;
+}
 function _getSpinDateKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
 function getSpinUsesToday(){
   const today=_getSpinDateKey();
@@ -4052,7 +4180,7 @@ function getSpinUsesToday(){
   return parseInt(safeGet('bfm_spin_uses','0'))||0;
 }
 function addSpinUse(){ safeSet('bfm_spin_uses', String(getSpinUsesToday()+1)); }
-function getSpinLeft(){ return Math.max(0, SPIN_DAILY_LIMIT - getSpinUsesToday()); }
+function getSpinLeft(){ return Math.max(0, getSpinDailyLimit() - getSpinUsesToday()); }
 
 function updateRotBtn(){
   const btn=document.getElementById('btn-rot');
@@ -4064,7 +4192,8 @@ function updateRotBtn(){
     btn.onclick=()=>{ vibrate('go'); tg?.showPopup?.({title:'🔒 СПИН заблокирован',message:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне '+BANK_SPIN_LVL+'!',buttons:[{id:'ok',type:'ok'}]}); };
   } else {
     const left=getSpinLeft();
-    btn.innerHTML='↻ СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.75;display:block">'+(left>0?left+'/'+SPIN_DAILY_LIMIT+' ост.':'Завтра 🌙')+'</span>';
+    const lim=getSpinDailyLimit();
+    btn.innerHTML='↻ СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.75;display:block">'+(left>0?left+'/'+lim+' ост.':'Завтра 🌙')+'</span>';
     btn.onclick=rotHeld;
     // disabled state managed by renderHold (no held piece) OR no spins left
   }
@@ -5652,14 +5781,26 @@ function openCaseOv(caseId, drop){
   const ov      = document.getElementById('case-open-ov');
   const resWrap = document.getElementById('case-result-wrap');
   const caseConf = CASES[caseId] || {};
+  const ch = caseConf.chest || {};
   const glow = CASE_GLOW_COLOR[caseId] || 'rgba(251,191,36,.9)';
   const btnSt = CASE_BTN_STYLE[caseId] || CASE_BTN_STYLE.legend;
 
-  // Emoji сундука с цветным свечением
-  const chest = document.getElementById('case-chest');
-  chest.textContent = _caseChestEmoji(caseId);
-  chest.style.filter = `drop-shadow(0 0 30px ${glow}) drop-shadow(0 0 14px ${glow})`;
-  chest.className = 'case-chest';
+  // CS2 кейс: применяем цвета через CSS переменные
+  const cs2 = document.getElementById('cs2-case');
+  cs2.className = 'cs2-case';
+  cs2.style.setProperty('--c-top',      ch.lid  || '#1c2f42');
+  cs2.style.setProperty('--c-mid',      ch.main || '#101d2b');
+  cs2.style.setProperty('--c-bot',      '#06101a');
+  cs2.style.setProperty('--c-stripe',   (ch.glow || glow).replace(/[\d.]+\)$/,'.45)'));
+  cs2.style.setProperty('--c-accent',   (ch.glow || glow).replace(/[\d.]+\)$/,'.55)'));
+  cs2.style.setProperty('--c-band',     (ch.glow || glow).replace(/[\d.]+\)$/,'.2)'));
+  cs2.style.setProperty('--c-accent-s', ch.lid  || '#60a5fa');
+  cs2.style.setProperty('--c-glow',     ch.glow || glow);
+  cs2.style.filter = `drop-shadow(0 0 28px ${ch.glow||glow}) drop-shadow(0 8px 20px rgba(0,0,0,.6))`;
+  document.getElementById('cs2-icon').textContent  = caseConf.ico || '📦';
+  document.getElementById('cs2-label').textContent = caseConf.name || 'CASE';
+  document.getElementById('cs2-shadow').style.background = ch.glow || glow;
+  document.getElementById('case-chest-wrap').style.visibility='';
 
   // Кнопка "Открыть" в цвете кейса
   const openBtn = document.getElementById('case-open-btn');
@@ -5671,7 +5812,6 @@ function openCaseOv(caseId, drop){
   openBtn.onclick = ()=> triggerCaseOpen(caseId, drop);
 
   resWrap.classList.remove('show');
-  document.getElementById('case-chest-wrap').style.visibility = '';
   document.getElementById('case-ov-title').textContent    = caseConf.name || 'Кейс';
   document.getElementById('case-ov-subtitle').textContent = 'Нажми кнопку чтобы открыть';
 
@@ -5684,12 +5824,12 @@ function _caseChestEmoji(id){
 }
 
 function triggerCaseOpen(caseId, drop){
-  const chest   = document.getElementById('case-chest');
+  const cs2     = document.getElementById('cs2-case');
   const resWrap = document.getElementById('case-result-wrap');
   const openBtn = document.getElementById('case-open-btn');
   openBtn.onclick = null;
   openBtn.disabled = true;
-  chest.classList.add('opening');
+  cs2.classList.add('opening');
   playSound('levelup');
   vibrate([20,30,20,80,40]);
   spawnCaseParticles();
@@ -5730,6 +5870,7 @@ function spawnCaseParticles(){
 function closeCaseOv(){
   document.getElementById('case-open-ov').classList.remove('show');
   document.getElementById('case-chest-wrap').style.visibility='';
+  document.getElementById('cs2-case').classList.remove('opening');
   showBPLevelUpToast('Кейс открыт! 🎲');
 }
 
@@ -5967,14 +6108,23 @@ function updateStreakHUD(){
 // Множитель серии
 function streakMult(){ return _streakActive?1.5:1; }
 
-/* ══ AD BANNER: умная геолокация ══ */
+/* ══ AD BANNER: Adsterra везде + Яндекс для СНГ ══ */
 async function initSmartBanner(){
   const banner = document.getElementById('ad-banner');
   if(!banner) return;
   if(banner.dataset.loaded) return;
   banner.dataset.loaded = 'true';
 
-  let country = 'RU'; // по умолчанию RU — на случай если Worker недоступен
+  // Adsterra sticky banner — работает везде (RU + EU + мир)
+  loadAdsterraBanner();
+
+  // RichAds push-style уведомление при первом открытии игры
+  if(_richadsReady && _richadsController && RICHADS_PUB_ID !== 'ВСТАВЬ_PUB_ID'){
+    try { _richadsController.triggerNativeNotification(); } catch(e){}
+  }
+
+  // СНГ дополнительно — Яндекс floorAd (после одобрения 10 апреля)
+  let country = 'RU';
   try {
     const resp = await fetch(API + '/init', {signal: AbortSignal.timeout(3000)});
     if(resp.ok){ const data = await resp.json(); country = data.country || 'RU'; }
@@ -5982,25 +6132,15 @@ async function initSmartBanner(){
     const lang = tg?.initDataUnsafe?.user?.language_code || navigator.language || 'ru';
     if(/^ru|^be|^kk|^uk/.test(lang)) country = 'RU';
   }
-
   const cisCountries = ['RU','BY','KZ','UZ','AM','UA','AZ','GE','MD','TJ','TM','KG'];
   if(cisCountries.includes(country)){
-    // ── Яндекс РСЯ Floor Ad R-A-18894418-1 ──
-    // Яндекс floorAd рендерится сам как плавающий баннер — контейнер не нужен
     try{
       window.yaContextCb=window.yaContextCb||[];
       window.yaContextCb.push(()=>{
-        Ya.Context.AdvManager.render({
-          blockId:'R-A-18894418-1',
-          type:'floorAd',
-          platform:'touch'
-        });
+        Ya.Context.AdvManager.render({blockId:'R-A-18894418-1',type:'floorAd',platform:'touch'});
       });
-      // Скрываем наш кастомный баннер — Яндекс показывает свой overlay
-      banner.style.display='none';
-    }catch(e){console.warn('Yandex floorAd error',e);}
+    }catch(e){}
   }
-  // Для не-СНГ стран — баннер скрыт до появления другой сети
 }
 
 
@@ -6083,35 +6223,6 @@ function claimDailyBonus(){
 }
 function closeDailyBonus(){ document.getElementById('daily-ov').classList.remove('show'); }
 
-/* ══ TEST HELPERS ══ */
-function testOpenCase(caseId){
-  closeSettings();
-  const drop=rollCase(caseId);
-  if(drop) applyBPRewardItem(drop);
-  setTimeout(()=>openCaseOv(caseId,drop),150);
-}
-function testDailyBonus(){
-  closeSettings();
-  safeDel('bfm_daily_claimed_today');
-  setTimeout(showDailyBonus,200);
-}
-function testBPMaxXP(){
-  bpSetXP(BP_TOTAL_XP,false);
-  closeSettings();
-  setTimeout(()=>{updateMenuBP();renderBP&&renderBP();},100);
-}
-function testBPReset(){
-  safeSet('bfm_bp_xp','0');
-  safeSet('bfm_bp_claimed','[]');
-  safeSet('bfm_bank_spin','');
-  closeSettings();
-  setTimeout(()=>{updateMenuBP();renderBP&&renderBP();updateRotBtn();updateBankLock();},100);
-  const nt=document.createElement('div');
-  nt.style.cssText='position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.9);color:#fff;font-family:Bungee,cursive;font-size:12px;padding:8px 18px;border-radius:10px;z-index:3000;white-space:nowrap;';
-  nt.textContent='BP сброшен ✓';
-  document.body.appendChild(nt);
-  setTimeout(()=>nt.remove(),2000);
-}
 
 /* ══ BOOT ══ */
 restoreCloudScores();
@@ -6161,6 +6272,28 @@ setTimeout(checkDailyBonus, 1200);
   <div class="case-ov-subtitle" id="case-ov-subtitle">Нажми кнопку чтобы открыть</div>
   <div class="case-chest-wrap" id="case-chest-wrap">
     <div class="case-chest" id="case-chest">📦</div>
+    <div class="css-chest" id="css-chest"></div>
+    <!-- CS2-style 3D case -->
+    <div class="cs2-case-wrap">
+      <div class="cs2-case" id="cs2-case">
+        <div class="cs2-front">
+          <div class="cs2-grid"></div>
+          <div class="cs2-top-stripe"></div>
+          <div class="cs2-midband"></div>
+          <div class="cs2-shine"></div>
+          <div class="cs2-rivet r1"></div>
+          <div class="cs2-rivet r2"></div>
+          <div class="cs2-rivet r3"></div>
+          <div class="cs2-rivet r4"></div>
+          <div class="cs2-lock" id="cs2-lock">🔒</div>
+          <div class="cs2-icon" id="cs2-icon">📦</div>
+          <div class="cs2-label" id="cs2-label">CASE</div>
+        </div>
+        <div class="cs2-side-r"></div>
+        <div class="cs2-bottom"></div>
+      </div>
+      <div class="cs2-shadow" id="cs2-shadow"></div>
+    </div>
     <button class="chest-open-btn" id="case-open-btn">Открыть!</button>
   </div>
   <div class="case-result-wrap" id="case-result-wrap">
