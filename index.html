@@ -4,13 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="101">
+<meta name="version" content="105">
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается один раз -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>
-<!-- RichAds TMA SDK -->
-<script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js" async id="richads-sdk"></script>
+<!-- RichAds TMA SDK (rewarded only — auto-interstitial disabled) -->
+<script id="richads-sdk">
+// Загружаем SDK динамически после того как перехватчик уже установлен
+(function(){
+  // Перехватчик: блокируем любые авто-вызовы interstitial/onboarding до нашей инициализации
+  // SDK tg-ob.js может сам вызывать showAd/show при загрузке — блокируем это
+  window._richadsAutoBlocked = true;
+  const _orig = window.TelegramAdsController;
+  // Патч: после загрузки SDK подменяем авто-триггеры
+  Object.defineProperty(window, 'TelegramAdsController', {
+    configurable: true,
+    set: function(cls){
+      // Сохраняем оригинальный класс
+      window._TelegramAdsControllerClass = cls;
+    },
+    get: function(){
+      return window._TelegramAdsControllerClass;
+    }
+  });
+  const s = document.createElement('script');
+  s.src = 'https://richinfo.co/richpartners/telegram/js/tg-ob.js';
+  s.async = true;
+  s.id = 'richads-sdk-src';
+  s.onload = function(){ window._richadsAutoBlocked = false; };
+  document.head.appendChild(s);
+})();
+</script>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet">
@@ -466,23 +491,32 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    outline анимирует цвет рамки (paint, но только для ячеек линии)
    box-shadow с большим spread выходит за рамки ячейки — как пульс у кристаллов */
 /* line-ready: overlay поверх грида вместо анимации на каждой ячейке
-   Это кардинально снижает нагрузку: 1-2 div'а вместо 10-20 анимирующих ячеек */
+   Это кардинально снижает нагрузку: 1-2 div'а вместо 10-20 анимирующих ячеек
+   v103: box-shadow убран из анимации — он вызывал repaint на каждом кадре (FPS drop)
+   Теперь анимируется только opacity (GPU composite) + статичная border + glow через filter */
 @keyframes glowCDiffuse{
-  0%  { background: rgba(0,229,255,.13); box-shadow: 0 0 14px 4px rgba(0,229,255,.55), inset 0 0 8px rgba(0,229,255,.2); border-color: rgba(0,229,255,.8); }
-  33% { background: rgba(255,230,0,.13); box-shadow: 0 0 14px 4px rgba(255,230,0,.55),  inset 0 0 8px rgba(255,230,0,.2);  border-color: rgba(255,230,0,.8); }
-  66% { background: rgba(255,60,172,.13); box-shadow: 0 0 14px 4px rgba(255,60,172,.55), inset 0 0 8px rgba(255,60,172,.2); border-color: rgba(255,60,172,.8); }
-  100%{ background: rgba(0,229,255,.13); box-shadow: 0 0 14px 4px rgba(0,229,255,.55), inset 0 0 8px rgba(0,229,255,.2);  border-color: rgba(0,229,255,.8); }
+  0%  { border-color: rgba(0,229,255,1);   background: rgba(0,229,255,.22); }
+  33% { border-color: rgba(255,230,0,1);   background: rgba(255,230,0,.22); }
+  66% { border-color: rgba(255,60,172,1);  background: rgba(255,60,172,.22); }
+  100%{ border-color: rgba(0,229,255,1);   background: rgba(0,229,255,.22); }
+}
+@keyframes glowOverlayPulse{
+  0%,100% { opacity: 0.88; }
+  50%     { opacity: 1;    }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
   position:absolute;
   pointer-events:none;
-  border: 2px solid rgba(0,229,255,.8);
-  border-radius:4px;
+  border: 3px solid rgba(0,229,255,1);
+  border-radius:5px;
   box-sizing:border-box;
-  animation: glowCDiffuse 1.8s linear infinite;
-  will-change: box-shadow, background;
+  animation: glowCDiffuse 1.8s linear infinite, glowOverlayPulse 0.9s ease-in-out infinite;
+  /* filter вместо box-shadow — GPU composited, не вызывает repaint */
+  filter: drop-shadow(0 0 6px rgba(0,229,255,.9)) drop-shadow(0 0 12px rgba(0,229,255,.5));
+  will-change: opacity, border-color, background;
   transform: translateZ(0);
+  contain: layout style;
   z-index: 5;
 }
 /* Обычная подсветка ячеек (ok/bad) — без анимации, только цвет */
@@ -1161,7 +1195,49 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 .sp-theme-btn:active { transform:scale(.95); }
 .sp-theme-btn.active { border-color:rgba(255,220,0,.6); background:rgba(255,200,0,.15); color:#ffe066; }
 
-/* ══ SETTINGS PANEL ══ */
+/* ══ v102: AD SPIN BUTTON — кнопка +3 спина за рекламу ══ */
+#btn-ad-spins{
+  display:none;
+  width:100%;margin-top:5px;
+  border:none;border-radius:9px;padding:6px 8px;
+  background:linear-gradient(135deg,#7c3aed,#a855f7);
+  color:#fff;font-family:'Bungee',cursive;font-size:10px;
+  cursor:pointer;letter-spacing:.5px;
+  box-shadow:0 3px 12px rgba(124,58,237,.4);
+  transition:transform .15s,box-shadow .15s;
+}
+#btn-ad-spins.show{display:block;}
+#btn-ad-spins:active{transform:scale(.97);box-shadow:0 1px 6px rgba(124,58,237,.3);}
+
+/* ══ v103: HINT BUTTON — узкая полная ширина под треем ══ */
+#btn-hint{
+  display:none;
+  width:100%;
+  margin:5px 0 0 0;
+  border:1.5px solid rgba(34,211,238,.35);
+  border-radius:10px;
+  padding:7px 12px;
+  background:linear-gradient(135deg,rgba(8,145,178,.22),rgba(34,211,238,.14));
+  color:rgba(34,211,238,.9);
+  font-family:'Bungee',cursive;font-size:11px;letter-spacing:.5px;
+  cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+  box-shadow:0 2px 10px rgba(8,145,178,.18);
+  flex-shrink:0;
+}
+#btn-hint.show{display:block;}
+#btn-hint:active{transform:scale(.98);}
+#hint-banner{
+  position:fixed;bottom:130px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,rgba(8,145,178,.95),rgba(34,211,238,.9));
+  border-radius:14px;padding:8px 18px;
+  font-family:'Bungee',cursive;font-size:12px;color:#fff;
+  white-space:nowrap;z-index:600;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+  box-shadow:0 4px 20px rgba(8,145,178,.5);
+}
+#hint-banner.show{opacity:1;}
+
 #settings-panel{display:none;position:fixed;top:0;right:0;width:230px;z-index:650;
   background:linear-gradient(160deg,#15133a,#1b1940);
   border-left:1.5px solid rgba(255,255,255,.1);
@@ -1727,6 +1803,7 @@ body[class*="theme-"] .g-header {
   <!-- Spacer so bonus-pills (position:fixed) never overlap the grid -->
   <div class="game-bonus-spacer"></div>
 
+  <!-- v102: Hint button перемещена под tray (полная ширина) -->
   <div id="grid-wrap"><div id="grid"></div><div id="line-glows"></div></div>
 
   <!-- TRAY ROW: tray + bank-col (spin above bank) side by side -->
@@ -1738,6 +1815,7 @@ body[class*="theme-"] .g-header {
     </div>
     <div class="bank-col">
       <button id="btn-rot" class="disabled" onclick="rotHeld()">↻ СПИН<span id="spin-count-badge"></span></button>
+      <button id="btn-ad-spins" onclick="doAdSpins()">📺 +3 СПИНА</button>
       <div id="hold">
         <div id="hold-inner"></div>
         <div class="hold-lbl">БАНК</div>
@@ -1745,6 +1823,10 @@ body[class*="theme-"] .g-header {
       </div>
     </div>
   </div>
+
+  <!-- v103: Hint button — узкая полная ширина под треем -->
+  <button id="btn-hint" onclick="doAdHint()">💡 Подсказка (реклама)</button>
+  <div id="hint-banner">💡 Лучший ход подсвечен!</div>
 </div>
 
 <!-- BATTLE PASS -->
@@ -2033,7 +2115,7 @@ setTimeout(initDefaultStars, 500);
 <script>
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
-if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;});}
+if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;_invalidateOverlayCache();});}
 
 /* ══ GLOBAL ERROR CATCHER — debug only ══ */
 window.onerror=function(msg,src,line){
@@ -2310,6 +2392,8 @@ let grid=[],pieces=[null,null,null],held=null;
 let score=0,best=0,lvl=1,combo=1,maxCombo=1,lines=0;
 let dead=false,locked=false,sel=-1;
 let _continueUsedThisGame=false;
+let _continueCountThisGame=0; // v102: до 3 продолжений за игру
+const CONTINUE_MAX = 3;
 let timSec=300,timIv=null;
 let isNewRecord=false,isTimeUp=false,noBlastStreak=0;
 
@@ -2428,20 +2512,22 @@ async function submitScore(modeKey, scoreVal){
 /* Кеш лидерборда — не грузим повторно 60 секунд */
 const boardCache = {};
 const CACHE_TTL = 120000; // 2 min cache (было 60s)
-let _boardReqId = 0; // [FIX] токен отмены — предотвращает async race при быстром переключении вкладок
+// v102: per-mode reqId — предотвращает race condition при одновременном prefetch нескольких режимов
+const _boardReqIds = {classic:0, mini:0, speed:0, daily:0};
 
 async function fetchLeaderboard(m){
   const now = Date.now();
   if(boardCache[m] && now - boardCache[m].ts < CACHE_TTL){
     return boardCache[m].data;
   }
-  const reqId = ++_boardReqId; // запоминаем ID запроса
+  _boardReqIds[m] = (_boardReqIds[m]||0) + 1;
+  const reqId = _boardReqIds[m];
   const id = MY_TG_ID();
   try {
     const url = `${API}/leaderboard?mode=${m}&limit=50${id?'&tg_id='+id:''}`;
     const res = await fetch(url);
     const data = await res.json();
-    if(reqId !== _boardReqId) return null; // [FIX] пришёл устаревший ответ — игнорируем
+    if(reqId !== _boardReqIds[m]) return null; // пришёл устаревший ответ — игнорируем
     boardCache[m] = { data, ts: now };
     return data;
   } catch(e){
@@ -2742,6 +2828,7 @@ function buildGrid(){
   grid=Array.from({length:N},()=>Array(N).fill(-1));
   const el=document.getElementById('grid');el.innerHTML='';
   cellEls=[];
+  _invalidateOverlayCache(); // v103: сбрасываем кэш позиций при новой игре
   const cs=cSz();
   el.style.gridTemplateColumns=`repeat(${N},${cs}px)`;
   el.style.gridTemplateRows=`repeat(${N},${cs}px)`;
@@ -3168,26 +3255,32 @@ function showHL(shape,sr,sc,valid,si){
   }
 }
 
-/* Рисуем 1 overlay на строку + 1 на колонку вместо анимации на каждой ячейке */
+/* Рисуем 1 overlay на строку + 1 на колонку вместо анимации на каждой ячейке
+   v103: кэшируем BoundingClientRect — не делаем forced layout при каждом drag */
+let _overlayCache = null; // {wLeft, wTop, offX, offY, cs, stepX, stepY} — сбрасывается при buildGrid
+function _invalidateOverlayCache(){ _overlayCache = null; }
 function _drawLineOverlays(rows,cols){
   const wrap=document.getElementById('grid-wrap');
   if(!wrap)return;
   wrap.querySelectorAll('.line-overlay').forEach(el=>el.remove());
-  // Измеряем реальное положение ячеек относительно grid-wrap
-  // Это учитывает border(2px) + padding(4px) + gap(2px) без хардкода
-  const c00=cel(0,0); const c01=cel(0,1); const c10=cel(1,0);
-  if(!c00)return;
-  const wRect=wrap.getBoundingClientRect();
-  const r00=c00.getBoundingClientRect();
-  // FIX v101: Если grid скрыт (opacity:0 / не в DOM) — BoundingClientRect вернёт 0.
-  // Рисовать оверлей в этом случае бессмысленно, пропускаем.
-  if(r00.width===0||wRect.width===0)return;
-  const cs=r00.width;
-  // Реальный шаг = позиция [0,1] - позиция [0,0]
-  const stepX=c01?c01.getBoundingClientRect().left-r00.left:cs+2;
-  const stepY=c10?c10.getBoundingClientRect().top-r00.top:cs+2;
-  const offX=r00.left-wRect.left;
-  const offY=r00.top-wRect.top;
+
+  // Используем кэш замеров — getBoundingClientRect очень дорог при частых вызовах
+  if(!_overlayCache){
+    const c00=cel(0,0); const c01=cel(0,1); const c10=cel(1,0);
+    if(!c00)return;
+    const wRect=wrap.getBoundingClientRect();
+    const r00=c00.getBoundingClientRect();
+    if(r00.width===0||wRect.width===0)return;
+    const cs=r00.width;
+    const stepX=c01?c01.getBoundingClientRect().left-r00.left:cs+2;
+    const stepY=c10?c10.getBoundingClientRect().top-r00.top:cs+2;
+    _overlayCache={
+      offX: r00.left-wRect.left,
+      offY: r00.top-wRect.top,
+      cs, stepX, stepY
+    };
+  }
+  const {offX, offY, cs, stepX, stepY} = _overlayCache;
   rows.forEach(r=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
@@ -3197,7 +3290,8 @@ function _drawLineOverlays(rows,cols){
   cols.forEach(c=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    ov.style.cssText=`left:${offX+c*stepX}px;top:${offY}px;width:${cs}px;height:${stepY*(N-1)+cs}px;`;
+    // Немного смещаем анимацию у колонок чтобы не мигали синхронно
+    ov.style.cssText=`left:${offX+c*stepX}px;top:${offY}px;width:${cs}px;height:${stepY*(N-1)+cs}px;animation-delay:${c*0.12}s;`;
     wrap.appendChild(ov);
   });
 }
@@ -3391,6 +3485,11 @@ const CBG=['','','rgba(6,182,212,.38)','rgba(20,150,60,.38)','rgba(6,182,212,.38
 
 function showComboBanner(c,cleared,pts){
   if(c>=2) playSound('combo');
+  // v102: нарастающая вибрация на комбо
+  if(c>=10)      { vibrate('crystal'); setTimeout(()=>vibrate('combo'),100); } // ×10+ — двойной удар
+  else if(c>=5)  { vibrate('combo'); setTimeout(()=>vibrate('line'),80); }     // ×5-9 — heavy + medium
+  else if(c>=3)  { vibrate('combo'); }                                          // ×3-4 — heavy
+  else if(c>=2)  { vibrate('line'); }                                           // ×2 — medium
   const idx=Math.min(c,12);const col=CC[idx]||'#22c55e';const txt=CT[idx]||'КОМБО!';
   const cx=window.innerWidth/2, cy=window.innerHeight*.40;
   // Big bold combo label — gradient style like screenshot 2
@@ -3553,6 +3652,27 @@ function rnd(){
   return{shape:SH[idx],ci:Math.floor(Math.random()*BC.length),crystal:false};
 }
 function fillPieces(){for(let i=0;i<3;i++)if(!pieces[i])pieces[i]=rnd();}
+
+/* v104: safeRnd — гарантирует что фигура влезает на текущий грид.
+   При обычной игре grid почти пустой — canPAny почти всегда true.
+   После continue грид заполнен — fallback на маленькие фигуры.
+   Если даже SH_SMALL не влезает (grid должен быть почти полным — 
+   game over уже должен был сработать) — возвращаем 1×1. */
+function safeRnd(){
+  const p=rnd();
+  if(canPAny(p.shape))return p;
+  // Fallback 1: попробовать маленькие фигуры
+  for(let attempt=0;attempt<8;attempt++){
+    const idx=SH_SMALL[Math.floor(Math.random()*SH_SMALL.length)];
+    const shape=SH[idx];
+    if(canPAny(shape))return{shape,ci:Math.floor(Math.random()*BC.length),crystal:false};
+  }
+  // Fallback 2: 1×1 (индекс 0 в SH — всегда влезает если есть хоть одна пустая клетка)
+  return{shape:SH[0],ci:Math.floor(Math.random()*BC.length),crystal:false};
+}
+
+/* safeRefillAll — используется после continue чтобы блоки точно влезали */
+function safeRefillAll(){for(let i=0;i<3;i++)pieces[i]=safeRnd();}
 function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 
 /* ══ GAME OVER ══ */
@@ -3664,19 +3784,20 @@ function showGO(){
     document.getElementById('go-title').textContent=t('gameOver');
   }
   document.getElementById('go').classList.add('show');
-  // Кнопка Продолжить — всегда 1 раз за игру, через CSS класс
+  // Кнопка Продолжить — до 3 раз за игру, через CSS класс
   const cbtn=document.getElementById('go-continue-btn');
   if(cbtn){
-    if(_continueUsedThisGame){
+    const left = CONTINUE_MAX - _continueCountThisGame;
+    if(left <= 0){
       cbtn.closest('.go-section').style.display='none';
     } else {
       cbtn.closest('.go-section').style.display='';
-      cbtn.textContent='▶️ Продолжить';
+      cbtn.textContent=left < CONTINUE_MAX ? `▶️ Продолжить (${left}/${CONTINUE_MAX})` : '▶️ Продолжить';
     }
   }
-  // Speed: кнопка +10сек — тоже 1 раз за игру
+  // Speed: кнопка +10сек — тоже до 3 раз за игру
   const scbtn=document.getElementById('go-speed-continue-btn');
-  if(scbtn) scbtn.closest('.go-section').style.display = _continueUsedThisGame ? 'none' : '';
+  if(scbtn) scbtn.closest('.go-section').style.display = (_continueCountThisGame >= CONTINUE_MAX) ? 'none' : '';
   // Сохраняем флаг что daily сегодня сыгран
   if(isDailyMode) {
     safeSet(getDailyKey(),'1');
@@ -3694,6 +3815,7 @@ function showGO(){
 }
 function continuePlaying(){
   _continueUsedThisGame=true;
+  _continueCountThisGame++;
   dead=false;locked=false;isNewRecord=false;isTimeUp=false;_goScheduled=false;
   document.getElementById('go').classList.remove('show');
   held=null;noBlastStreak=0;
@@ -3703,7 +3825,9 @@ function continuePlaying(){
   document.getElementById('gs-combo').className='g-combo-num x1';
   // Сброс всех бонусных состояний при продолжении
   resetMechanics();
-  refillAll();
+  // v104: [FIX] safeRefillAll — гарантирует что новые блоки влезают на заполненный грид
+  // После continue поле почти полное — обычный rnd() может дать 5×5 фигуру которую некуда ставить
+  safeRefillAll();
   renderGrid();renderPieces();renderHold();updateComboDots();
   if(mode==='speed'&&timSec>0)resumeTimer();
 }
@@ -3759,27 +3883,31 @@ let _bottomBannerLoaded = false;
 
 // Инициализация RichAds (точно по документации richads.com)
 function initRichAds(){
-  if(!window.TelegramAdsController) return;
+  if(!window._TelegramAdsControllerClass) return;
   if(_richadsReady) return;
   try {
-    window.TelegramAdsController = new TelegramAdsController();
-    window.TelegramAdsController.initialize({
+    const ctrl = new window._TelegramAdsControllerClass();
+    ctrl.initialize({
       pubId: RICHADS_PUB_ID,
       appId: RICHADS_APP_ID,
+      autoShow: false,        // отключаем авто-interstitial
+      interstitial: false,    // дополнительный флаг отключения авто
+      onboarding: false,      // отключаем onboarding-показы
     });
-    _richadsController = window.TelegramAdsController;
+    _richadsController = ctrl;
+    window.TelegramAdsController = ctrl; // для совместимости
     _richadsReady = true;
-    console.log('[RichAds] initialized ok');
+    console.log('[RichAds] initialized ok (rewarded-only mode)');
   } catch(e){ console.warn('[RichAds] init error', e); }
 }
 // Запуск: после загрузки SDK
 (function(){
-  const sdk = document.getElementById('richads-sdk');
-  if(!sdk){ initRichAds(); return; }
-  sdk.addEventListener('load', initRichAds);
-  // Fallback если скрипт уже загружен
-  if(sdk.readyState === 'complete' || document.readyState === 'complete') initRichAds();
-  // Ещё один fallback через 3 секунды
+  const tryInit = () => {
+    if(window._TelegramAdsControllerClass){ initRichAds(); return; }
+    const sdk = document.getElementById('richads-sdk-src');
+    if(sdk) sdk.addEventListener('load', initRichAds);
+  };
+  tryInit();
   setTimeout(initRichAds, 3000);
 })();
 
@@ -3804,6 +3932,15 @@ function loadBottomBanner(){
     sdk.async = true;
     sdk.defer = true;
     sdk.setAttribute('data-cfasync', 'false');
+    sdk.onload = () => {
+      console.log('[Tads] SDK loaded OK, widget ID:', TADS_WIDGET_ID);
+      // Проверяем отображение через 3 секунды
+      setTimeout(()=>{
+        const cont = inner.querySelector('[data-tads-widget-id]');
+        const hasContent = cont && (cont.children.length > 0 || cont.offsetHeight > 5);
+        console.log('[Tads] Widget rendered:', hasContent, 'height:', cont?.offsetHeight);
+      }, 3000);
+    };
     sdk.onerror = () => console.warn('[Tads] SDK load failed');
     document.body.appendChild(sdk);
     return;
@@ -3836,6 +3973,7 @@ function goUseContinue(){
   // Если есть free_continue буст — используем без рекламы
   if(_activeBoostThisGame==='free_continue'){
     _continueUsedThisGame=true;
+    _continueCountThisGame++;
     boostConsume('free_continue');
     const btn=document.getElementById('go-continue-btn');
     if(btn) btn.closest('.go-section').style.display='none';
@@ -3848,18 +3986,100 @@ function goUseContinue(){
 function goSpeedContinue(){
   doAd('speed_time');
 }
+
+/* ══ REWARDED ADS — дополнительные точки монетизации ══ */
+// +3 спина за рекламу (когда лимит кончился)
+function doAdSpins(){
+  vibrate('menu');
+  doAd('spins');
+}
+// Подсказка за рекламу
+function doAdHint(){
+  if(_hintUsedThisGame){
+    showBestHint(); // повторный вызов — просто показываем без рекламы
+    return;
+  }
+  vibrate('menu');
+  doAd('hint');
+}
+let _hintUsedThisGame=false;
+
+// Подсвечиваем лучшее место для размещения — ищем по всем 3 фигурам
+function showBestHint(){
+  if(dead||locked)return;
+  _hintUsedThisGame=true;
+  let bestResult=null; // {si, sr, sc, linesCleared}
+  const allPieces=[...pieces.map((p,i)=>({p,si:i})), held?{p:held,si:'h'}:null].filter(Boolean);
+  for(const{p,si} of allPieces){
+    if(!p)continue;
+    for(let r=0;r<=N-p.shape.length;r++){
+      for(let c=0;c<=N-p.shape[0].length;c++){
+        if(!canP(p.shape,r,c))continue;
+        // Симулируем размещение
+        const sim=grid.map(row=>[...row]);
+        for(let dr=0;dr<p.shape.length;dr++)for(let dc=0;dc<p.shape[0].length;dc++){
+          if(p.shape[dr][dc])sim[r+dr][c+dc]=p.ci;
+        }
+        let cleared=0;
+        for(let rr=0;rr<N;rr++)if(sim[rr].every(v=>v>=0))cleared++;
+        for(let cc=0;cc<N;cc++)if(sim.every(row=>row[cc]>=0))cleared++;
+        if(!bestResult||cleared>bestResult.linesCleared||(cleared===bestResult.linesCleared&&Math.random()>.7)){
+          bestResult={si,sr:r,sc:c,shape:p.shape,linesCleared:cleared};
+        }
+      }
+    }
+  }
+  if(!bestResult)return;
+  // Выбираем фигуру-подсказку в трее
+  if(bestResult.si!=='h'&&bestResult.si>=0&&bestResult.si<3){
+    sel=bestResult.si;renderPieces();
+  } else if(bestResult.si==='h'){
+    sel='h';renderHold();
+  }
+  // Подсвечиваем позицию
+  const p=(bestResult.si==='h')?held:pieces[bestResult.si];
+  if(!p)return;
+  showHL(p.shape,bestResult.sr,bestResult.sc,true,bestResult.si);
+  vibrate('combo');
+  // Показываем баннер-подсказку
+  const hintBanner=document.getElementById('hint-banner');
+  if(hintBanner){
+    hintBanner.classList.add('show');
+    setTimeout(()=>hintBanner.classList.remove('show'),2500);
+  }
+  // Через 3 секунды — убираем подсветку
+  setTimeout(()=>{ clearHL(); sel=-1; renderPieces(); renderHold(); }, 3000);
+}
 function giveAdReward(type){
   vibrate('line');
   if(type==='speed_time'){
     const btn=document.getElementById('go-speed-continue-btn');
     if(btn) btn.closest('.go-section').style.display='none';
-    _continueUsedThisGame=true;
+    _continueCountThisGame++;
     addSpeedTime(10,'📺 +10 сек');
   } else if(type==='continue'){
+    // Скрываем кнопку — continuePlaying сам инкрементирует счётчик
     const btn=document.getElementById('go-continue-btn');
     if(btn) btn.closest('.go-section').style.display='none';
-    _continueUsedThisGame=true;
     continuePlaying();
+  } else if(type==='spins'){
+    // +3 спина за рекламу
+    const today=_getSpinDateKey();
+    const used=getSpinUsesToday();
+    const limit=getSpinDailyLimit();
+    // Сбрасываем сегодняшний лимит — даём ещё 3 спина
+    safeSet('bfm_spin_date',today);
+    safeSet('bfm_spin_uses',String(Math.max(0,used-3)));
+    vibrate('combo');
+    renderHold();
+    const n=document.createElement('div');
+    n.style.cssText='position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-family:Bungee,cursive;font-size:14px;padding:10px 22px;border-radius:14px;z-index:3000;white-space:nowrap;animation:toastIn .4s cubic-bezier(.34,1.56,.64,1)';
+    n.textContent='📺 +3 СПИНА получено!';
+    document.body.appendChild(n);
+    setTimeout(()=>n.remove(),2000);
+  } else if(type==='hint'){
+    // Показываем подсказку
+    showBestHint();
   }
 }
 
@@ -3894,7 +4114,7 @@ function addSpeedTime(secs,label){
   document.getElementById('gs-combo').textContent='×1 КОМБО';
   document.getElementById('gs-combo').className='g-combo-num x1';
   resetMechanics();
-  refillAll();renderGrid();renderPieces();renderHold();updateComboDots();
+  safeRefillAll();renderGrid();renderPieces();renderHold();updateComboDots();
   showTimerBonus(label||'+'+secs+'с');resumeTimer();
 }
 /* ══ REAL STARS PAYMENTS ══ */
@@ -4061,6 +4281,9 @@ function showScreen(id){
   } else if(ss && id!=='skins-screen'){
     ss.style.background = '';
   }
+  // v102: Hint btn — только во время игры
+  const hintBtn=document.getElementById('btn-hint');
+  if(hintBtn) hintBtn.classList.toggle('show', id==='game');
   // Ad banner: only on menu, game, board
   const banner = document.getElementById('ad-banner');
   if(banner){
@@ -4203,7 +4426,8 @@ function startGame(m){
   _currentGameId=_generateGameId(); // новый ID на каждую игру
   _c4=0;_c6=0;_c9=0;_lastComboLv=2; // [FIX] сброс счётчиков звуков комбо между играми
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
-  isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_goScheduled=false;
+  isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_continueCountThisGame=0;_goScheduled=false;
+  _hintUsedThisGame=false; // сброс подсказки при новой игре
   _spinPendingCharge=false; // сброс флага спина при старте новой игры
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
@@ -4248,7 +4472,7 @@ const SKINS = [
     desc:'Яркие насыщенные блоки',
     colors:['#FF3535','#FF8500','#FFD300','#2ECC44','#0DBBD8','#3366FF','#9922CC','#EE0E88','#18A880','#66BB00'],
     effect:'none' },
-  { id:'neon',    name:'Неон',      free:true,  icon:'⚡',
+  { id:'neon',    name:'Неон',      free:false, icon:'⚡',
     desc:'Светящиеся блоки в темноте',
     colors:['#FF006E','#FB5607','#FFBE0B','#8338EC','#3A86FF','#06D6A0','#FF006E','#F72585','#00F5D4','#ADFF2F'],
     effect:'glow' },
@@ -4280,6 +4504,11 @@ const SKINS = [
 
 let currentSkin = safeGet('bfm_skin','default');
 let currentTheme = safeGet('bfm_bg_theme','default');
+// Если сохранённая тема больше не разблокирована — сброс на default
+if(currentTheme && currentTheme !== 'default' && !isBgThemeUnlocked(currentTheme)){
+  currentTheme = 'default';
+  safeSet('bfm_bg_theme', 'default');
+}
 
 // ─── БАНК + СПИН разблокируются на уровне 7 БП
 const BANK_SPIN_LVL = 6;
@@ -4290,10 +4519,8 @@ function isBankSpinUnlocked(){
 
 function isBgThemeUnlocked(id){
   if(!id || id==='default') return true;
-  // Темы, не требующие BP — всегда доступны
-  const FREE_THEMES = ['cyberpunk','hell','ice','nature','sakura','retro'];
-  if(FREE_THEMES.includes(id)) return true;
-  // BP-темы: только через кейс (сохраняется в localStorage при выпадении)
+  // Все темы кроме default открываются только через кейсы BP
+  // При выпадении из кейса сохраняется: bfm_bg_theme_{id} = '1'
   if(safeGet('bfm_bg_theme_'+id,'')==='1') return true;
   return false;
 }
@@ -4318,18 +4545,34 @@ function getSpinLeft(){ return Math.max(0, getSpinDailyLimit() - getSpinUsesToda
 
 function updateRotBtn(){
   const btn=document.getElementById('btn-rot');
+  const adSpinsBtn=document.getElementById('btn-ad-spins');
   if(!btn)return;
   const unlocked = isBankSpinUnlocked();
   if(!unlocked){
     btn.className='bp-locked';
     btn.innerHTML='🔒 СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.7;display:block">БП '+BANK_SPIN_LVL+'</span>';
     btn.onclick=()=>{ vibrate('go'); tg?.showPopup?.({title:'🔒 СПИН заблокирован',message:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне '+BANK_SPIN_LVL+'!',buttons:[{id:'ok',type:'ok'}]}); };
+    if(adSpinsBtn)adSpinsBtn.classList.remove('show');
   } else {
     const left=getSpinLeft();
     const lim=getSpinDailyLimit();
     btn.innerHTML='↻ СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.75;display:block">'+(left>0?left+'/'+lim+' ост.':'Завтра 🌙')+'</span>';
     btn.onclick=rotHeld;
-    // disabled state managed by renderHold (no held piece) OR no spins left
+    // v102: показываем кнопку +3 спина если лимит исчерпан
+    if(adSpinsBtn){
+      if(left<=0) adSpinsBtn.classList.add('show');
+      else adSpinsBtn.classList.remove('show');
+    }
+    // disable state managed by renderHold
+  }
+  // v102: показываем кнопку подсказки во время игры
+  const hintBtn=document.getElementById('btn-hint');
+  if(hintBtn){
+    if(!dead&&document.getElementById('game')&&!document.getElementById('game').classList.contains('hidden')){
+      hintBtn.classList.add('show');
+    } else {
+      hintBtn.classList.remove('show');
+    }
   }
 }
 
@@ -4371,11 +4614,11 @@ function getSkinColors() {
 }
 
 function isSkinUnlocked(skinId) {
-  if(bpIsSkinUnlocked && bpIsSkinUnlocked(skinId)) return true;
   const s = SKINS.find(s=>s.id===skinId);
   if(!s) return false;
   if(s.free) return true;
-  return safeGet('bfm_skin_'+skinId,'')==='1';
+  // Только через кейсы BP: запись в bfm_bp_skins
+  return bpIsSkinUnlocked(skinId);
 }
 
 function showSkins() {
@@ -4451,7 +4694,7 @@ function renderSkinsScreen() {
 function selectSkin(id) {
   if(!isSkinUnlocked(id)) {
     vibrate('go');
-    tg?.showPopup?.({title:'🔒 Скин недоступен',message:'Этот скин будет доступен в следующем обновлении!',buttons:[{id:'ok',type:'ok'}]});
+    tg?.showPopup?.({title:'🔒 Скин заблокирован',message:'Открой этот скин из кейса Боевого Пропуска!',buttons:[{id:'ok',type:'ok'}]});
     return;
   }
   currentSkin = id;
@@ -5182,22 +5425,22 @@ function renderThemeGrid(){
     {id:'default',   emoji:'🎮', name:'Дефолт',   desc:'Чистый фон',              bp:false,
      bg:'background:linear-gradient(135deg,#1a1640,#0d1c3a);',
      border:'rgba(100,100,200,.3)', glow:''},
-    {id:'cyberpunk', emoji:'💻', name:'Матрица',  desc:'Цифровой дождь 0101',     bp:false,
+    {id:'cyberpunk', emoji:'💻', name:'Матрица',  desc:'Цифровой дождь 0101',     bp:true,
      bg:'background:linear-gradient(135deg,rgba(0,255,65,.12) 0%,rgba(0,100,30,.2) 50%,#000 100%);',
      border:'rgba(0,255,65,.45)', glow:'0 0 20px rgba(0,255,65,.3)'},
-    {id:'hell',      emoji:'🔥', name:'Ад',       desc:'Лава и огонь',             bp:false,
+    {id:'hell',      emoji:'🔥', name:'Ад',       desc:'Лава и огонь',             bp:true,
      bg:'background:radial-gradient(ellipse at 50% 100%,rgba(255,60,0,.4) 0%,#0f0000 65%);',
      border:'rgba(255,80,0,.5)', glow:'0 0 20px rgba(255,60,0,.3)'},
-    {id:'ice',       emoji:'❄️', name:'Лёд',      desc:'Снежинки и иней',          bp:false,
+    {id:'ice',       emoji:'❄️', name:'Лёд',      desc:'Снежинки и иней',          bp:true,
      bg:'background:radial-gradient(ellipse at 50% 0%,rgba(0,180,255,.25) 0%,#000d18 70%);',
      border:'rgba(0,200,255,.4)', glow:'0 0 18px rgba(0,200,255,.25)'},
-    {id:'retro',     emoji:'🪖', name:'Ретро',    desc:'Пиксельные танки',         bp:false,
+    {id:'retro',     emoji:'🪖', name:'Ретро',    desc:'Пиксельные танки',         bp:true,
      bg:'background:linear-gradient(135deg,rgba(0,255,80,.1) 0%,#000 100%);',
      border:'rgba(0,255,80,.38)', glow:'0 0 16px rgba(0,255,80,.2)'},
-    {id:'nature',    emoji:'🌿', name:'Природа',  desc:'Деревья и листья',         bp:false,
+    {id:'nature',    emoji:'🌿', name:'Природа',  desc:'Деревья и листья',         bp:true,
      bg:'background:radial-gradient(ellipse at 50% 100%,rgba(20,120,10,.4) 0%,#010f02 65%);',
      border:'rgba(60,200,40,.42)', glow:'0 0 18px rgba(40,180,20,.22)'},
-    {id:'sakura',    emoji:'🌸', name:'Сакура',   desc:'Цветение и лепестки',      bp:false,
+    {id:'sakura',    emoji:'🌸', name:'Сакура',   desc:'Цветение и лепестки',      bp:true,
      bg:'background:radial-gradient(ellipse at 50% 0%,rgba(220,80,160,.3) 0%,#0f0008 65%);',
      border:'rgba(255,100,180,.48)', glow:'0 0 20px rgba(255,80,160,.25)'},
     {id:'cosmos',    emoji:'🌌', name:'Космос',   desc:'Звёзды и туманности',      bp:true, bpLvl:8,
@@ -5232,7 +5475,7 @@ function renderThemeGrid(){
 function selectThemeCard(id){
   if(!isBgThemeUnlocked(id)){
     vibrate('go');
-    tg?.showPopup?.({title:'🔒 Тема заблокирована',message:'Разблокируй эту тему в Боевом Пропуске!',buttons:[{id:'ok',type:'ok'}]});
+    tg?.showPopup?.({title:'🔒 Тема заблокирована',message:'Открой эту тему из кейса Боевого Пропуска!',buttons:[{id:'ok',type:'ok'}]});
     return;
   }
   const themeId = id==='default' ? '' : id;
@@ -6459,25 +6702,26 @@ updateBankLock();
 showScreen('menu');
 // JS-run indicator: version badge turns visible when JS executes
 (function(){ const v=document.querySelector('.m-sub + div'); if(v) v.style.color='rgba(100,255,150,.5)'; })();
-// Очистка тестовых данных — удаляем все разблокированные скины/темы если BP уровень < 3
-// (защита от случайно оставшихся данных тест-секции)
-(function cleanTestData(){
-  try{
-    const bpXP = parseInt(safeGet('bfm_bp_xp','0'))||0;
-    // Если XP меньше чем нужно для 3 уровня (2300 XP) — сбрасываем тестовые открытия
-    if(bpXP < 2300){
-      // Оставляем только скины которые можно получить на ур.1-2
-      const validLowLevelSkins = []; // на ур.1-2 скинов нет
-      const currentSkins = JSON.parse(safeGet('bfm_bp_skins','[]'));
-      if(currentSkins.length > 0){
-        safeSet('bfm_bp_skins', JSON.stringify(validLowLevelSkins));
-      }
-      // Темы cosmos/ocean_bg/sunset — только через кейс после ур.5+
-      ['cosmos','ocean_bg','sunset'].forEach(t=>{
-        if(bpXP < 8800) safeDel('bfm_bg_theme_'+t); // кейс тем на ур.5
-      });
-    }
-  }catch{}
+// v105: одноразовая очистка легаси-данных скинов и тем (старые тестовые записи)
+// Удаляем устаревшие ключи bfm_skin_* и сбрасываем bfm_bp_skins / bfm_bg_theme_*
+// Запускается ОДИН раз — флаг bfm_clean_v105 предотвращает повтор
+(function cleanLegacyV105(){
+  if(safeGet('bfm_clean_v105','') === '1') return;
+  // Удаляем легаси-ключи разблокировки скинов (bfm_skin_{id})
+  ['neon','pastel','dark','ocean','fire','gold','galaxy'].forEach(id => safeDel('bfm_skin_'+id));
+  // Сбрасываем bfm_bp_skins (старые тестовые данные)
+  safeSet('bfm_bp_skins', '[]');
+  // Сбрасываем все bfm_bg_theme_* (старые тестовые данные)
+  ['cyberpunk','hell','ice','retro','nature','sakura','cosmos','ocean_bg','sunset']
+    .forEach(id => safeDel('bfm_bg_theme_'+id));
+  // Если активная тема теперь заблокирована — сброс на default
+  const th = safeGet('bfm_bg_theme','default');
+  if(th && th !== 'default'){ safeSet('bfm_bg_theme','default'); currentTheme='default'; applyBgTheme(''); }
+  // Если активный скин теперь заблокирован — сброс на default
+  const sk = safeGet('bfm_skin','default');
+  if(sk && sk !== 'default'){ safeSet('bfm_skin','default'); currentSkin='default'; }
+  safeSet('bfm_clean_v105','1');
+  console.log('[v105] Legacy skin/theme data cleaned');
 })();
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
