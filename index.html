@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="87">
+<meta name="version" content="94">
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается один раз -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
@@ -459,23 +459,34 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   background:rgba(239,68,68,.25)!important;
   box-shadow:inset 0 3px 0 rgba(255,100,100,.4),inset 0 -3px 0 rgba(100,0,0,.4),0 0 8px rgba(239,68,68,.4)!important;
 }
-/* Line-ready — радужное 3-цветное переливание
-   outline задаётся ТОЛЬКО через анимацию (без статичного цвета → нет синей рамки)
-   filter:drop-shadow composited на GPU */
+/* Line-ready — оригинальный радужный outline + мягкое рассеянное свечение за рамками
+   outline анимирует цвет рамки (paint, но только для ячеек линии)
+   box-shadow с большим spread выходит за рамки ячейки — как пульс у кристаллов */
 @keyframes glowC{
   0%  {outline:3px solid #00e5ff;}
   33% {outline:3px solid #ffe600;}
   66% {outline:3px solid #ff3cac;}
   100%{outline:3px solid #00e5ff;}
 }
+/* Рассеянное свечение — пульсирует и меняет цвет вслед за outline */
+@keyframes glowCDiffuse{
+  0%  { box-shadow: 0 0 10px 4px rgba(0,229,255,.65), 0 0 26px 8px rgba(0,229,255,.30), 0 0 48px 12px rgba(0,229,255,.12); }
+  33% { box-shadow: 0 0 10px 4px rgba(255,230,0,.65),  0 0 26px 8px rgba(255,230,0,.30),  0 0 48px 12px rgba(255,230,0,.12); }
+  66% { box-shadow: 0 0 10px 4px rgba(255,60,172,.65), 0 0 26px 8px rgba(255,60,172,.30), 0 0 48px 12px rgba(255,60,172,.12); }
+  100%{ box-shadow: 0 0 10px 4px rgba(0,229,255,.65), 0 0 26px 8px rgba(0,229,255,.30), 0 0 48px 12px rgba(0,229,255,.12); }
+}
 .cell.line-ready{
-  animation:glowC 1.8s linear infinite !important;
-  outline-offset:0px;
-  z-index:2;
+  animation: glowC 1.8s linear infinite, glowCDiffuse 1.8s linear infinite !important;
+  outline-offset: 0px;
+  will-change: box-shadow;
+  transform: translateZ(0);
+  z-index: 2;
 }
 .cell.line-ready.ok{
-  animation:glowC 1.8s linear infinite !important;
-  outline-offset:0px;
+  animation: glowC 1.8s linear infinite, glowCDiffuse 1.8s linear infinite !important;
+  outline-offset: 0px;
+  will-change: box-shadow;
+  transform: translateZ(0);
 }
 /* Line glow — через outline на ячейках, overlay не используется */
 #line-glows{display:none;}
@@ -1034,27 +1045,30 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 /* ══ 💎 КРИСТАЛЬНЫЙ БЛОК ══ */
 /* ══ 💎 КРИСТАЛЬНЫЙ БЛОК ══ */
 @keyframes crystalShimmer{
-  0%   {filter:hue-rotate(0deg)   brightness(1.4) saturate(2);}
-  33%  {filter:hue-rotate(120deg) brightness(1.8) saturate(2.5);}
-  66%  {filter:hue-rotate(240deg) brightness(1.6) saturate(2);}
-  100% {filter:hue-rotate(360deg) brightness(1.4) saturate(2);}
+  0%   {filter:hue-rotate(0deg)   brightness(1.35) saturate(1.9);}
+  33%  {filter:hue-rotate(120deg) brightness(1.65) saturate(2.3);}
+  66%  {filter:hue-rotate(240deg) brightness(1.5)  saturate(2.1);}
+  100% {filter:hue-rotate(360deg) brightness(1.35) saturate(1.9);}
 }
 @keyframes crystalPulse{
-  0%,100%{box-shadow:0 0 6px 2px rgba(255,255,255,.6);}
-  50%    {box-shadow:0 0 14px 5px rgba(180,120,255,.9);}
+  0%,100%{box-shadow:0 0 4px 1px rgba(255,255,255,.45), 0 0 10px 2px rgba(180,120,255,.25);}
+  50%    {box-shadow:0 0 8px 3px rgba(180,120,255,.70), 0 0 16px 4px rgba(140,80,255,.28);}
 }
 /* Кристальная клетка на поле */
 .cell.crystal-cell{
-  animation:crystalShimmer 3s linear infinite, crystalPulse 1.5s ease-in-out infinite;
+  animation:crystalShimmer 4s linear infinite, crystalPulse 1.5s ease-in-out infinite;
   z-index:2;position:relative;
-  will-change:filter;
+  will-change: filter, box-shadow;
+  transform: translateZ(0);        /* создаём GPU-слой ДО старта анимации */
+  contain: layout style paint;     /* изолируем repaint от соседних ячеек */
 }
 /* Маленький кристалл в лотке (pcell) */
 .pcell.crystal-p{
-  animation:crystalShimmer 3s linear infinite;
+  animation:crystalShimmer 4s linear infinite;
   box-shadow:0 0 8px 2px rgba(200,150,255,.8);
   border-radius:2px;
-  will-change:filter;
+  will-change: filter;
+  transform: translateZ(0);
 }
 /* Кристальный след на поле (остаётся 3 хода) */
 @keyframes crystalTrail{
@@ -1603,8 +1617,7 @@ body[class*="theme-"] .g-header {
       <div class="m-title-row">
         <div class="m-title">BLOCK FAST<br>MANIA</div>
       </div>
-      <div class="m-sub">Puzzle · Telegram · 2026</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:1px;">v81</div>
+      <div class="m-sub">Puzzle · Telegram · 2026 <span style="font-size:8px;color:rgba(255,255,255,.15);user-select:none;">·</span></div>
     </div>
 
     <!-- Battle Pass button -->
@@ -2051,6 +2064,8 @@ function closeSettings(){
 const SP_BOOSTS_DEF = [
   {id:'score2x',  name:'×2 Очки',      ico:'⚡', desc:'1 игра'},
   {id:'score3x',  name:'×3 Очки',      ico:'🔥', desc:'1 игра'},
+  {id:'score4x',  name:'×4 Очки',      ico:'💥', desc:'1 игра'},
+  {id:'score5x',  name:'×5 Очки',      ico:'🌟', desc:'1 игра'},
   {id:'xp2x',     name:'×2 XP',        ico:'💎', desc:'3 игры'},
   {id:'combo_shield', name:'Щит Комбо',ico:'🛡️', desc:'1 сброс'},
 ];
@@ -2325,7 +2340,7 @@ function restoreCloudScores(){
 
 /* ══ DAILY CHALLENGE — seeded random (одинаково у всех!) ══ */
 let isDailyMode=false,dailyRNG=null;
-let _activeBoostThisGame=null,_comboShieldUsed=false,_xp2xConsumedThisGame=false;
+let _activeBoostThisGame=null,_xp2xConsumedThisGame=false;
 function getDailySeed(){const d=new Date();const s=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;return parseInt(s);}
 function makeSRNG(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
 function getDailyDateStr(){const d=new Date();return d.getDate()+'.'+( d.getMonth()+1)+'.'+d.getFullYear();}
@@ -2404,7 +2419,7 @@ async function submitScore(modeKey, scoreVal){
 /* Загрузить лидерборд с сервера */
 /* Кеш лидерборда — не грузим повторно 60 секунд */
 const boardCache = {};
-const CACHE_TTL = 60000; // 60 sec cache
+const CACHE_TTL = 120000; // 2 min cache (было 60s)
 let _boardReqId = 0; // [FIX] токен отмены — предотвращает async race при быстром переключении вкладок
 
 async function fetchLeaderboard(m){
@@ -2605,22 +2620,30 @@ function renderMenuPanel(m){
 let activeBoardTab='classic';
 function showBoard(m){
   activeBoardTab=m;showScreen('board');
-  // Показываем кэш мгновенно, если есть — потом тихо обновляем в фоне
+  ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
   if(boardCache[m]){
+    // Мгновенно из кэша — никакого skeleton при возврате
     renderBoardRows(boardCache[m].data);
-    // Фоновое обновление если кэш старше 30 сек
+    // Тихое фоновое обновление если кэш старше 30 сек
     if(Date.now()-boardCache[m].ts > 30000){
       fetchLeaderboard(m).then(data=>{if(data)renderBoardRows(data);});
     }
   } else {
     renderBoardTab(m);
   }
+  // Prefetch остальных вкладок в фоне чтобы переключение было мгновенным
+  ['classic','mini','speed'].forEach(t=>{ if(t!==m && !boardCache[t]) fetchLeaderboard(t); });
 }
 function switchBoardTab(m){
   activeBoardTab=m;
   ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
-  if(boardCache[m]){ renderBoardRows(boardCache[m].data); } // мгновенно из кеша
-  else { renderBoardTab(m); }
+  if(boardCache[m]){
+    renderBoardRows(boardCache[m].data); // мгновенно из кеша
+    // Фоновое обновление если старый кэш
+    if(Date.now()-boardCache[m].ts > 30000) fetchLeaderboard(m).then(d=>{if(d)renderBoardRows(d);});
+  } else {
+    renderBoardTab(m);
+  }
 }
 
 async function renderBoardTab(m){
@@ -2830,8 +2853,8 @@ function tapHold(){
         return;
       }
       addSpinUse();
+      updateRotBtn(); // немедленно обновляем счётчик
     }
-    const prev=dc(held);held=dc(pieces[sel]);pieces[sel]=prev;
     if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
     else if(heldWasCrystal){_crystalPiece=sel;if(pieces[sel])pieces[sel].crystal=false;if(held)held.crystal=false;}
     sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
@@ -2852,8 +2875,8 @@ function doHoldSwapDrag(si){
       return;
     }
     addSpinUse();
+    updateRotBtn(); // немедленно обновляем счётчик
   }
-  const prev=dc(held);held=dc(p);pieces[si]=prev;
   if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
   else if(heldWasCrystal){_crystalPiece=si;if(pieces[si])pieces[si].crystal=false;if(held)held.crystal=false;}
   sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
@@ -2887,6 +2910,17 @@ async function place(si,sr,sc){
   const placed=[];
   for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){if(!p.shape[r][c])continue;grid[sr+r][sc+c]=p.ci;placed.push([sr+r,sc+c]);}
   const isCrystalPiece = (si !== 'h' && _crystalPiece === si) || (si === 'h' && held?.crystal);
+  // Pre-promote GPU layers для кристальных ячеек ДО старта CSS-анимации
+  // Это устраняет stutter при появлении crystal-cell
+  if(isCrystalPiece){
+    for(const[r,c]of placed){
+      const el=cel(r,c);if(!el)continue;
+      el.style.willChange='filter, box-shadow';
+      el.style.transform='translateZ(0)';
+    }
+  }
+  // requestAnimationFrame гарантирует что layer создан до добавления анимации
+  await new Promise(res=>requestAnimationFrame(res));
   for(const[r,c]of placed){
     const el=cel(r,c);if(!el)continue;
     applyBlockGrid(el,p.ci);
@@ -3038,7 +3072,7 @@ async function place(si,sr,sc){
       const bonus=cleared;timSec=Math.min(timSec+bonus,300);showTimerBonus('+'+bonus+'с');
     }
 
-    const _cel=document.getElementById('gs-combo');_cel.textContent='×'+combo+' КОМБО';_cel.className='g-combo-num';void _cel.offsetWidth;_cel.className='g-combo-num hot';
+    const _cel=document.getElementById('gs-combo');_cel.textContent='×'+combo+' КОМБО';_cel.className='g-combo-num';requestAnimationFrame(()=>{_cel.className='g-combo-num hot';});
     const nl=Math.floor(lines/8)+1;if(nl!==lvl){lvl=nl;showLvlFX(lvl);}
     await W(Math.max(delay+470, 660));
   } else {
@@ -3046,9 +3080,17 @@ async function place(si,sr,sc){
     crystalTurnsTick();
     noBlastStreak++;
     if(noBlastStreak>=3){
-      if(_activeBoostThisGame==='combo_shield'&&!_comboShieldUsed&&combo>1){
-        _comboShieldUsed=true;noBlastStreak=0;
-        spawnScoreNum(window.innerWidth/2,window.innerHeight*0.55,'🛡️ SHIELD!','#22d3ee',16);
+      if(_activeBoostThisGame==='combo_shield' && combo>1){
+        // Щит срабатывает с вероятностью 45% при каждой попытке сброса комбо
+        // Это даёт ~2-4 спасения за среднюю игру вместо строго одного
+        if(Math.random() < 0.45){
+          noBlastStreak=0;
+          spawnScoreNum(window.innerWidth/2,window.innerHeight*0.55,'🛡️ SHIELD!','#22d3ee',16);
+          vibrate(6);
+        } else {
+          // Щит не сработал — комбо сбрасывается
+          combo=1;noBlastStreak=0;document.getElementById('gs-combo').textContent='×1 КОМБО';document.getElementById('gs-combo').className='g-combo-num x1';
+        }
       } else {
         combo=1;noBlastStreak=0;document.getElementById('gs-combo').textContent='×1 КОМБО';document.getElementById('gs-combo').className='g-combo-num x1';
       }
@@ -3086,6 +3128,11 @@ function clearHL(){
   // OPT: используем Set вместо querySelectorAll — O(k) вместо O(N²)
   _hlCells.forEach(el=>{
     el.classList.remove('ok','bad','line-ready');
+    // Освобождаем GPU слои — не держим их зря
+    if(el.style.willChange==='box-shadow'){
+      el.style.willChange='';
+      el.style.transform='';
+    }
     const r=+el.dataset.r,c=+el.dataset.c;
     if(grid[r]?.[c]>=0)applyBlockGrid(el,grid[r][c]);else clearBlock(el);
   });
@@ -3121,10 +3168,11 @@ function showHL(shape,sr,sc,valid,si){
   }
   if(valid){
     const {rows,cols}=getLineReadySets(shape,sr,sc);
+    // Pre-promote GPU слои ДО старта анимации чтобы избежать FPS просадки
+    rows.forEach(r=>{for(let c=0;c<N;c++){const el=cel(r,c);if(el&&!el.classList.contains('line-ready')){el.style.willChange='box-shadow';el.style.transform='translateZ(0)';}}});
+    cols.forEach(c=>{for(let r=0;r<N;r++){const el=cel(r,c);if(el&&!el.classList.contains('line-ready')){el.style.willChange='box-shadow';el.style.transform='translateZ(0)';}}});
     rows.forEach(r=>{for(let c=0;c<N;c++){const el=cel(r,c);if(el){el.classList.add('line-ready');_hlCells.add(el);}}});
-    cols.forEach(c=>{for(let r=0;r<N;r++){const el=cel(r,c);if(el){el.classList.add('line-ready');_hlCells.add(el);}}});
-    // Draw glow strips
-    // placeLineGlows не нужен — line-ready CSS делает outline
+    cols.forEach(c=>{for(let r=0;r<N;r++){const el=cel(r,c);if(el){el.classList.add('line-ready');_hlCells.add(el);}}}); 
   }
 }
 
@@ -3242,6 +3290,8 @@ function addSc(pts,flash){
   // Применяем буст очков
   if(_activeBoostThisGame==='score2x') pts=Math.round(pts*2);
   else if(_activeBoostThisGame==='score3x') pts=Math.round(pts*3);
+  else if(_activeBoostThisGame==='score4x') pts=Math.round(pts*4);
+  else if(_activeBoostThisGame==='score5x') pts=Math.round(pts*5);
   score+=pts;
   if(score>best){best=score;lsS(isDailyMode?'daily':mode,best);isNewRecord=true;}
   document.getElementById('g-crown').className='g-crown-icon'+(score>0&&score>=best&&best>0?' show':'');
@@ -3523,7 +3573,7 @@ function showGO(){
       let xpGames = (+safeGet('bfm_xp2x_games','0')||0)+1;
       if(xpGames>=3){ boostConsume('xp2x'); safeDel('bfm_xp2x_games'); boostSetActive(null); }
       else safeSet('bfm_xp2x_games',xpGames);
-    } else if(_activeBoostThisGame && _activeBoostThisGame!=='free_continue' && _activeBoostThisGame!=='combo_shield'){
+    } else if(_activeBoostThisGame && _activeBoostThisGame!=='free_continue'){
       boostConsume(_activeBoostThisGame);
       boostSetActive(null);
     }
@@ -3646,8 +3696,8 @@ function resumeTimer(){
  * Добавь сайт blockfastmania.ru → Banner 320×50 →
  * Скопируй src из полученного <script src="...">
  * ════════════════════════════════════════════════════ */
-const RICHADS_PUB_ID  = 'ВСТАВЬ_PUB_ID';   // <-- из кабинета RichAds
-const RICHADS_APP_ID  = 'ВСТАВЬ_APP_ID';   // <-- из кабинета RichAds
+const RICHADS_PUB_ID  = '1004799';   // RichAds Publisher ID
+const RICHADS_APP_ID  = '6493';       // RichAds App ID
 const ADSTERRA_SRC    = 'ВСТАВЬ_ADSTERRA'; // <-- src баннера из Adsterra
 
 let adCallback = null;
@@ -3655,24 +3705,30 @@ let _richadsController = null;
 let _richadsReady = false;
 let _adsterraLoaded = false;
 
-// Инициализация RichAds
-(function initRichAds(){
+// Инициализация RichAds (точно по документации richads.com)
+function initRichAds(){
+  if(!window.TelegramAdsController) return;
+  if(_richadsReady) return;
+  try {
+    window.TelegramAdsController = new TelegramAdsController();
+    window.TelegramAdsController.initialize({
+      pubId: RICHADS_PUB_ID,
+      appId: RICHADS_APP_ID,
+    });
+    _richadsController = window.TelegramAdsController;
+    _richadsReady = true;
+    console.log('[RichAds] initialized ok');
+  } catch(e){ console.warn('[RichAds] init error', e); }
+}
+// Запуск: после загрузки SDK
+(function(){
   const sdk = document.getElementById('richads-sdk');
-  if(!sdk) return;
-  const doInit = () => {
-    if(!window.TelegramAdsController) return;
-    try {
-      _richadsController = new window.TelegramAdsController();
-      _richadsController.initialize({
-        pubId: RICHADS_PUB_ID,
-        appId: RICHADS_APP_ID,
-        debug: false,
-      });
-      _richadsReady = true;
-    } catch(e){ console.warn('RichAds init error', e); }
-  };
-  sdk.onload = doInit;
-  if(document.readyState === 'complete') doInit();
+  if(!sdk){ initRichAds(); return; }
+  sdk.addEventListener('load', initRichAds);
+  // Fallback если скрипт уже загружен
+  if(sdk.readyState === 'complete' || document.readyState === 'complete') initRichAds();
+  // Ещё один fallback через 3 секунды
+  setTimeout(initRichAds, 3000);
 })();
 
 // Загрузка Adsterra нижнего баннера
@@ -3691,14 +3747,14 @@ function loadAdsterraBanner(){
 
 function doAd(type){
   adCallback = type;
-  // Пробуем RichAds Rewarded Video
-  if(_richadsReady && _richadsController && RICHADS_PUB_ID !== 'ВСТАВЬ_PUB_ID'){
+  // RichAds Rewarded Video — основной источник
+  if(_richadsReady && _richadsController){
     _richadsController.triggerInterstitialVideo()
       .then(()  => { giveAdReward(type); })
       .catch(()  => { showFakeAd(type);  });
     return;
   }
-  // Fallback — оверлей с Яндекс баннером
+  // Fallback
   showFakeAd(type);
 }
 
@@ -4065,7 +4121,6 @@ function startGame(m){
   isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_goScheduled=false;
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
-  _comboShieldUsed = false;
   _xp2xConsumedThisGame = false;
   // Сброс механик
   resetMechanics();
@@ -4082,7 +4137,7 @@ function startGame(m){
   document.getElementById('g-mode-tag').textContent=isDailyMode?'📅 DAILY':{classic:'10×10',mini:'8×8 МИНИ',speed:'8×8 🔥'}[m];
   // Показываем тег активного буста
   const boostTag = document.getElementById('active-boost-tag');
-  const boostNames = {score2x:'⚡×2',score3x:'🔥×3',xp2x:'💎XP×2',combo_shield:'🛡️',free_continue:'💝'};
+  const boostNames = {score2x:'⚡×2',score3x:'🔥×3',score4x:'💥×4',score5x:'🌟×5',xp2x:'💎XP×2',combo_shield:'🛡️',free_continue:'💝'};
   if(boostTag){
     const ab = boostGetActive();
     if(ab && boostGet(ab)>0){ boostTag.textContent = boostNames[ab]||ab; boostTag.style.display='block'; }
@@ -4152,15 +4207,8 @@ function isBgThemeUnlocked(id){
   // Темы, не требующие BP — всегда доступны
   const FREE_THEMES = ['cyberpunk','hell','ice','nature','sakura','retro'];
   if(FREE_THEMES.includes(id)) return true;
-  // BP-темы: проверяем localStorage (открыто через кейс) ИЛИ BP-уровень
+  // BP-темы: только через кейс (сохраняется в localStorage при выпадении)
   if(safeGet('bfm_bg_theme_'+id,'')==='1') return true;
-  // Автоматически разблокируем по BP уровню
-  const BP_THEME_LVL = {cosmos:5, ocean_bg:9, sunset:13}; // уровни кейсов тем
-  const myLvl = bpGetLevel();
-  if(BP_THEME_LVL[id] && myLvl >= BP_THEME_LVL[id]){
-    safeSet('bfm_bg_theme_'+id,'1'); // сохраняем чтобы не проверять каждый раз
-    return true;
-  }
   return false;
 }
 
@@ -4171,7 +4219,7 @@ const SPIN_DAILY_LIMIT = 5;
 // Лимит спинов с учётом стрика: 5 базовых + 3 за каждый день стрика (с 2-го)
 function getSpinDailyLimit(){
   const streak = Math.max(1, parseInt(safeGet('bfm_daily_day','1'))||1);
-  return SPIN_DAILY_LIMIT + Math.max(0, streak-1)*3;
+  return SPIN_DAILY_LIMIT + Math.max(0, streak-1)*2;
 }
 function _getSpinDateKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
 function getSpinUsesToday(){
@@ -4372,11 +4420,11 @@ function animCosmos(){
     {x:W*.5,y:H*.15,r:W*.2,col:'rgba(120,0,255,.05)'},
   ];
   const moon={x:W*.78,y:H*.12,r:Math.min(W,H)*.08};
-  const bgStars=Array.from({length:120},()=>({
+  const bgStars=Array.from({length:70},()=>({
     x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,
     phase:Math.random()*Math.PI*2,speed:Math.random()*.6+.3
   }));
-  const sparkles=Array.from({length:18},()=>({
+  const sparkles=Array.from({length:10},()=>({
     x:Math.random()*W,y:Math.random()*H,
     size:Math.random()*4+2,
     phase:Math.random()*Math.PI*2,speed:Math.random()*1.2+.7,
@@ -4416,7 +4464,7 @@ function animCosmos(){
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
     // 30 FPS cap
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     ctx.clearRect(0,0,W,H);
     t+=.033;
@@ -4466,7 +4514,7 @@ function animCyberpunk(){
   let frame=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     frame++;
     ctx.fillStyle='rgba(0,0,0,0.07)';
@@ -4504,7 +4552,7 @@ function animCyberpunk(){
 function animHell(){
   const c=makeThemeCanvas(),ctx=c.getContext('2d');
   const W=c.width,H=c.height;
-  const particles=Array.from({length:40},()=>({
+  const particles=Array.from({length:22},()=>({
     x:Math.random()*W,y:H*.88-Math.random()*H*.3,
     vx:(Math.random()-.5)*2,vy:-(Math.random()*2.5+1),
     life:Math.random(),size:Math.random()*5+2,
@@ -4520,7 +4568,7 @@ function animHell(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     ctx.clearRect(0,0,W,H);t+=.03;
     ctx.drawImage(bgLava,0,0);
@@ -4546,7 +4594,7 @@ function animHell(){
 function animIce(){
   const c=makeThemeCanvas(),ctx=c.getContext('2d');
   const W=c.width,H=c.height;
-  const crystals=Array.from({length:18},()=>({
+  const crystals=Array.from({length:12},()=>({
     x:Math.random()*W,y:Math.random()*H,
     vx:(Math.random()-.5)*.3,vy:Math.random()*.3+.1,
     size:Math.random()*10+5,rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.015,
@@ -4592,7 +4640,7 @@ function animIce(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.033;
     ctx.clearRect(0,0,W,H);ctx.drawImage(bgIce,0,0);
     crystals.forEach(cr=>{
@@ -4637,7 +4685,7 @@ function animNature(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.033;
     ctx.clearRect(0,0,W,H);ctx.drawImage(bgN,0,0);
     leaves.forEach(l=>{
@@ -4686,7 +4734,7 @@ function animSakura(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.033;
     ctx.clearRect(0,0,W,H);ctx.drawImage(bgS,0,0);
     petals.forEach(p=>{
@@ -4707,85 +4755,115 @@ function animSakura(){
 function animRetro(){
   const c=makeThemeCanvas(),ctx=c.getContext('2d');
   const W=c.width,H=c.height;
-  const PX=3;
 
-  // Pre-render static brick wall + CRT overlay to offscreen (HUGE win — was redrawn every frame)
+  // Pre-render brick background
   const bgRetro=document.createElement('canvas');bgRetro.width=W;bgRetro.height=H;
   const bgCtx=bgRetro.getContext('2d');
-  const BW=32,BH=16;
-  for(let row=0;row<Math.ceil(H/BH)+1;row++){
-    const offset=row%2===0?0:BW/2;
-    for(let col=-1;col<Math.ceil(W/BW)+1;col++){
-      const bx=col*BW+offset,by=row*BH;
-      bgCtx.globalAlpha=0.18;bgCtx.fillStyle='#8B2500';bgCtx.fillRect(bx+1,by+1,BW-2,BH-2);
-      bgCtx.globalAlpha=0.07;bgCtx.fillStyle='#ff6030';bgCtx.fillRect(bx+2,by+2,BW-4,3);
-      bgCtx.globalAlpha=0.08;bgCtx.fillStyle='#222';bgCtx.fillRect(bx,by,BW,1);bgCtx.fillRect(bx,by,1,BH);
+  // Тёмный фон
+  bgCtx.fillStyle='#1a0800';bgCtx.fillRect(0,0,W,H);
+  // Кирпичные блоки 16×16
+  const BW=16,BH=16;
+  for(let row=0;row<Math.ceil(H/BH);row++){
+    for(let col=0;col<Math.ceil(W/BW);col++){
+      const bx=col*BW,by=row*BH;
+      bgCtx.globalAlpha=0.20;bgCtx.fillStyle='#7a2800';bgCtx.fillRect(bx+1,by+1,BW-2,BH-2);
+      bgCtx.globalAlpha=0.08;bgCtx.fillStyle='#ff6030';bgCtx.fillRect(bx+2,by+2,BW-4,3);
+      bgCtx.globalAlpha=0.06;bgCtx.fillStyle='#ff4010';bgCtx.fillRect(bx+2,by+9,BW-4,3);
+      bgCtx.globalAlpha=0.10;bgCtx.fillStyle='#111';bgCtx.fillRect(bx,by,BW,1);bgCtx.fillRect(bx,by,1,BH);
     }
   }
-  // CRT scanlines (static overlay)
-  bgCtx.globalAlpha=.04;bgCtx.fillStyle='#000';
+  // CRT scanlines
+  bgCtx.globalAlpha=.05;bgCtx.fillStyle='#000';
   for(let y=0;y<H;y+=4)bgCtx.fillRect(0,y,W,1);
-  // Phosphor dots
-  bgCtx.globalAlpha=.03;bgCtx.fillStyle='#00ff41';
-  for(let x=0;x<W;x+=20)for(let y=0;y<H;y+=20)bgCtx.fillRect(x,y,1,1);
-  // CRT corner brackets
-  bgCtx.globalAlpha=.12;bgCtx.strokeStyle='#00ff41';bgCtx.lineWidth=2;
-  [[0,0,1,1],[W,0,-1,1],[0,H,1,-1],[W,H,-1,-1]].forEach(([x,y,sx,sy])=>{
-    bgCtx.beginPath();bgCtx.moveTo(x+sx*24,y);bgCtx.lineTo(x,y);bgCtx.lineTo(x,y+sy*24);bgCtx.stroke();
-  });
   bgCtx.globalAlpha=1;
 
-  const LANES=[H*.2,H*.45,H*.72];
-  const tanks=LANES.map((lane,i)=>({
-    x:i%2===0?-60:W+60,y:lane,
-    dir:i%2===0?1:-1,
-    speed:Math.random()*.7+.5,
-    col:i===0?'#00ff41':i===1?'#ffd700':'#ff4444',
-    shootTimer:Math.floor(Math.random()*80)
-  }));
-  const bullets=[];
+  // ── Пиксельный Battle City танк (16×16 grid, px=размер 1 пикселя)
+  // dir: 0=вверх, 1=вниз (для вертикального движения)
+  function drawBattleTank(tx,ty,dir,colors){
+    // colors: {main, dark, tread, barrel, highlight}
+    const p=4; // пиксель = 4px
+    ctx.save();
+    ctx.translate(tx,ty);
+    // Поворачиваем весь танк: dir=1 смотрит вниз (180°), dir=-1 смотрит вверх (0°)
+    if(dir>0) ctx.rotate(Math.PI);
 
-  function drawTank(x,y,dir,col){
-    const p=PX;
-    ctx.globalAlpha=0.3;ctx.fillStyle='rgba(0,0,0,.3)';
-    ctx.fillRect(x-7*p+2,y+3*p+2,14*p,4*p);
-    ctx.fillStyle=col==='#ffd700'?'#806000':col==='#00ff41'?'#005018':'#801010';
-    ctx.globalAlpha=0.7;ctx.fillRect(x-8*p,y+2*p,16*p,3*p);
-    [-5,-1,3].forEach(wx=>{ctx.fillStyle='#111';ctx.fillRect(x+wx*p,y+3*p,3*p,2*p);});
-    ctx.fillStyle=col;ctx.globalAlpha=0.8;
-    ctx.fillRect(x-5*p,y-3*p,10*p,6*p);
-    ctx.beginPath();ctx.arc(x,y-p,3*p,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(x-3*p,y-4*p,3*p,2*p);
-    ctx.fillStyle=col;ctx.globalAlpha=0.85;
-    ctx.fillRect(dir>0?x+2*p:x-8*p,y-p,6*p,2*p);
-    ctx.globalAlpha=1;
+    // Рисуем танк смотрящим ВВЕРХ, потом поворачиваем
+    // Координаты относительно центра (0,0) = центр танка
+    // Гусеница левая (полосы)
+    ctx.fillStyle=colors.tread;
+    ctx.globalAlpha=0.85;
+    ctx.fillRect(-4*p,-4*p, 2*p, 8*p); // левая гусеница
+    ctx.fillRect( 2*p,-4*p, 2*p, 8*p); // правая гусеница
+    // Детали гусениц — горизонтальные сегменты
+    ctx.fillStyle=colors.dark;
+    ctx.globalAlpha=0.6;
+    for(let i=0;i<4;i++){
+      ctx.fillRect(-4*p,(-3+i*2)*p, 2*p, 1*p);
+      ctx.fillRect( 2*p,(-3+i*2)*p, 2*p, 1*p);
+    }
+    // Корпус (середина)
+    ctx.fillStyle=colors.main;
+    ctx.globalAlpha=0.90;
+    ctx.fillRect(-2*p,-3*p, 4*p, 6*p);
+    // Блик на корпусе
+    ctx.fillStyle=colors.highlight;
+    ctx.globalAlpha=0.35;
+    ctx.fillRect(-2*p,-3*p, 2*p, 2*p);
+    // Башня (квадрат по центру)
+    ctx.fillStyle=colors.dark;
+    ctx.globalAlpha=0.95;
+    ctx.fillRect(-1*p,-2*p, 2*p, 2*p);
+    // Пушка (вверх от башни)
+    ctx.fillStyle=colors.barrel;
+    ctx.globalAlpha=1.0;
+    ctx.fillRect(-0.5*p,-5*p, 1*p, 4*p); // ствол пушки
+    ctx.restore();
   }
+
+  // 3 танка в вертикальных колонках: зелёный, жёлтый, красный
+  const TANK_DEFS=[
+    { x:W*.18, y:-60, dir:1,  speed:.55,
+      colors:{main:'#3aaa3a',dark:'#1e6e1e',tread:'#2d862d',barrel:'#1a5c1a',highlight:'#7ddd7d'} },
+    { x:W*.50, y:H+60, dir:-1, speed:.70,
+      colors:{main:'#d4a017',dark:'#8a6500',tread:'#b88a10',barrel:'#705200',highlight:'#ffe066'} },
+    { x:W*.82, y:-60, dir:1,  speed:.45,
+      colors:{main:'#cc3333',dark:'#891515',tread:'#aa2222',barrel:'#6e1010',highlight:'#ff8888'} },
+  ];
+  const bullets=[];
 
   let lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<32){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     ctx.clearRect(0,0,W,H);
     ctx.drawImage(bgRetro,0,0);
-    tanks.forEach(tank=>{
-      tank.x+=tank.dir*tank.speed;
-      if(tank.x>W+80){tank.x=W+80;tank.dir=-1;}
-      if(tank.x<-80){tank.x=-80;tank.dir=1;}
-      tank.shootTimer++;
-      if(tank.shootTimer>120+Math.random()*60){
-        bullets.push({x:tank.x+(tank.dir>0?22:-22),y:tank.y-PX,dir:tank.dir,col:tank.col,life:1});
+
+    TANK_DEFS.forEach(tank=>{
+      tank.y += tank.dir * tank.speed;
+      if(tank.y > H+80){ tank.y=H+80; tank.dir=-1; }
+      if(tank.y < -80){  tank.y=-80;  tank.dir=1;  }
+      // Выстрел
+      tank.shootTimer=(tank.shootTimer||0)+1;
+      if(tank.shootTimer > 90+Math.random()*60){
+        bullets.push({x:tank.x, y:tank.y+(tank.dir>0?24:-24), dir:tank.dir,
+                      col:tank.colors.barrel, life:1});
         tank.shootTimer=0;
       }
-      drawTank(tank.x,tank.y,tank.dir,tank.col);
+      drawBattleTank(tank.x, tank.y, tank.dir, tank.colors);
     });
-    ctx.shadowBlur=0;
+
+    // Пули — летят вертикально
     for(let i=bullets.length-1;i>=0;i--){
       const b=bullets[i];
-      b.x+=b.dir*6;b.life-=.025;
-      if(b.life<=0||b.x<-20||b.x>W+20){bullets.splice(i,1);continue;}
-      ctx.globalAlpha=b.life*.8;ctx.fillStyle=b.col;
-      ctx.fillRect(b.x-4,b.y-2,8,4);
+      b.y+=b.dir*8; b.life-=0.018;
+      if(b.life<=0||b.y<-20||b.y>H+20){bullets.splice(i,1);continue;}
+      ctx.globalAlpha=b.life*.9;
+      ctx.fillStyle='#ffe566';
+      ctx.fillRect(b.x-3,b.y-5,6,10);
+      // блик на пуле
+      ctx.fillStyle='#fff';
+      ctx.fillRect(b.x-1,b.y-4,2,3);
     }
     ctx.globalAlpha=1;
     requestAnimationFrame(draw);
@@ -4818,7 +4896,7 @@ function animOceanBg(){
     {y:H*.88,amp:7, freq:.035,speed:1.3, col:'rgba(0,180,255,.10)'},
   ];
   // Bubbles
-  const bubbles=Array.from({length:22},()=>({
+  const bubbles=Array.from({length:12},()=>({
     x:Math.random()*W, y:H*.5+Math.random()*H*.5,
     r:1+Math.random()*3, speed:.3+Math.random()*.8,
     phase:Math.random()*Math.PI*2
@@ -4826,7 +4904,7 @@ function animOceanBg(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
-    if(ts-lastFrame<40){requestAnimationFrame(draw);return;}
+    if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.025;
     ctx.clearRect(0,0,W,H);
     ctx.drawImage(bg,0,0);
@@ -5052,7 +5130,7 @@ function renderThemeGrid(){
   grid.innerHTML=THEMES.map(t=>{
     const isAct=active===t.id||(t.id==='default'&&(!active||active==='default'));
     const unlocked=isBgThemeUnlocked(t.id);
-    const lockBadge=(!unlocked)?`<span style="position:absolute;top:4px;right:6px;font-size:9px;font-weight:900;color:rgba(255,200,100,.9)">🔒 БП${t.bpLvl}</span>`:'';
+    const lockBadge=(!unlocked)?`<span style="position:absolute;top:5px;right:7px;font-size:13px;opacity:.7">🔒</span>`:'';
     const activeBadge=isAct?'<span class="th-active-badge">✅ Активна</span>':'';
     return `<div class="sk-theme-card${isAct?' active':''}${!unlocked?' locked':''}"
       style="${t.bg}border-color:${t.border};${isAct?'box-shadow:'+t.glow+',inset 0 0 30px rgba(255,255,255,.03);':''}${!unlocked?'opacity:.65;':''}position:relative;"
@@ -5268,20 +5346,21 @@ const CASES = {
     name:'Кейс Новичка', ico:'📦', color:'#60a5fa',
     chest:{lid:'#4f94ea',main:'#2563eb',band:'rgba(0,0,0,.3)',glow:'rgba(96,165,250,.4)',btnA:'#3b82f6',btnB:'#1d4ed8',btnText:'#fff',shadow:'rgba(59,130,246,.5)'},
     items:[
-      { weight:40, type:'boost',    id:'score2x',     name:'×2 Очки',     ico:'⚡', desc:'Двойные очки — 1 игра',        rarity:'common' },
-      { weight:30, type:'boost',    id:'combo_shield',name:'Щит Комбо',    ico:'🛡️', desc:'Комбо не сбрасывается 1 раз',  rarity:'common' },
-      { weight:20, type:'skin',     id:'neon',        name:'Скин Неон',    ico:'🌈', desc:'Разблокирован навсегда',        rarity:'rare'   },
-      { weight:10, type:'skin',     id:'pastel',      name:'Скин Пастель', ico:'🎨', desc:'Разблокирован навсегда',        rarity:'rare'   },
+      { weight:35, type:'boost',    id:'score2x',     name:'×2 Очки',     ico:'⚡', desc:'Двойные очки — 1 игра',        rarity:'common' },
+      { weight:25, type:'boost',    id:'combo_shield',name:'Щит Комбо',    ico:'🛡️', desc:'Комбо не сбрасывается 1 раз',  rarity:'common' },
+      { weight:20, type:'bg_theme', id:'retro',       name:'Тема: Ретро',  ico:'🪖', desc:'Пиксельные танки — навсегда',  rarity:'rare'   },
+      { weight:12, type:'skin',     id:'neon',        name:'Скин Неон',    ico:'🌈', desc:'Разблокирован навсегда',        rarity:'rare'   },
+      { weight:8,  type:'skin',     id:'pastel',      name:'Скин Пастель', ico:'🎨', desc:'Разблокирован навсегда',        rarity:'rare'   },
     ]
   },
   'themes': {
     name:'Кейс Тем', ico:'🌌', color:'#a78bfa',
     chest:{lid:'#9c6ef5',main:'#7c3aed',band:'rgba(0,0,0,.3)',glow:'rgba(167,139,250,.4)',btnA:'#a78bfa',btnB:'#7c3aed',btnText:'#fff',shadow:'rgba(124,58,237,.5)'},
     items:[
-      { weight:35, type:'bg_theme', id:'cyberpunk',  name:'Тема: Киберпанк',ico:'🔮', desc:'Фон игры — навсегда',  rarity:'rare'   },
-      { weight:35, type:'bg_theme', id:'hell',       name:'Тема: Ад',       ico:'🔥', desc:'Фон игры — навсегда',  rarity:'rare'   },
-      { weight:20, type:'bg_theme', id:'cosmos',     name:'Тема: Космос',   ico:'🌌', desc:'Фон игры — навсегда',  rarity:'epic'   },
-      { weight:10, type:'boost',    id:'xp2x',       name:'×2 XP',         ico:'💎', desc:'Двойной XP — 3 игры',  rarity:'common' },
+      { weight:30, type:'bg_theme', id:'cyberpunk',  name:'Тема: Киберпанк',ico:'🔮', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:30, type:'bg_theme', id:'hell',       name:'Тема: Ад',       ico:'🔥', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:25, type:'bg_theme', id:'retro',      name:'Тема: Ретро',    ico:'🪖', desc:'Пиксельные танки',     rarity:'rare'   },
+      { weight:15, type:'bg_theme', id:'cosmos',     name:'Тема: Космос',   ico:'🌌', desc:'Фон игры — навсегда',  rarity:'epic'   },
     ]
   },
   'rare': {
@@ -5342,6 +5421,17 @@ const CASES = {
       { weight:20, type:'skin',     id:'galaxy',     name:'Скин Галактика 🏆',ico:'🌌',desc:'Легендарный · навсегда',     rarity:'legend' },
     ]
   },
+  'master': {
+    name:'Кейс Мастера', ico:'💜', color:'#c084fc',
+    chest:{lid:'#a855f7',main:'#7e22ce',band:'rgba(0,0,0,.3)',glow:'rgba(192,132,252,.4)',btnA:'#c084fc',btnB:'#7e22ce',btnText:'#fff',shadow:'rgba(168,85,247,.5)'},
+    items:[
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',    ico:'🔥', desc:'Эксклюзив — навсегда',     rarity:'epic'   },
+      { weight:25, type:'skin',     id:'gold',       name:'Скин Золото',   ico:'💛', desc:'Роскошные блоки навсегда', rarity:'epic'   },
+      { weight:25, type:'bg_theme', id:'ocean_bg',   name:'Тема: Океан',   ico:'🌊', desc:'Фон игры — навсегда',      rarity:'epic'   },
+      { weight:15, type:'bg_theme', id:'sunset',     name:'Тема: Закат',   ico:'🌅', desc:'Фон игры — навсегда',      rarity:'epic'   },
+      { weight:5,  type:'skin',     id:'galaxy',     name:'Скин Галактика',ico:'🌌', desc:'Легендарный · навсегда',   rarity:'legend' },
+    ]
+  },
 };
 
 /* Взвешенный рандом */
@@ -5350,34 +5440,50 @@ function rollCase(caseId){
   if(!c) return null;
   const total = c.items.reduce((s,i)=>s+i.weight,0);
   let rnd = Math.random()*total;
-  for(const item of c.items){ rnd-=item.weight; if(rnd<=0) return item; }
-  return c.items[c.items.length-1];
+  let item = c.items[c.items.length-1];
+  for(const it of c.items){ rnd-=it.weight; if(rnd<=0){item=it;break;} }
+  // Бонусный буст при выпадении скина или темы — с шансом 30% добавляет азарт
+  if((item.type==='skin' || item.type==='bg_theme') && Math.random()<0.30){
+    const bonusBoosts=[
+      {id:'score3x',name:'×3 Очки',ico:'🔥', weight:55},
+      {id:'score4x',name:'×4 Очки',ico:'💥', weight:30},
+      {id:'score5x',name:'×5 Очки',ico:'🌟', weight:15},
+    ];
+    const bTotal=bonusBoosts.reduce((s,b)=>s+b.weight,0);
+    let bRnd=Math.random()*bTotal;
+    let bonus=bonusBoosts[bonusBoosts.length-1];
+    for(const b of bonusBoosts){bRnd-=b.weight;if(bRnd<=0){bonus=b;break;}}
+    item._bonusBoost={id:bonus.id, name:bonus.name, ico:bonus.ico};
+  } else {
+    item._bonusBoost = null;
+  }
+  return item;
 }
 
 /* ══════════════════════════════════════════════════════════════
- * BP_LEVELS — 20 уровней, итого 445 000 XP
+ * BP_LEVELS — 20 уровней, итого 478 000 XP
  *
  * Лвл |  xpNeeded | Накопительно | Тип
- *  1  |     3 000 |        3 000 | boost score2x ×1
- *  2  |     5 000 |        8 000 | boost combo_shield ×1
- *  3  |     8 000 |       16 000 | case starter
- *  4  |    11 000 |       27 000 | boost xp2x ×2
- *  5  |    14 000 |       41 000 | case themes
- *  6  |    18 000 |       59 000 | feature bank_spin
- *  7  |    22 000 |       81 000 | case rare
- *  8  |    26 000 |      107 000 | boost score2x ×2
- *  9  |    31 000 |      138 000 | case themes2
- * 10  |    36 000 |      174 000 | boost score3x ×2
- * 11  |    41 000 |      215 000 | case mid (Охотника)
- * 12  |    46 000 |      261 000 | boost xp2x ×3
- * 13  |    38 000 |      299 000 | case themes3 (Горизонта)
- * 14  |    32 000 |      331 000 | boost combo_shield ×3
- * 15  |    28 000 |      359 000 | boost score3x ×3  ← 15-20: подряд
- * 16  |    25 000 |      384 000 | case legend
- * 17  |    22 000 |      406 000 | boost score2x ×4
- * 18  |    19 000 |      425 000 | case season
- * 19  |    12 000 |      437 000 | boost xp2x ×4
- * 20  |     8 000 |      445 000 | skin galaxy 🏆 (легенда сезона)
+ *  1  |       800 |          800 | boost score2x ×1
+ *  2  |     1 500 |        2 300 | boost combo_shield ×2
+ *  3  |     2 200 |        4 500 | case starter
+ *  4  |     4 800 |        9 300 | boost xp2x ×3
+ *  5  |     8 800 |       18 100 | case themes
+ *  6  |    11 300 |       29 400 | feature bank_spin
+ *  7  |    16 800 |       46 200 | case rare
+ *  8  |    21 300 |       67 500 | boost score2x ×3
+ *  9  |    31 500 |       99 000 | case themes2
+ * 10  |    36 000 |      135 000 | boost score3x ×4
+ * 11  |    41 000 |      176 000 | case mid (Охотника)
+ * 12  |    46 000 |      222 000 | boost xp2x ×5
+ * 13  |    29 000 |      251 000 | case themes3 (Горизонта)
+ * 14  |    27 000 |      278 000 | boost combo_shield ×5 + score3x ×3
+ * 15  |    25 000 |      303 000 | case master (Мастера)
+ * 16  |    30 000 |      333 000 | boost xp2x ×5 + score2x ×3
+ * 17  |    29 000 |      362 000 | case legend
+ * 18  |    30 000 |      392 000 | boost score3x ×5 + combo_shield ×3
+ * 19  |    28 000 |      420 000 | case season
+ * 20  |    58 000 |      478 000 | boost score5x ×3 + xp2x ×5 + skin galaxy
  * ══════════════════════════════════════════════════════════════ */
 const BP_LEVELS = [
   { lvl:1,  xpNeeded:800,   reward:{type:'boost',   id:'score2x',     name:'×2 Очки',         ico:'⚡', desc:'Двойные очки — 1 игра',                amt:1}, rewardIco:'⚡' },
@@ -5393,16 +5499,17 @@ const BP_LEVELS = [
   { lvl:11, xpNeeded:41000, reward:{type:'case',    id:'mid',         name:'Кейс Охотника',     ico:'🗡️', desc:'Топ скин — случайно'},                 rewardIco:'🗡️' },
   { lvl:12, xpNeeded:46000, reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×5',          ico:'💎', desc:'Двойной XP — 5 игр',                   amt:5}, rewardIco:'💎' },
   { lvl:13, xpNeeded:29000, reward:{type:'case',    id:'themes3',     name:'Кейс Горизонта',    ico:'🌅', desc:'Эпик тема — случайно'},                rewardIco:'🌅' },
-  { lvl:14, xpNeeded:27000, reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо ×5',      ico:'🛡️', desc:'5 бесплатных щитов',                   amt:5}, rewardIco:'🛡️' },
-  { lvl:15, xpNeeded:25000, reward:{type:'boost',   id:'score3x',     name:'×3 Очки ×5',        ico:'🔥', desc:'Тройные очки — 5 игр',                 amt:5}, rewardIco:'🔥' },
-  { lvl:16, xpNeeded:30000, reward:{type:'case',    id:'legend',      name:'Кейс Легенды',      ico:'🏆', desc:'Эпик или легенда — случайно'},
-    bonus:{type:'boost', id:'xp2x', amt:5, name:'×2 XP ×5', ico:'💎'},                                                                                rewardIco:'🏆' },
-  { lvl:17, xpNeeded:29000, reward:{type:'boost',   id:'score2x',     name:'×2 Очки ×5',        ico:'⚡', desc:'Двойные очки — 5 игр',                 amt:5}, rewardIco:'⚡' },
-  { lvl:18, xpNeeded:30000, reward:{type:'case',    id:'season',      name:'Кейс Сезона',       ico:'🌟', desc:'Топ скины сезона — случайно'},
-    bonus:{type:'boost', id:'combo_shield', amt:5, name:'Щит Комбо ×5', ico:'🛡️'},                                                                     rewardIco:'🌟' },
-  { lvl:19, xpNeeded:28000, reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×5',          ico:'💎', desc:'Двойной XP — 5 игр',                   amt:5}, rewardIco:'💎' },
+  { lvl:14, xpNeeded:27000, reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо ×5',      ico:'🛡️', desc:'5 бесплатных щитов',                   amt:5},
+    bonus:{type:'boost', id:'score3x', amt:3, name:'×3 Очки ×3', ico:'🔥'},                                                                            rewardIco:'🛡️' },
+  { lvl:15, xpNeeded:25000, reward:{type:'case',    id:'master',      name:'Кейс Мастера',      ico:'💜', desc:'Эпик скины и темы — случайно'},         rewardIco:'💜' },
+  { lvl:16, xpNeeded:30000, reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×5',          ico:'💎', desc:'Двойной XP — 5 игр',                   amt:5},
+    bonus:{type:'boost', id:'score2x', amt:3, name:'×2 Очки ×3', ico:'⚡'},                                                                            rewardIco:'💎' },
+  { lvl:17, xpNeeded:29000, reward:{type:'case',    id:'legend',      name:'Кейс Легенды',      ico:'🏆', desc:'Эпик или легенда — случайно'},          rewardIco:'🏆' },
+  { lvl:18, xpNeeded:30000, reward:{type:'boost',   id:'score3x',     name:'×3 Очки ×5',        ico:'🔥', desc:'Тройные очки — 5 игр',                 amt:5},
+    bonus:{type:'boost', id:'combo_shield', amt:3, name:'Щит Комбо ×3', ico:'🛡️'},                                                                     rewardIco:'🔥' },
+  { lvl:19, xpNeeded:28000, reward:{type:'case',    id:'season',      name:'Кейс Сезона',       ico:'🌟', desc:'Топ скины сезона — случайно'},          rewardIco:'🌟' },
   { lvl:20, xpNeeded:58000, reward:{type:'skin',    id:'galaxy',      name:'Скин Галактика 🏆',  ico:'🌌', desc:'Легендарный эксклюзив Сезона 1 · навсегда'},
-    bonus:{type:'boost', id:'score3x', amt:5, name:'×3 Очки ×5', ico:'🔥'},                                                                             rewardIco:'👑' },
+    bonus:{type:'boost', id:'score5x', amt:3, name:'×5 Очки ×3', ico:'🌟'},                                                                             rewardIco:'👑' },
 ];
 
 // XP который надо набрать ДО начала уровня (кумулятивно)
@@ -5844,6 +5951,18 @@ function triggerCaseOpen(caseId, drop){
       const rarMap = {common:'ОБЫЧНЫЙ',rare:'РЕДКИЙ',epic:'ЭПИЧЕСКИЙ',legend:'ЛЕГЕНДАРНЫЙ'};
       rarEl.textContent = rarMap[drop.rarity]||'';
       rarEl.className = 'case-result-rarity rarity-'+(drop.rarity||'common');
+      // Бонусный буст при выпадении скина или темы
+      if(drop._bonusBoost){
+        boostAdd(drop._bonusBoost.id, 1);
+        const bonusEl = document.getElementById('case-bonus-boost');
+        if(bonusEl){
+          bonusEl.textContent = `${drop._bonusBoost.ico} +${drop._bonusBoost.name} в подарок!`;
+          bonusEl.style.display='block';
+        }
+      } else {
+        const bonusEl = document.getElementById('case-bonus-boost');
+        if(bonusEl) bonusEl.style.display='none';
+      }
     }
     resWrap.classList.add('show');
   }, 520);
@@ -6119,7 +6238,7 @@ async function initSmartBanner(){
   loadAdsterraBanner();
 
   // RichAds push-style уведомление при первом открытии игры
-  if(_richadsReady && _richadsController && RICHADS_PUB_ID !== 'ВСТАВЬ_PUB_ID'){
+  if(_richadsReady && _richadsController){
     try { _richadsController.triggerNativeNotification(); } catch(e){}
   }
 
@@ -6301,6 +6420,7 @@ setTimeout(checkDailyBonus, 1200);
     <div class="case-result-rarity rarity-common" id="case-result-rarity">ОБЫЧНЫЙ</div>
     <div class="case-result-name" id="case-result-name">Буст</div>
     <div class="case-result-desc" id="case-result-desc">Описание награды</div>
+    <div id="case-bonus-boost" style="display:none;margin-top:10px;padding:7px 14px;background:linear-gradient(135deg,rgba(251,191,36,.18),rgba(245,158,11,.10));border:1px solid rgba(251,191,36,.35);border-radius:10px;font-size:12px;font-weight:800;color:#fbbf24;letter-spacing:.5px;text-align:center;animation:toastIn .4s cubic-bezier(.34,1.56,.64,1);"></div>
     <button class="case-result-btn" onclick="closeCaseOv()">Отлично! 🎉</button>
   </div>
 </div>
