@@ -3868,13 +3868,11 @@ function resumeTimer(){
  * ════════════════════════════════════════════════════ */
 const RICHADS_PUB_ID  = '1004799';   // RichAds Publisher ID
 const RICHADS_APP_ID  = '6493';       // RichAds App ID
-// ─── Нижний баннер Tads.me (Vanilla JS) ───────────────────────────────────
-// Инструкция: Publisher → Widgets → твой виджет → скопируй Widget ID
-// Формат: строка типа "abc123def456"
-const TADS_WIDGET_ID = '9542'; // Tads.me Widget ID
-const TADS_WIDGET_TYPE = 'static';          // 'static' = TGB баннер (нижняя плашка)
-// Fallback: если Tads не работает — старый src-баннер (Adsterra или другой)
-const BOTTOM_BANNER_SRC = '';              // оставь пустым если используешь Tads
+// ─── Нижний баннер Adsterra 320×50 ──────────────────────────────────────────
+const TADS_WIDGET_ID = ''; // Tads отключён (CDN не работает)
+const TADS_WIDGET_TYPE = '';
+const BOTTOM_BANNER_SRC = 'https://www.highperformanceformat.com/0ec81b33f6588a840e86be997d89de2b/invoke.js';
+const ADSTERRA_KEY = '0ec81b33f6588a840e86be997d89de2b';
 
 let adCallback = null;
 let _richadsController = null;
@@ -3911,48 +3909,27 @@ function initRichAds(){
   setTimeout(initRichAds, 3000);
 })();
 
-// Загрузка нижнего баннера Tads.me (Vanilla JS embed)
+// Загрузка нижнего баннера Adsterra 320×50
 function loadBottomBanner(){
   if(_bottomBannerLoaded) return;
   const inner = document.getElementById('ad-banner-inner');
   if(!inner) return;
-
-  if(TADS_WIDGET_ID && TADS_WIDGET_ID !== 'ВСТАВЬ_WIDGET_ID'){
-    _bottomBannerLoaded = true;
-    // Tads Vanilla JS: виджет-контейнер с data-атрибутами + SDK скрипт
-    // Документация: tads.gitbook.io/docs/getting-started/publishers/embed-widget/vanilla-js
-    const container = document.createElement('div');
-    container.setAttribute('data-tads-widget-id', TADS_WIDGET_ID);
-    container.setAttribute('data-tads-type', TADS_WIDGET_TYPE);
-    container.style.cssText = 'width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;';
-    inner.appendChild(container);
-
-    const sdk = document.createElement('script');
-    sdk.src = 'https://cdn.tads.me/widget/widget.js';
-    sdk.async = true;
-    sdk.defer = true;
-    sdk.setAttribute('data-cfasync', 'false');
-    sdk.onload = () => {
-      console.log('[Tads] SDK loaded OK, widget ID:', TADS_WIDGET_ID);
-      // Проверяем отображение через 3 секунды
-      setTimeout(()=>{
-        const cont = inner.querySelector('[data-tads-widget-id]');
-        const hasContent = cont && (cont.children.length > 0 || cont.offsetHeight > 5);
-        console.log('[Tads] Widget rendered:', hasContent, 'height:', cont?.offsetHeight);
-      }, 3000);
-    };
-    sdk.onerror = () => console.warn('[Tads] SDK load failed');
-    document.body.appendChild(sdk);
-    return;
-  }
-
-  // Fallback: src-баннер (Adsterra/другой)
-  if(!BOTTOM_BANNER_SRC) return;
   _bottomBannerLoaded = true;
+
+  // Adsterra: сначала atOptions, потом invoke.js
+  window.atOptions = {
+    'key'   : ADSTERRA_KEY,
+    'format': 'iframe',
+    'height': 50,
+    'width' : 320,
+    'params': {}
+  };
   const s = document.createElement('script');
   s.src = BOTTOM_BANNER_SRC;
   s.async = true;
   s.setAttribute('data-cfasync','false');
+  s.onload = () => console.log('[Adsterra] Banner loaded OK');
+  s.onerror = () => console.warn('[Adsterra] Banner load failed');
   inner.appendChild(s);
 }
 
