@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="94">
+<meta name="version" content="97">
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается один раз -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
@@ -123,6 +123,8 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 /* Share button */
 .go-share{background:linear-gradient(135deg,rgba(59,130,246,.7),rgba(37,99,235,.6));border:1.5px solid rgba(147,197,253,.4);color:#fff;}
 .go-share:active{transform:scale(.97);}
+.go-share.record-glow{background:linear-gradient(135deg,#f59e0b,#f97316);border-color:rgba(255,214,0,.6);animation:shareGlow 1.5s ease-in-out infinite;}
+@keyframes shareGlow{0%,100%{box-shadow:0 0 12px rgba(251,146,60,.5);}50%{box-shadow:0 0 26px rgba(251,146,60,.9),0 0 8px rgba(255,214,0,.4);}}
 /* Кнопка ачивментов в меню */
 .m-ach-btn{
   width:64px;height:64px;border:none;border-radius:50%;cursor:pointer;
@@ -282,6 +284,7 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .go-continue-main{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:16px;letter-spacing:.3px;}
 .go-new{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);color:var(--text);}
 .go-share{background:linear-gradient(135deg,rgba(59,130,246,.75),rgba(37,99,235,.65));border:1px solid rgba(147,197,253,.35);color:#fff;}
+.go-share.record-glow{background:linear-gradient(135deg,#f59e0b,#f97316);border-color:rgba(255,214,0,.6);}
 .go-menu-btn{background:rgba(100,116,139,.35);border:1.5px solid rgba(148,163,184,.35);color:#fff;}
 
 /* ══════════════════════════════
@@ -309,7 +312,7 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
   line-height:1;letter-spacing:.5px;
   -webkit-text-stroke:1px rgba(0,30,60,.7);
   text-shadow:0 2px 0 rgba(0,0,0,.55),0 0 10px rgba(34,211,238,.5);
-  transition:color .15s;
+  transition:color .15s, transform .1s;
 }
 .g-combo-num.hot{
   color:#ffd600;
@@ -462,31 +465,29 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 /* Line-ready — оригинальный радужный outline + мягкое рассеянное свечение за рамками
    outline анимирует цвет рамки (paint, но только для ячеек линии)
    box-shadow с большим spread выходит за рамки ячейки — как пульс у кристаллов */
-@keyframes glowC{
-  0%  {outline:3px solid #00e5ff;}
-  33% {outline:3px solid #ffe600;}
-  66% {outline:3px solid #ff3cac;}
-  100%{outline:3px solid #00e5ff;}
-}
-/* Рассеянное свечение — пульсирует и меняет цвет вслед за outline */
+/* line-ready: только box-shadow анимация (GPU composited), outline статичный */
 @keyframes glowCDiffuse{
-  0%  { box-shadow: 0 0 10px 4px rgba(0,229,255,.65), 0 0 26px 8px rgba(0,229,255,.30), 0 0 48px 12px rgba(0,229,255,.12); }
-  33% { box-shadow: 0 0 10px 4px rgba(255,230,0,.65),  0 0 26px 8px rgba(255,230,0,.30),  0 0 48px 12px rgba(255,230,0,.12); }
-  66% { box-shadow: 0 0 10px 4px rgba(255,60,172,.65), 0 0 26px 8px rgba(255,60,172,.30), 0 0 48px 12px rgba(255,60,172,.12); }
-  100%{ box-shadow: 0 0 10px 4px rgba(0,229,255,.65), 0 0 26px 8px rgba(0,229,255,.30), 0 0 48px 12px rgba(0,229,255,.12); }
+  0%  { box-shadow: 0 0 8px 3px rgba(0,229,255,.70), 0 0 22px 7px rgba(0,229,255,.32), 0 0 44px 10px rgba(0,229,255,.13); }
+  33% { box-shadow: 0 0 8px 3px rgba(255,230,0,.70),  0 0 22px 7px rgba(255,230,0,.32),  0 0 44px 10px rgba(255,230,0,.13); }
+  66% { box-shadow: 0 0 8px 3px rgba(255,60,172,.70), 0 0 22px 7px rgba(255,60,172,.32), 0 0 44px 10px rgba(255,60,172,.13); }
+  100%{ box-shadow: 0 0 8px 3px rgba(0,229,255,.70), 0 0 22px 7px rgba(0,229,255,.32), 0 0 44px 10px rgba(0,229,255,.13); }
 }
 .cell.line-ready{
-  animation: glowC 1.8s linear infinite, glowCDiffuse 1.8s linear infinite !important;
+  animation: glowCDiffuse 1.8s linear infinite !important;
+  outline: 2px solid rgba(0,229,255,.9);
   outline-offset: 0px;
   will-change: box-shadow;
   transform: translateZ(0);
   z-index: 2;
+  contain: layout style;
 }
 .cell.line-ready.ok{
-  animation: glowC 1.8s linear infinite, glowCDiffuse 1.8s linear infinite !important;
+  animation: glowCDiffuse 1.8s linear infinite !important;
+  outline: 2px solid rgba(0,229,255,.9);
   outline-offset: 0px;
   will-change: box-shadow;
   transform: translateZ(0);
+  contain: layout style;
 }
 /* Line glow — через outline на ячейках, overlay не используется */
 #line-glows{display:none;}
@@ -1741,7 +1742,7 @@ body[class*="theme-"] .g-header {
       <div id="hold">
         <div id="hold-inner"></div>
         <div class="hold-lbl">БАНК</div>
-        <div id="hold-bp-lock" style="display:none"><span>🔒</span><small>БП УР.7</small></div>
+        <div id="hold-bp-lock" style="display:none"><span>🔒</span><small>БП УР.6</small></div>
       </div>
     </div>
   </div>
@@ -1899,7 +1900,7 @@ body[class*="theme-"] .g-header {
     <!-- Main actions -->
     <div class="go-btns-main">
       <button class="go-btn go-new" onclick="restartGame()">🔄 Новая игра</button>
-      <button class="go-btn go-share" onclick="shareResult()">📤 Поделиться</button>
+      <button class="go-btn go-share" id="go-share-btn" onclick="shareResult()">📤 Поделиться</button>
       <button class="go-btn go-menu-btn" onclick="goMenu()">🏠 Меню</button>
     </div>
   </div>
@@ -2397,6 +2398,13 @@ async function submitBPXP(scoreVal, modeKey){
 
 async function submitScore(modeKey, scoreVal){
   if(!tg?.initData) return; // [FIX] нет initData — не в Telegram, не отправляем
+  // Клиентская защита от аномальных счётов (античит)
+  // Максимум ~200 блоков × комбо×12 × буст×5 × уровень×10 = ~120000 за партию
+  const MAX_SCORE = 300000;
+  if(scoreVal > MAX_SCORE){
+    console.warn('[AntiCheat] Suspicious score:', scoreVal);
+    return; // не отправляем — Worker тоже проверит
+  }
   try {
     await fetch(`${API}/score`, {
       method:'POST',
@@ -2810,16 +2818,6 @@ function renderPieces(){
     sl.onclick=()=>tapSlot(i);
   }
 }
-function renderHold(){
-  const holdEl=document.getElementById('hold');
-  renderPieceInto(document.getElementById('hold-inner'),held,BANK_W-20,false);
-  let hc=held?'filled':'';
-  if(sel==='h') hc+=' selected';
-  else if(sel>=0&&sel<3&&pieces[sel]) hc+=' piece-selected';
-  holdEl.className=hc.trim();
-  document.getElementById('btn-rot').className=held?'':'disabled';
-}
-
 /* ══ ROTATE (bank only) ══ */
 function rotHeld(){
   if(!held)return;
@@ -2855,6 +2853,10 @@ function tapHold(){
       addSpinUse();
       updateRotBtn(); // немедленно обновляем счётчик
     }
+    // ══ SWAP: pieces[sel] ↔ held ══
+    const tmp = held;
+    held = pieces[sel];
+    pieces[sel] = tmp;
     if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
     else if(heldWasCrystal){_crystalPiece=sel;if(pieces[sel])pieces[sel].crystal=false;if(held)held.crystal=false;}
     sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
@@ -2877,6 +2879,10 @@ function doHoldSwapDrag(si){
     addSpinUse();
     updateRotBtn(); // немедленно обновляем счётчик
   }
+  // ══ SWAP: pieces[si] ↔ held ══
+  const tmp = held;
+  held = pieces[si];
+  pieces[si] = tmp;
   if(isCrystalSlot){_crystalPiece=-1;if(held)held.crystal=true;}
   else if(heldWasCrystal){_crystalPiece=si;if(pieces[si])pieces[si].crystal=false;if(held)held.crystal=false;}
   sel=-1;clearHL();renderPieces();renderHold();vibrate(8);playSound('hold');
@@ -3087,6 +3093,9 @@ async function place(si,sr,sc){
           noBlastStreak=0;
           spawnScoreNum(window.innerWidth/2,window.innerHeight*0.55,'🛡️ SHIELD!','#22d3ee',16);
           vibrate(6);
+          // Flash-анимация HUD combo при срабатывании щита
+          const comboEl = document.getElementById('gs-combo');
+          if(comboEl){ comboEl.style.transition='transform .1s'; comboEl.style.transform='scale(1.35)'; comboEl.style.color='#22d3ee'; setTimeout(()=>{comboEl.style.transform='';comboEl.style.color='';},300); }
         } else {
           // Щит не сработал — комбо сбрасывается
           combo=1;noBlastStreak=0;document.getElementById('gs-combo').textContent='×1 КОМБО';document.getElementById('gs-combo').className='g-combo-num x1';
@@ -3129,10 +3138,8 @@ function clearHL(){
   _hlCells.forEach(el=>{
     el.classList.remove('ok','bad','line-ready');
     // Освобождаем GPU слои — не держим их зря
-    if(el.style.willChange==='box-shadow'){
-      el.style.willChange='';
-      el.style.transform='';
-    }
+    el.style.willChange='';
+    el.style.transform='';
     const r=+el.dataset.r,c=+el.dataset.c;
     if(grid[r]?.[c]>=0)applyBlockGrid(el,grid[r][c]);else clearBlock(el);
   });
@@ -3556,6 +3563,9 @@ function showGO(){
   document.getElementById('go-cmb').textContent='×'+maxCombo;
   document.getElementById('go-new-rec').className='go-best-badge'+(isNewRecord?' show':'');
   document.getElementById('go-new-rec').textContent=t('newRecord');
+  // Подсвечиваем кнопку Поделиться при новом рекорде
+  const shareBtn = document.getElementById('go-share-btn');
+  if(shareBtn) shareBtn.className = 'go-btn go-share' + (isNewRecord?' record-glow':'');
   // Translate stat labels
   const sl=document.getElementById('go-sl-lines'); if(sl) sl.textContent=t('lines');
   const slv=document.getElementById('go-sl-lvl'); if(slv) slv.textContent=t('level');
@@ -3580,6 +3590,17 @@ function showGO(){
     // Обновить XP секцию в GO
     const xpEl = document.getElementById('go-xp-val');
     if(xpEl) xpEl.textContent = '+'+xpEarned.toLocaleString()+' XP'+((_activeBoostThisGame==='xp2x')?' (×2)':'');
+    // ✨ XP анимация — цифры летят вверх
+    setTimeout(()=>{
+      const xpSection = document.getElementById('go-xp-section');
+      if(xpSection){
+        const r = xpSection.getBoundingClientRect();
+        const cx = r.left + r.width/2;
+        const cy = r.top + r.height/2;
+        spawnScoreNum(cx, cy, '+'+xpEarned.toLocaleString()+' XP', '#a78bfa', 20);
+        if(_activeBoostThisGame==='xp2x') setTimeout(()=>spawnScoreNum(cx+30, cy-20, '💎×2', '#22d3ee', 15), 200);
+      }
+    }, 400);
     const bpFill = document.getElementById('go-bp-fill');
     const bpLvlTxt = document.getElementById('go-bp-lvl-txt');
     const curLvl = bpResult.newLevel;
@@ -3698,12 +3719,18 @@ function resumeTimer(){
  * ════════════════════════════════════════════════════ */
 const RICHADS_PUB_ID  = '1004799';   // RichAds Publisher ID
 const RICHADS_APP_ID  = '6493';       // RichAds App ID
-const ADSTERRA_SRC    = 'ВСТАВЬ_ADSTERRA'; // <-- src баннера из Adsterra
+// ─── Нижний баннер Tads.me (Vanilla JS) ───────────────────────────────────
+// Инструкция: Publisher → Widgets → твой виджет → скопируй Widget ID
+// Формат: строка типа "abc123def456"
+const TADS_WIDGET_ID = '9542'; // <-- Widget ID из Tads.me dashboard
+const TADS_WIDGET_TYPE = 'static';          // 'static' = TGB баннер (нижняя плашка)
+// Fallback: если Tads не работает — старый src-баннер (Adsterra или другой)
+const BOTTOM_BANNER_SRC = '';              // оставь пустым если используешь Tads
 
 let adCallback = null;
 let _richadsController = null;
 let _richadsReady = false;
-let _adsterraLoaded = false;
+let _bottomBannerLoaded = false;
 
 // Инициализация RichAds (точно по документации richads.com)
 function initRichAds(){
@@ -3731,15 +3758,46 @@ function initRichAds(){
   setTimeout(initRichAds, 3000);
 })();
 
-// Загрузка Adsterra нижнего баннера
-function loadAdsterraBanner(){
-  if(_adsterraLoaded) return;
-  if(ADSTERRA_SRC === 'ВСТАВЬ_ADSTERRA') return;
-  _adsterraLoaded = true;
+// Загрузка нижнего баннера: Tads.me (приоритет) или src-баннер (fallback)
+function loadBottomBanner(){
+  if(_bottomBannerLoaded) return;
   const inner = document.getElementById('ad-banner-inner');
   if(!inner) return;
+
+  // Вариант 1: Tads.me Vanilla JS SDK
+  if(TADS_WIDGET_ID && TADS_WIDGET_ID !== 'ВСТАВЬ_WIDGET_ID'){
+    _bottomBannerLoaded = true;
+    // Загружаем Tads SDK
+    const sdk = document.createElement('script');
+    sdk.src = 'https://cdn.tads.me/widget/widget.js';
+    sdk.async = true;
+    sdk.onload = () => {
+      try{
+        // Создаём контейнер для виджета
+        const container = document.createElement('div');
+        container.id = 'tads-widget-container';
+        container.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:center;';
+        inner.appendChild(container);
+        // Инициализируем виджет
+        if(window.TadsWidget){
+          window.TadsWidget.init({
+            id: TADS_WIDGET_ID,
+            type: TADS_WIDGET_TYPE,
+            container: 'tads-widget-container',
+            onAdsNotFound: ()=>{ console.log('[Tads] no ads'); }
+          });
+        }
+      }catch(e){ console.warn('[Tads] init error', e); }
+    };
+    document.head.appendChild(sdk);
+    return;
+  }
+
+  // Вариант 2: src-баннер (Adsterra/другой)
+  if(!BOTTOM_BANNER_SRC || BOTTOM_BANNER_SRC === 'ВСТАВЬ_КОД') return;
+  _bottomBannerLoaded = true;
   const s = document.createElement('script');
-  s.src = ADSTERRA_SRC;
+  s.src = BOTTOM_BANNER_SRC;
   s.async = true;
   s.setAttribute('data-cfasync','false');
   inner.appendChild(s);
@@ -3759,22 +3817,34 @@ function doAd(type){
 }
 
 function goUseContinue(){
-  _continueUsedThisGame=true;
-  if(_activeBoostThisGame==='free_continue') boostConsume('free_continue');
-  const btn=document.getElementById('go-continue-btn');
-  if(btn) btn.closest('.go-section').style.display='none';
-  continuePlaying();
+  // Если есть free_continue буст — используем без рекламы
+  if(_activeBoostThisGame==='free_continue'){
+    _continueUsedThisGame=true;
+    boostConsume('free_continue');
+    const btn=document.getElementById('go-continue-btn');
+    if(btn) btn.closest('.go-section').style.display='none';
+    continuePlaying();
+    return;
+  }
+  // Иначе — показываем рекламу
+  doAd('continue');
 }
 function goSpeedContinue(){
-  _continueUsedThisGame=true;
-  const btn=document.getElementById('go-speed-continue-btn');
-  if(btn) btn.closest('.go-section').style.display='none';
-  addSpeedTime(10,'▶️ +10 сек');
+  doAd('speed_time');
 }
 function giveAdReward(type){
   vibrate('line');
-  if(type==='speed_time') addSpeedTime(10,'📺 +10 сек');
-  else if(type==='continue') continuePlaying();
+  if(type==='speed_time'){
+    const btn=document.getElementById('go-speed-continue-btn');
+    if(btn) btn.closest('.go-section').style.display='none';
+    _continueUsedThisGame=true;
+    addSpeedTime(10,'📺 +10 сек');
+  } else if(type==='continue'){
+    const btn=document.getElementById('go-continue-btn');
+    if(btn) btn.closest('.go-section').style.display='none';
+    _continueUsedThisGame=true;
+    continuePlaying();
+  }
 }
 
 function showFakeAd(type){
@@ -3888,16 +3958,18 @@ function shareResult(){
   const myId = MY_TG_ID();
   const botName = 'BlockFastManiaBot';
   vibrate('menu'); playSound('menu');
+  const newRecBadge = isNewRecord ? '🏆 НОВЫЙ РЕКОРД!%0A' : '';
   if(isDailyMode){
     const refParam = myId ? '?start='+myId : '';
-    const shareText = `🎮 Block Fast Mania — Daily Challenge%0A📅 ${getDailyDateStr()}%0A🏆 Мой результат: ${score.toLocaleString()} очков%0A📦 ${lines} линий · 🔥 Комбо ×${maxCombo}%0A%0AА ты сможешь лучше?%0Ahttps://t.me/${botName}${refParam}`;
+    const shareText = `🎮 Block Fast Mania${newRecBadge?'%0A'+newRecBadge:''}%0A📅 Daily ${getDailyDateStr()}%0A🏆 ${score.toLocaleString()} очков%0A📦 ${lines} линий · 🔥 Комбо ×${maxCombo}%0A%0AА ты сможешь лучше? 👇%0Ahttps://t.me/${botName}${refParam}`;
     const shareUrl = `https://t.me/share/url?url=https://t.me/${botName}${refParam}&text=${shareText}`;
     if(tg?.openTelegramLink){ tg.openTelegramLink(shareUrl); }
     else if(navigator.share){ navigator.share({text: decodeURIComponent(shareText.replace(/%0A/g,'\n'))}); }
     else { navigator.clipboard?.writeText(decodeURIComponent(shareText.replace(/%0A/g,'\n'))).then(()=>{ tg?.showPopup?.({title:'📋 Скопировано',message:'Вставь в любой чат!',buttons:[{id:'ok',type:'ok'}]}); }); }
   } else {
     const refParam = myId ? '?start='+myId : '';
-    const shareText = `🎮 Block Fast Mania [${modeNames[mode]||mode}]%0A🏆 Набрал ${score.toLocaleString()} очков!%0A📦 ${lines} линий · 🔥 Макс комбо ×${maxCombo}%0A%0AПобей мой рекорд!%0Ahttps://t.me/${botName}${refParam}`;
+    const recLine = isNewRecord ? '🏆 НОВЫЙ РЕКОРД!%0A' : '';
+    const shareText = `🎮 Block Fast Mania [${modeNames[mode]||mode}]%0A${recLine}%0A✨ ${score.toLocaleString()} очков%0A📦 ${lines} линий · 🔥 Макс комбо ×${maxCombo}%0A%0AПобей мой рекорд! 👇%0Ahttps://t.me/${botName}${refParam}`;
     const shareUrl = `https://t.me/share/url?url=https://t.me/${botName}${refParam}&text=${shareText}`;
     if(tg?.openTelegramLink){ tg.openTelegramLink(shareUrl); }
     else if(navigator.share){ navigator.share({text: decodeURIComponent(shareText.replace(/%0A/g,'\n'))}); }
@@ -3910,22 +3982,19 @@ const ONBOARDING_KEY = 'bfm_onboarded';
 let onboardingStep = 0;
 const ONBOARDING_STEPS = [
   { emoji:'🎮', title: LANG==='ru'?'Добро пожаловать!':'Welcome!',
-    text: LANG==='ru'?'Перетащи фигуру на поле. Заполни ряд или колонку — она исчезнет и принесёт очки!':'Drag a piece onto the grid. Fill a row or column — it disappears and scores points!',
+    text: LANG==='ru'?'Перетащи фигуру на поле. Заполни ряд или колонку целиком — она взрывается и даёт очки!':'Drag a piece onto the grid. Fill a row or column completely — it clears and scores points!',
     btn: LANG==='ru'?'Понял!':'Got it!' },
-  { emoji:'🔥', title: LANG==='ru'?'Комбо множитель':'Combo multiplier',
-    text: LANG==='ru'?'Взрывай линии несколько ходов подряд — множитель растёт до ×12 и очки взрываются! Без линий 3 хода подряд — комбо сбрасывается.':'Clear lines several turns in a row — multiplier grows up to ×12! 3 turns without lines resets it.',
-    btn: LANG==='ru'?'Дальше':'Next' },
-  { emoji:'💎', title: LANG==='ru'?'Кристальные блоки':'Crystal blocks',
-    text: LANG==='ru'?'Каждые 8 ходов одна фигура становится кристальной 💎. Поставь её и взорви линию — получишь ×3 к очкам на 3 хода!':'Every 8 moves one piece turns crystal 💎. Place it and clear a line — get ×3 score bonus for 3 moves!',
-    btn: LANG==='ru'?'Дальше':'Next' },
-  { emoji:'⚡', title: LANG==='ru'?'Цепочки на поле':'Chain cells',
-    text: LANG==='ru'?'На поле появляются метки ⚡🔥💎. Взорви линию с 2+ метками — получишь бонус ×1.5 к очкам и защиту комбо!':'Special marks ⚡🔥💎 appear on the grid. Clear a line with 2+ marks — get ×1.5 score bonus and combo protection!',
-    btn: LANG==='ru'?'Дальше':'Next' },
-  { emoji:'🏆', title: LANG==='ru'?'Бусты и Батл Пасс':'Boosts & Battle Pass',
-    text: LANG==='ru'?'В Батл Пасе тебя ждут бусты: ×2/×3 к очкам, ×2 XP, щит комбо. Открывай награды — они дают реальное преимущество!':'Battle Pass has boosts: ×2/×3 score, ×2 XP, combo shield. Unlock rewards — they give real advantage!',
+  { emoji:'🔥', title: LANG==='ru'?'Комбо — твоё оружие':'Combo is your weapon',
+    text: LANG==='ru'?'Взрывай линии несколько ходов подряд — множитель растёт до ×12! 3 хода без линий — и комбо сбрасывается. Береги его!':'Clear lines several turns in a row — multiplier grows to ×12! 3 turns without clears — combo resets. Protect it!',
     btn: LANG==='ru'?'Дальше':'Next' },
   { emoji:'📦', title: LANG==='ru'?'Банк фигур':'Piece bank',
-    text: LANG==='ru'?'Сохрани одну фигуру в банк — обменяй в нужный момент! Функция открывается в Батл Пасс уровень 7.':'Save one piece in the bank — swap it at the right moment! Unlocks at Battle Pass level 7.',
+    text: LANG==='ru'?'Нажми на фигуру → нажми БАНК — сохранится. Обменяй в нужный момент! Разблокируется на уровне 6 Батл Пасса.':'Tap a piece → tap BANK to save it. Swap at the right moment! Unlocks at Battle Pass level 6.',
+    btn: LANG==='ru'?'Дальше':'Next' },
+  { emoji:'💎', title: LANG==='ru'?'Кристальные блоки':'Crystal blocks',
+    text: LANG==='ru'?'Каждые 8 ходов одна фигура становится кристальной 💎. Поставь её и взорви линию — ×3 к очкам на 3 хода!':'Every 8 moves one piece turns crystal 💎. Place it and clear a line — ×3 score bonus for 3 moves!',
+    btn: LANG==='ru'?'Дальше':'Next' },
+  { emoji:'⚡', title: LANG==='ru'?'Боевой Пропуск':'Battle Pass',
+    text: LANG==='ru'?'Играй — получай XP — прокачивай Батл Пасс! Бусты ×2/×3 к очкам, щит комбо, скины и темы ждут тебя!':'Play — earn XP — level up the Battle Pass! Score boosters, combo shield, skins and themes await!',
     btn: LANG==='ru'?'Начать!':'Let\'s go!' },
 ];
 function showOnboarding(){
@@ -6235,12 +6304,9 @@ async function initSmartBanner(){
   banner.dataset.loaded = 'true';
 
   // Adsterra sticky banner — работает везде (RU + EU + мир)
-  loadAdsterraBanner();
+  loadBottomBanner();
 
-  // RichAds push-style уведомление при первом открытии игры
-  if(_richadsReady && _richadsController){
-    try { _richadsController.triggerNativeNotification(); } catch(e){}
-  }
+  // Adsterra sticky bottom banner
 
   // СНГ дополнительно — Яндекс floorAd (после одобрения 10 апреля)
   let country = 'RU';
@@ -6376,8 +6442,51 @@ updateBankLock();
 showScreen('menu');
 // JS-run indicator: version badge turns visible when JS executes
 (function(){ const v=document.querySelector('.m-sub + div'); if(v) v.style.color='rgba(100,255,150,.5)'; })();
+// Очистка тестовых данных — удаляем все разблокированные скины/темы если BP уровень < 3
+// (защита от случайно оставшихся данных тест-секции)
+(function cleanTestData(){
+  try{
+    const bpXP = parseInt(safeGet('bfm_bp_xp','0'))||0;
+    // Если XP меньше чем нужно для 3 уровня (2300 XP) — сбрасываем тестовые открытия
+    if(bpXP < 2300){
+      // Оставляем только скины которые можно получить на ур.1-2
+      const validLowLevelSkins = []; // на ур.1-2 скинов нет
+      const currentSkins = JSON.parse(safeGet('bfm_bp_skins','[]'));
+      if(currentSkins.length > 0){
+        safeSet('bfm_bp_skins', JSON.stringify(validLowLevelSkins));
+      }
+      // Темы cosmos/ocean_bg/sunset — только через кейс после ур.5+
+      ['cosmos','ocean_bg','sunset'].forEach(t=>{
+        if(bpXP < 8800) safeDel('bfm_bg_theme_'+t); // кейс тем на ур.5
+      });
+    }
+  }catch{}
+})();
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
+// Синхронизируем BP XP с сервера — защита от потери прогресса при очистке браузера
+(async function syncBPFromServer(){
+  try{
+    const id=MY_TG_ID();
+    if(!id||id==='0') return;
+    const r=await fetch(API+'/bp/status?tg_id='+id);
+    if(!r.ok) return;
+    const d=await r.json();
+    if(!d||!d.bp_xp) return;
+    const serverXP=parseInt(d.bp_xp)||0;
+    const localXP=bpGetXP();
+    if(serverXP>localXP){
+      bpSetXP(serverXP,false);
+      try{
+        const cc=JSON.parse(d.bp_claimed||'[]');
+        const lc=JSON.parse(safeGet('bfm_bp_claimed','[]'));
+        const merged=[...new Set([...lc,...cc])];
+        if(merged.length>lc.length) safeSet('bfm_bp_claimed',JSON.stringify(merged));
+      }catch{}
+      updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock();
+    }
+  }catch{}
+})();
 // Prefetch leaderboard data in background after 1.5s for fast open
 setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1500);
 // Онбординг — только новым игрокам, через секунду после загрузки
