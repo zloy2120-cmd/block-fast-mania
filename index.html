@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="98">
+<meta name="version" content="101">
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается один раз -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
@@ -465,30 +465,29 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 /* Line-ready — оригинальный радужный outline + мягкое рассеянное свечение за рамками
    outline анимирует цвет рамки (paint, но только для ячеек линии)
    box-shadow с большим spread выходит за рамки ячейки — как пульс у кристаллов */
-/* line-ready: только box-shadow анимация (GPU composited), outline статичный */
+/* line-ready: overlay поверх грида вместо анимации на каждой ячейке
+   Это кардинально снижает нагрузку: 1-2 div'а вместо 10-20 анимирующих ячеек */
 @keyframes glowCDiffuse{
-  0%  { box-shadow: 0 0 8px 3px rgba(0,229,255,.70), 0 0 22px 7px rgba(0,229,255,.32), 0 0 44px 10px rgba(0,229,255,.13); }
-  33% { box-shadow: 0 0 8px 3px rgba(255,230,0,.70),  0 0 22px 7px rgba(255,230,0,.32),  0 0 44px 10px rgba(255,230,0,.13); }
-  66% { box-shadow: 0 0 8px 3px rgba(255,60,172,.70), 0 0 22px 7px rgba(255,60,172,.32), 0 0 44px 10px rgba(255,60,172,.13); }
-  100%{ box-shadow: 0 0 8px 3px rgba(0,229,255,.70), 0 0 22px 7px rgba(0,229,255,.32), 0 0 44px 10px rgba(0,229,255,.13); }
+  0%  { background: rgba(0,229,255,.13); box-shadow: 0 0 14px 4px rgba(0,229,255,.55), inset 0 0 8px rgba(0,229,255,.2); border-color: rgba(0,229,255,.8); }
+  33% { background: rgba(255,230,0,.13); box-shadow: 0 0 14px 4px rgba(255,230,0,.55),  inset 0 0 8px rgba(255,230,0,.2);  border-color: rgba(255,230,0,.8); }
+  66% { background: rgba(255,60,172,.13); box-shadow: 0 0 14px 4px rgba(255,60,172,.55), inset 0 0 8px rgba(255,60,172,.2); border-color: rgba(255,60,172,.8); }
+  100%{ background: rgba(0,229,255,.13); box-shadow: 0 0 14px 4px rgba(0,229,255,.55), inset 0 0 8px rgba(0,229,255,.2);  border-color: rgba(0,229,255,.8); }
 }
-.cell.line-ready{
-  animation: glowCDiffuse 1.8s linear infinite !important;
-  outline: 2px solid rgba(0,229,255,.9);
-  outline-offset: 0px;
-  will-change: box-shadow;
+/* Оверлей-полоса поверх строки/колонки — один div на линию */
+.line-overlay{
+  position:absolute;
+  pointer-events:none;
+  border: 2px solid rgba(0,229,255,.8);
+  border-radius:4px;
+  box-sizing:border-box;
+  animation: glowCDiffuse 1.8s linear infinite;
+  will-change: box-shadow, background;
   transform: translateZ(0);
-  z-index: 2;
-  contain: layout style;
+  z-index: 5;
 }
-.cell.line-ready.ok{
-  animation: glowCDiffuse 1.8s linear infinite !important;
-  outline: 2px solid rgba(0,229,255,.9);
-  outline-offset: 0px;
-  will-change: box-shadow;
-  transform: translateZ(0);
-  contain: layout style;
-}
+/* Обычная подсветка ячеек (ok/bad) — без анимации, только цвет */
+.cell.ok{ outline: 2px solid rgba(100,255,120,.85); }
+.cell.bad{ outline: 2px solid rgba(255,80,80,.75); }
 /* Line glow — через outline на ячейках, overlay не используется */
 #line-glows{display:none;}
 @keyframes preBlastOp{0%,100%{opacity:1;}50%{opacity:.45;}}
@@ -2631,25 +2630,24 @@ function showBoard(m){
   activeBoardTab=m;showScreen('board');
   ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
   if(boardCache[m]){
-    // Мгновенно из кэша — никакого skeleton при возврате
     renderBoardRows(boardCache[m].data);
-    // Тихое фоновое обновление если кэш старше 30 сек
-    if(Date.now()-boardCache[m].ts > 30000){
+    // Фоновое обновление только если кэш устарел (CACHE_TTL = 2 мин)
+    if(Date.now()-boardCache[m].ts > CACHE_TTL){
       fetchLeaderboard(m).then(data=>{if(data)renderBoardRows(data);});
     }
   } else {
     renderBoardTab(m);
   }
-  // Prefetch остальных вкладок в фоне чтобы переключение было мгновенным
+  // Prefetch остальных вкладок в фоне
   ['classic','mini','speed'].forEach(t=>{ if(t!==m && !boardCache[t]) fetchLeaderboard(t); });
 }
 function switchBoardTab(m){
   activeBoardTab=m;
   ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
   if(boardCache[m]){
-    renderBoardRows(boardCache[m].data); // мгновенно из кеша
-    // Фоновое обновление если старый кэш
-    if(Date.now()-boardCache[m].ts > 30000) fetchLeaderboard(m).then(d=>{if(d)renderBoardRows(d);});
+    renderBoardRows(boardCache[m].data); // мгновенно из кэша
+    // Фоновое обновление только если кэш устарел
+    if(Date.now()-boardCache[m].ts > CACHE_TTL) fetchLeaderboard(m).then(d=>{if(d)renderBoardRows(d);});
   } else {
     renderBoardTab(m);
   }
@@ -2822,13 +2820,14 @@ function renderPieces(){
 /* ══ ROTATE (bank only) ══ */
 function rotHeld(){
   if(!held)return;
-  // Вращение бесплатное — счётчик тратится при помещении фигуры в банк (tapHold)
   if(isBankSpinUnlocked()){
     if(getSpinLeft()<=0){
       vibrate('go');
       tg?.showPopup?.({title:'🌙 Спины закончились',message:'Бесплатные спины кончились на сегодня. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
       return;
     }
+    // Отмечаем что спин был использован — -1 спишется только при постановке на поле
+    _spinPendingCharge=true;
   }
   held.shape=rotateCW(held.shape);
   vibrate(6);playSound('rotate');
@@ -2843,17 +2842,9 @@ function tapHold(){
   if(sel>=0&&sel<3&&pieces[sel]){
     const isCrystalSlot=(_crystalPiece===sel);
     const heldWasCrystal=(held&&held.crystal);
-    // Спин-счётчик: тратим ТОЛЬКО при извлечении фигуры из банка (held→tray)
-    // Помещение в банк бесплатно, вращение бесплатно
-    if(isBankSpinUnlocked() && held){
-      if(getSpinLeft()<=0){
-        vibrate('go');
-        tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит обменов на сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
-        return;
-      }
-      addSpinUse();
-      updateRotBtn(); // немедленно обновляем счётчик
-    }
+    // Свап бесплатный — спин тратится только при postановке на поле (place с si==='h')
+    // Если игрок вернул фигуру в трей не разместив — обнуляем флаг (спин не засчитан)
+    if(!held) _spinPendingCharge=false; // кладём в банк — новый цикл
     // ══ SWAP: pieces[sel] ↔ held ══
     const tmp = held;
     held = pieces[sel];
@@ -2870,16 +2861,7 @@ function doHoldSwapDrag(si){
   if(si==='h')return;const p=pieces[si];if(!p)return;
   const isCrystalSlot=(_crystalPiece===si);
   const heldWasCrystal=(held&&held.crystal);
-  // Спин-счётчик: тратим только если извлекаем из банка (held существует)
-  if(isBankSpinUnlocked() && held){
-    if(getSpinLeft()<=0){
-      vibrate('go');
-      tg?.showPopup?.({title:'🌙 Спины закончились',message:'Лимит обменов на сегодня исчерпан. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
-      return;
-    }
-    addSpinUse();
-    updateRotBtn(); // немедленно обновляем счётчик
-  }
+  // Свап бесплатный — спин тратится только при rotHeld()
   // ══ SWAP: pieces[si] ↔ held ══
   const tmp = held;
   held = pieces[si];
@@ -2938,6 +2920,12 @@ async function place(si,sr,sc){
     el.classList.add('placed');setTimeout(()=>el.classList.remove('placed'),300);
   }
   if(si==='h'){held=null;}else{pieces[si]=null;}
+  // Списываем спин если фигура была в банке и была прокручена
+  if(si==='h' && _spinPendingCharge){
+    addSpinUse();
+    _spinPendingCharge=false;
+    updateRotBtn();
+  }
   // Сброс кристального слота после использования
   if(isCrystalPiece) _crystalPiece=-1;
   addSc(placed.length*2*lvl,false);renderPieces();renderHold();
@@ -3135,16 +3123,16 @@ let lastHL={sr:-1,sc:-1,valid:null,si:null};
 // OPT: Set подсвеченных ячеек вместо querySelectorAll по DOM
 let _hlCells=new Set();
 function clearHL(){
-  // OPT: используем Set вместо querySelectorAll — O(k) вместо O(N²)
   _hlCells.forEach(el=>{
     el.classList.remove('ok','bad','line-ready');
-    // Освобождаем GPU слои — не держим их зря
     el.style.willChange='';
     el.style.transform='';
     const r=+el.dataset.r,c=+el.dataset.c;
     if(grid[r]?.[c]>=0)applyBlockGrid(el,grid[r][c]);else clearBlock(el);
   });
   _hlCells.clear();
+  // Удаляем overlay-полосы линий
+  document.getElementById('grid-wrap')?.querySelectorAll('.line-overlay').forEach(el=>el.remove());
   lastHL={sr:-1,sc:-1,valid:null};
 }
 
@@ -3161,7 +3149,7 @@ function getLineReadySets(shape,sr,sc){
   return{rows,cols};
 }
 
-function placeLineGlows(rows,cols){/* всё через cell.line-ready outline */}
+function placeLineGlows(rows,cols){ /* overlays удаляются в clearHL */ }
 
 function showHL(shape,sr,sc,valid,si){
   if(lastHL.sr===sr&&lastHL.sc===sc&&lastHL.valid===valid&&lastHL.si===si) return;
@@ -3176,12 +3164,42 @@ function showHL(shape,sr,sc,valid,si){
   }
   if(valid){
     const {rows,cols}=getLineReadySets(shape,sr,sc);
-    // Pre-promote GPU слои ДО старта анимации чтобы избежать FPS просадки
-    rows.forEach(r=>{for(let c=0;c<N;c++){const el=cel(r,c);if(el&&!el.classList.contains('line-ready')){el.style.willChange='box-shadow';el.style.transform='translateZ(0)';}}});
-    cols.forEach(c=>{for(let r=0;r<N;r++){const el=cel(r,c);if(el&&!el.classList.contains('line-ready')){el.style.willChange='box-shadow';el.style.transform='translateZ(0)';}}});
-    rows.forEach(r=>{for(let c=0;c<N;c++){const el=cel(r,c);if(el){el.classList.add('line-ready');_hlCells.add(el);}}});
-    cols.forEach(c=>{for(let r=0;r<N;r++){const el=cel(r,c);if(el){el.classList.add('line-ready');_hlCells.add(el);}}}); 
+    _drawLineOverlays(rows,cols);
   }
+}
+
+/* Рисуем 1 overlay на строку + 1 на колонку вместо анимации на каждой ячейке */
+function _drawLineOverlays(rows,cols){
+  const wrap=document.getElementById('grid-wrap');
+  if(!wrap)return;
+  wrap.querySelectorAll('.line-overlay').forEach(el=>el.remove());
+  // Измеряем реальное положение ячеек относительно grid-wrap
+  // Это учитывает border(2px) + padding(4px) + gap(2px) без хардкода
+  const c00=cel(0,0); const c01=cel(0,1); const c10=cel(1,0);
+  if(!c00)return;
+  const wRect=wrap.getBoundingClientRect();
+  const r00=c00.getBoundingClientRect();
+  // FIX v101: Если grid скрыт (opacity:0 / не в DOM) — BoundingClientRect вернёт 0.
+  // Рисовать оверлей в этом случае бессмысленно, пропускаем.
+  if(r00.width===0||wRect.width===0)return;
+  const cs=r00.width;
+  // Реальный шаг = позиция [0,1] - позиция [0,0]
+  const stepX=c01?c01.getBoundingClientRect().left-r00.left:cs+2;
+  const stepY=c10?c10.getBoundingClientRect().top-r00.top:cs+2;
+  const offX=r00.left-wRect.left;
+  const offY=r00.top-wRect.top;
+  rows.forEach(r=>{
+    const ov=document.createElement('div');
+    ov.className='line-overlay';
+    ov.style.cssText=`left:${offX}px;top:${offY+r*stepY}px;width:${stepX*(N-1)+cs}px;height:${cs}px;`;
+    wrap.appendChild(ov);
+  });
+  cols.forEach(c=>{
+    const ov=document.createElement('div');
+    ov.className='line-overlay';
+    ov.style.cssText=`left:${offX+c*stepX}px;top:${offY}px;width:${cs}px;height:${stepY*(N-1)+cs}px;`;
+    wrap.appendChild(ov);
+  });
 }
 
 /* ══ DRAG & DROP — оптимизированный ══ */
@@ -3541,7 +3559,13 @@ function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
 let _currentGameId=null; // уникальный ID текущей игры
 let _lastComboLv=2; // уровень комбо для звука — защита от повторной отправки XP
-function _generateGameId(){const uid=MY_TG_ID()||'0';return `${uid}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;}
+let _gameIdCounter=0;
+let _spinPendingCharge=false; // флаг: был ли спин — заряд снимается при ПОСТАНОВКЕ на поле
+function _generateGameId(){
+  const uid=MY_TG_ID()||'0';
+  const salt=Math.random().toString(36).slice(2,8);
+  return `${uid}_${Date.now()}_${salt}_${++_gameIdCounter}`;
+}
 let _animTimers=[]; // копим setTimeout-ы анимаций для очистки при startGame
 function _anim(fn,ms){const id=setTimeout(()=>{_animTimers=_animTimers.filter(x=>x!==id);fn();},ms);_animTimers.push(id);return id;}
 function resetMechanics(){crystalReset();chainReset();streakReset();}
@@ -3723,7 +3747,7 @@ const RICHADS_APP_ID  = '6493';       // RichAds App ID
 // ─── Нижний баннер Tads.me (Vanilla JS) ───────────────────────────────────
 // Инструкция: Publisher → Widgets → твой виджет → скопируй Widget ID
 // Формат: строка типа "abc123def456"
-const TADS_WIDGET_ID = '9542'; // <-- Widget ID из Tads.me dashboard
+const TADS_WIDGET_ID = '9542'; // Tads.me Widget ID
 const TADS_WIDGET_TYPE = 'static';          // 'static' = TGB баннер (нижняя плашка)
 // Fallback: если Tads не работает — старый src-баннер (Adsterra или другой)
 const BOTTOM_BANNER_SRC = '';              // оставь пустым если используешь Tads
@@ -3759,43 +3783,34 @@ function initRichAds(){
   setTimeout(initRichAds, 3000);
 })();
 
-// Загрузка нижнего баннера: Tads.me (приоритет) или src-баннер (fallback)
+// Загрузка нижнего баннера Tads.me (Vanilla JS embed)
 function loadBottomBanner(){
   if(_bottomBannerLoaded) return;
   const inner = document.getElementById('ad-banner-inner');
   if(!inner) return;
 
-  // Вариант 1: Tads.me Vanilla JS SDK
   if(TADS_WIDGET_ID && TADS_WIDGET_ID !== 'ВСТАВЬ_WIDGET_ID'){
     _bottomBannerLoaded = true;
-    // Загружаем Tads SDK
+    // Tads Vanilla JS: виджет-контейнер с data-атрибутами + SDK скрипт
+    // Документация: tads.gitbook.io/docs/getting-started/publishers/embed-widget/vanilla-js
+    const container = document.createElement('div');
+    container.setAttribute('data-tads-widget-id', TADS_WIDGET_ID);
+    container.setAttribute('data-tads-type', TADS_WIDGET_TYPE);
+    container.style.cssText = 'width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;';
+    inner.appendChild(container);
+
     const sdk = document.createElement('script');
     sdk.src = 'https://cdn.tads.me/widget/widget.js';
     sdk.async = true;
-    sdk.onload = () => {
-      try{
-        // Создаём контейнер для виджета
-        const container = document.createElement('div');
-        container.id = 'tads-widget-container';
-        container.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:center;';
-        inner.appendChild(container);
-        // Инициализируем виджет
-        if(window.TadsWidget){
-          window.TadsWidget.init({
-            id: TADS_WIDGET_ID,
-            type: TADS_WIDGET_TYPE,
-            container: 'tads-widget-container',
-            onAdsNotFound: ()=>{ console.log('[Tads] no ads'); }
-          });
-        }
-      }catch(e){ console.warn('[Tads] init error', e); }
-    };
-    document.head.appendChild(sdk);
+    sdk.defer = true;
+    sdk.setAttribute('data-cfasync', 'false');
+    sdk.onerror = () => console.warn('[Tads] SDK load failed');
+    document.body.appendChild(sdk);
     return;
   }
 
-  // Вариант 2: src-баннер (Adsterra/другой)
-  if(!BOTTOM_BANNER_SRC || BOTTOM_BANNER_SRC === 'ВСТАВЬ_КОД') return;
+  // Fallback: src-баннер (Adsterra/другой)
+  if(!BOTTOM_BANNER_SRC) return;
   _bottomBannerLoaded = true;
   const s = document.createElement('script');
   s.src = BOTTOM_BANNER_SRC;
@@ -4189,6 +4204,7 @@ function startGame(m){
   _c4=0;_c6=0;_c9=0;_lastComboLv=2; // [FIX] сброс счётчиков звуков комбо между играми
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
   isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_goScheduled=false;
+  _spinPendingCharge=false; // сброс флага спина при старте новой игры
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
   _xp2xConsumedThisGame = false;
