@@ -495,28 +495,27 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    v103: box-shadow убран из анимации — он вызывал repaint на каждом кадре (FPS drop)
    Теперь анимируется только opacity (GPU composite) + статичная border + glow через filter */
 @keyframes glowCDiffuse{
-  0%  { border-color: rgba(0,229,255,1);   background: rgba(0,229,255,.22); }
-  33% { border-color: rgba(255,230,0,1);   background: rgba(255,230,0,.22); }
-  66% { border-color: rgba(255,60,172,1);  background: rgba(255,60,172,.22); }
-  100%{ border-color: rgba(0,229,255,1);   background: rgba(0,229,255,.22); }
+  0%  { outline-color: rgba(0,229,255,1);  }
+  33% { outline-color: rgba(255,230,0,1);  }
+  66% { outline-color: rgba(255,60,172,1); }
+  100%{ outline-color: rgba(0,229,255,1);  }
 }
 @keyframes glowOverlayPulse{
-  0%,100% { opacity: 0.88; }
-  50%     { opacity: 1;    }
+  0%,100% { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor); opacity:.85; }
+  50%     { filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 18px currentColor); opacity:1;   }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
   position:absolute;
   pointer-events:none;
-  border: 3px solid rgba(0,229,255,1);
-  border-radius:5px;
+  outline: 3.5px solid rgba(0,229,255,1);
+  outline-offset: 0px;
+  border-radius:3px;
   box-sizing:border-box;
-  animation: glowCDiffuse 1.8s linear infinite, glowOverlayPulse 0.9s ease-in-out infinite;
-  /* filter вместо box-shadow — GPU composited, не вызывает repaint */
-  filter: drop-shadow(0 0 6px rgba(0,229,255,.9)) drop-shadow(0 0 12px rgba(0,229,255,.5));
-  will-change: opacity, border-color, background;
+  background:transparent;
+  animation: glowCDiffuse 1.8s linear infinite, glowOverlayPulse 1.2s ease-in-out infinite;
+  will-change: opacity, filter, outline-color;
   transform: translateZ(0);
-  contain: layout style;
   z-index: 5;
 }
 /* Обычная подсветка ячеек (ok/bad) — без анимации, только цвет */
@@ -3281,17 +3280,17 @@ function _drawLineOverlays(rows,cols){
     };
   }
   const {offX, offY, cs, stepX, stepY} = _overlayCache;
+  const EXP = 0; // без выхода за пределы блоков
   rows.forEach(r=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    ov.style.cssText=`left:${offX}px;top:${offY+r*stepY}px;width:${stepX*(N-1)+cs}px;height:${cs}px;`;
+    ov.style.cssText=`left:${offX-EXP}px;top:${offY+r*stepY-EXP}px;width:${stepX*(N-1)+cs+EXP*2}px;height:${cs+EXP*2}px;`;
     wrap.appendChild(ov);
   });
   cols.forEach(c=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    // Немного смещаем анимацию у колонок чтобы не мигали синхронно
-    ov.style.cssText=`left:${offX+c*stepX}px;top:${offY}px;width:${cs}px;height:${stepY*(N-1)+cs}px;animation-delay:${c*0.12}s;`;
+    ov.style.cssText=`left:${offX+c*stepX-EXP}px;top:${offY-EXP}px;width:${cs+EXP*2}px;height:${stepY*(N-1)+cs+EXP*2}px;animation-delay:${c*0.12}s;`;
     wrap.appendChild(ov);
   });
 }
@@ -6681,25 +6680,7 @@ showScreen('menu');
 (function(){ const v=document.querySelector('.m-sub + div'); if(v) v.style.color='rgba(100,255,150,.5)'; })();
 // v105: одноразовая очистка легаси-данных скинов и тем (старые тестовые записи)
 // Удаляем устаревшие ключи bfm_skin_* и сбрасываем bfm_bp_skins / bfm_bg_theme_*
-// Запускается ОДИН раз — флаг bfm_clean_v105 предотвращает повтор
-(function cleanLegacyV105(){
-  if(safeGet('bfm_clean_v105','') === '1') return;
-  // Удаляем легаси-ключи разблокировки скинов (bfm_skin_{id})
-  ['neon','pastel','dark','ocean','fire','gold','galaxy'].forEach(id => safeDel('bfm_skin_'+id));
-  // Сбрасываем bfm_bp_skins (старые тестовые данные)
-  safeSet('bfm_bp_skins', '[]');
-  // Сбрасываем все bfm_bg_theme_* (старые тестовые данные)
-  ['cyberpunk','hell','ice','retro','nature','sakura','cosmos','ocean_bg','sunset']
-    .forEach(id => safeDel('bfm_bg_theme_'+id));
-  // Если активная тема теперь заблокирована — сброс на default
-  const th = safeGet('bfm_bg_theme','default');
-  if(th && th !== 'default'){ safeSet('bfm_bg_theme','default'); currentTheme='default'; applyBgTheme(''); }
-  // Если активный скин теперь заблокирован — сброс на default
-  const sk = safeGet('bfm_skin','default');
-  if(sk && sk !== 'default'){ safeSet('bfm_skin','default'); currentSkin='default'; }
-  safeSet('bfm_clean_v105','1');
-  console.log('[v105] Legacy skin/theme data cleaned');
-})();
+// v105: миграция легаси-данных уже выполнена, cleanLegacyV105 удалена
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
 // Синхронизируем BP XP с сервера — защита от потери прогресса при очистке браузера
