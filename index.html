@@ -143,13 +143,13 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .m-daily{background:linear-gradient(135deg,rgba(16,185,129,.45),rgba(5,150,105,.35),rgba(6,95,70,.3));border:1.5px solid rgba(52,211,153,.4);box-shadow:0 6px 24px rgba(16,185,129,.2),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 .daily-ico-wrap{background:rgba(52,211,153,.18)!important;border-color:rgba(52,211,153,.3)!important;}
 .daily-badge{background:linear-gradient(135deg,#34d399,#059669)!important;color:#fff!important;animation:dailyPulse 2s ease-in-out infinite;}
-@keyframes dailyPulse{0%,100%{filter:drop-shadow(0 2px 4px rgba(52,211,153,.5));}50%{filter:drop-shadow(0 2px 9px rgba(52,211,153,.95));}}
+@keyframes dailyPulse{0%,100%{box-shadow:0 2px 8px rgba(52,211,153,.35);}50%{box-shadow:0 2px 18px rgba(52,211,153,.85);}}
 
 /* Share button */
 .go-share{background:linear-gradient(135deg,rgba(59,130,246,.7),rgba(37,99,235,.6));border:1.5px solid rgba(147,197,253,.4);color:#fff;}
 .go-share:active{transform:scale(.97);}
 .go-share.record-glow{background:linear-gradient(135deg,#f59e0b,#f97316);border-color:rgba(255,214,0,.6);animation:shareGlow 1.5s ease-in-out infinite;}
-@keyframes shareGlow{0%,100%{filter:drop-shadow(0 0 6px rgba(251,146,60,.6));}50%{filter:drop-shadow(0 0 13px rgba(251,146,60,.95)) drop-shadow(0 0 4px rgba(255,214,0,.5));}}
+@keyframes shareGlow{0%,100%{box-shadow:0 0 12px rgba(251,146,60,.5);}50%{box-shadow:0 0 26px rgba(251,146,60,.9),0 0 8px rgba(255,214,0,.4);}}
 /* Кнопка ачивментов в меню */
 .m-ach-btn{
   width:64px;height:64px;border:none;border-radius:50%;cursor:pointer;
@@ -157,15 +157,14 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
   box-shadow:0 0 0 4px rgba(255,214,0,.25),0 6px 22px rgba(200,120,0,.55),inset 0 3px 0 rgba(255,240,160,.6),inset 0 -3px 0 rgba(120,60,0,.4);
   display:flex;align-items:center;justify-content:center;
   font-size:32px;
-  transition:transform .15s,filter .15s;
+  transition:transform .15s,box-shadow .15s;
   position:relative;
   animation:achBtnPulse 2.8s ease-in-out infinite;
 }
 .m-ach-btn:active{transform:scale(.93);}
-/* FIX 5: box-shadow анимация → filter:brightness — GPU composited, нет paint */
 @keyframes achBtnPulse{
-  0%,100%{filter:drop-shadow(0 4px 10px rgba(200,120,0,.55));}
-  50%{filter:drop-shadow(0 6px 16px rgba(255,180,0,.8)) drop-shadow(0 0 8px rgba(255,214,0,.5));}
+  0%,100%{box-shadow:0 0 0 4px rgba(255,214,0,.25),0 6px 22px rgba(200,120,0,.55),inset 0 3px 0 rgba(255,240,160,.6),inset 0 -3px 0 rgba(120,60,0,.4);}
+  50%{box-shadow:0 0 0 8px rgba(255,214,0,.18),0 8px 32px rgba(255,180,0,.7),inset 0 3px 0 rgba(255,240,160,.6),inset 0 -3px 0 rgba(120,60,0,.4);}
 }
 .m-ach-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .m-ach-lbl{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;opacity:.8;}
@@ -178,7 +177,7 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
   background:radial-gradient(circle at 38% 35%,#ffe566,#f5a800 55%,#c97800 100%);
   box-shadow:0 0 0 3px rgba(255,214,0,.2),0 6px 20px rgba(200,120,0,.5),inset 0 2px 0 rgba(255,240,160,.5);
   padding:0 14px;min-width:68px;
-  transition:transform .15s,filter .15s;
+  transition:transform .15s,box-shadow .15s;
   animation:achBtnPulse 2.8s ease-in-out infinite;
   flex-shrink:0;
   position:static;transform:none;
@@ -499,11 +498,9 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   0%   { filter: hue-rotate(0deg);   }
   100% { filter: hue-rotate(360deg); }
 }
-/* FIX 5: glowPulse — убираем box-shadow из keyframes, оставляем только opacity
-   outline + hue-rotate уже GPU composited, opacity тоже composited */
 @keyframes glowPulse{
-  0%,100% { opacity:.82; }
-  50%     { opacity:1;   }
+  0%,100% { opacity:.82; box-shadow: 0 0 8px 4px rgba(0,229,255,.7), 0 0 20px 8px rgba(0,229,255,.35); }
+  50%     { opacity:1;   box-shadow: 0 0 12px 6px rgba(0,229,255,.9), 0 0 30px 12px rgba(0,229,255,.5); }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
@@ -731,8 +728,8 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   box-shadow:0 0 12px rgba(255,220,0,.9),0 0 0 2px rgba(255,255,255,.6);
   animation:starPulse 2s ease-in-out infinite;
 }
-/* FIX 5: box-shadow → filter:drop-shadow — GPU composited */
-@keyframes starPulse{0%,100%{filter:drop-shadow(0 0 6px rgba(255,220,0,.9));}50%{filter:drop-shadow(0 0 11px rgba(255,220,0,1)) drop-shadow(0 0 2px rgba(255,255,255,.8));}}
+/* FIX 5 reverted: оставляем оригинальный box-shadow для визуальной яркости */
+@keyframes starPulse{0%,100%{box-shadow:0 0 12px rgba(255,220,0,.9),0 0 0 2px rgba(255,255,255,.5);}50%{box-shadow:0 0 22px rgba(255,220,0,1),0 0 0 3px rgba(255,255,255,.9);}}
 
 /* Wings */
 .cup-wing-l{
@@ -963,8 +960,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 .sk-card-desc{font-size:9px;color:var(--muted);margin:2px 0 4px;line-height:1.3;min-height:22px;}
 
 /* Per-skin card animations */
-/* FIX 5: skinNeonPulse box-shadow → filter:drop-shadow — GPU composited */
-@keyframes skinNeonPulse{0%,100%{filter:drop-shadow(0 0 9px rgba(255,0,110,.35)) drop-shadow(0 0 15px rgba(58,134,255,.25));}50%{filter:drop-shadow(0 0 14px rgba(255,0,110,.6)) drop-shadow(0 0 25px rgba(58,134,255,.45));}}
+@keyframes skinNeonPulse{0%,100%{box-shadow:0 0 18px rgba(255,0,110,.3),0 0 30px rgba(58,134,255,.2);}50%{box-shadow:0 0 28px rgba(255,0,110,.5),0 0 50px rgba(58,134,255,.35);}}
 .sk-card-glow{animation:skinNeonPulse 2s ease-in-out infinite;}
 
 @keyframes skinFireFlicker{0%,100%{filter:brightness(1) saturate(1);}50%{filter:brightness(1.15) saturate(1.3) hue-rotate(5deg);}}
@@ -1032,8 +1028,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 .bp-lvl-badge{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Bungee',cursive;font-size:15px;flex-shrink:0;background:rgba(255,255,255,.08);color:var(--muted);}
 .bp-card.unlocked .bp-lvl-badge{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;}
 .bp-card.current .bp-lvl-badge{background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;animation:bpBadgePulse 1.8s ease-in-out infinite;}
-/* FIX 5: bpBadgePulse box-shadow → filter:drop-shadow — GPU composited */
-@keyframes bpBadgePulse{0%,100%{filter:drop-shadow(0 0 0px rgba(34,211,238,.4));}50%{filter:drop-shadow(0 0 6px rgba(34,211,238,.75));}}
+@keyframes bpBadgePulse{0%,100%{box-shadow:0 0 0 0 rgba(34,211,238,.4);}50%{box-shadow:0 0 0 6px rgba(34,211,238,.0);}}
 .bp-card-info{flex:1;}
 .bp-card-title{font-size:14px;font-weight:900;color:var(--text);}
 .bp-card-xp{font-size:10px;color:var(--muted);margin-top:2px;}
@@ -2143,7 +2138,14 @@ setTimeout(initDefaultStars, 500);
 <script>
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
-if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;_invalidateOverlayCache();});}
+// FIX 11: debounce для viewportChanged — может стрелять многократно при анимации клавиатуры
+let _vpDebounce=null;
+if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{
+  if(_vpDebounce)clearTimeout(_vpDebounce);
+  _vpDebounce=setTimeout(()=>{
+    gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_vpDebounce=null;
+  },80);
+});}
 
 /* ══ HIGH REFRESH RATE AUTODETECT ══
    Браузер сам выбирает частоту кадров через rAF.
@@ -3208,7 +3210,12 @@ async function place(si,sr,sc){
         if(el){
           el.classList.remove('crystal-cell');
           el.classList.add('crystal-trail');
-          setTimeout(()=>el.classList.remove('crystal-trail'), 6000);
+          // FIX 10: храним ссылку и таймер — можно досрочно очистить при startGame
+          const trailTimer=setTimeout(()=>{
+            el.classList.remove('crystal-trail');
+            _crystalTrailTimers.delete(trailTimer);
+          }, 6000);
+          _crystalTrailTimers.add(trailTimer);
         }
       }
       // Убираем chain-cell классы из очищенных клеток
@@ -3332,16 +3339,27 @@ function clearHL(){
   lastHL={sr:-1,sc:-1,valid:null};
 }
 
+// FIX 9: без клонирования грида — подсчёт заполненных ячеек напрямую
+// Прямой счёт вместо клона + every() — один проход с счётчиками
 function getLineReadySets(shape,sr,sc){
-  const sim=grid.map(r=>[...r]);
+  // Считаем сколько ячеек фигуры добавляется в каждую строку/столбец
+  const extraRows=new Array(N).fill(0);
+  const extraCols=new Array(N).fill(0);
   for(let r=0;r<shape.length;r++)for(let c=0;c<shape[0].length;c++){
     if(!shape[r][c])continue;
     const gr=sr+r,gc=sc+c;
-    if(gr>=0&&gr<N&&gc>=0&&gc<N)sim[gr][gc]=99;
+    if(gr>=0&&gr<N&&gc>=0&&gc<N){extraRows[gr]++;extraCols[gc]++;}
   }
   const rows=new Set(),cols=new Set();
-  for(let r=0;r<N;r++)if(sim[r].every(v=>v>=0))rows.add(r);
-  for(let c=0;c<N;c++)if(sim.every(row=>row[c]>=0))cols.add(c);
+  // Строка полна если: уже заполненных + добавляемых фигурой == N
+  for(let r=0;r<N;r++){
+    let filled=0;for(let c=0;c<N;c++)if(grid[r][c]>=0)filled++;
+    if(filled+extraRows[r]===N)rows.add(r);
+  }
+  for(let c=0;c<N;c++){
+    let filled=0;for(let r=0;r<N;r++)if(grid[r][c]>=0)filled++;
+    if(filled+extraCols[c]===N)cols.add(c);
+  }
   return{rows,cols};
 }
 
@@ -3563,12 +3581,33 @@ function spawnPts(x,y,color,n=5){
     setTimeout(()=>{ if(p.parentNode===layer)_recycleParticle(p,layer); },820);
   }
 }
-function spawnScoreNum(x,y,txt,color,size){
-  const el=document.createElement('div');el.className='score-pop';el.textContent=txt;
-  el.style.left=x+'px';el.style.top=y+'px';el.style.color=color||'#fff';el.style.fontSize=(size||20)+'px';
-  const dur=0.9+Math.random()*.25;el.style.setProperty('--dur',dur+'s');
-  document.body.appendChild(el);setTimeout(()=>el.remove(),(dur+.1)*1000);
+// FIX 7: Object pool для score-pop, combo-pop, diamond — избегаем create/remove на каждый комбо
+const _scorePopPool=[];
+const _comboPopPool=[];
+const _diamondPool=[];
+function _getPoolEl(pool,className){
+  const el=pool.pop()||document.createElement('div');
+  el.className=className;
+  el.style.cssText='';
+  return el;
 }
+function _recycleEl(pool,el){
+  if(el.parentNode) el.parentNode.removeChild(el);
+  pool.push(el);
+}
+
+function spawnScoreNum(x,y,txt,color,size){
+  const el=_getPoolEl(_scorePopPool,'score-pop');
+  el.textContent=txt;
+  const dur=0.9+Math.random()*.25;
+  el.style.cssText=`left:${x}px;top:${y}px;color:${color||'#fff'};font-size:${size||20}px;--dur:${dur}s;`;
+  document.body.appendChild(el);
+  setTimeout(()=>_recycleEl(_scorePopPool,el),(dur+.1)*1000);
+}
+
+// FIX 8: кэш позиции timer-val — не вызываем getBoundingClientRect каждый раз
+let _timerValRect=null;
+function _invalidateTimerValRect(){_timerValRect=null;}
 
 // Timer bonus: show near timer (right aligned)
 function showTimerBonus(txt){
@@ -3576,24 +3615,25 @@ function showTimerBonus(txt){
   tag.textContent=txt;tag.classList.remove('show');
   void tag.offsetWidth;tag.classList.add('show');
   setTimeout(()=>tag.classList.remove('show'),1200);
-  // Also floating pop near timer
-  const tv=document.getElementById('timer-val').getBoundingClientRect();
-  const pop=document.createElement('div');pop.className='time-pop';pop.textContent='⏱ '+txt;
-  pop.style.left=(tv.left+tv.width/2)+'px';pop.style.top=tv.top+'px';
-  document.body.appendChild(pop);setTimeout(()=>pop.remove(),1400);
+  // FIX 8: используем кэш позиции вместо getBoundingClientRect каждый раз
+  if(!_timerValRect){const tv=document.getElementById('timer-val');if(tv)_timerValRect=tv.getBoundingClientRect();}
+  if(_timerValRect){
+    const pop=document.createElement('div');pop.className='time-pop';pop.textContent='⏱ '+txt;
+    pop.style.left=(_timerValRect.left+_timerValRect.width/2)+'px';pop.style.top=_timerValRect.top+'px';
+    document.body.appendChild(pop);setTimeout(()=>pop.remove(),1400);
+  }
 }
 
 function spawnDiamonds(){
   // ОПТ: 20→6 элементов — меньше нод, меньше compositing layers
+  // FIX 7: object pool — не создаём/удаляем DOM-ноды каждый раз
   const layer=document.getElementById('fx'),cx=window.innerWidth/2,cy=window.innerHeight*.5;
   for(let i=0;i<6;i++){
-    const d=document.createElement('div');d.className='diamond';
-    d.style.left=(cx-5+Math.random()*200-100)+'px';
-    d.style.top=(cy-5+Math.random()*40-20)+'px';
-    d.style.setProperty('--dx',(Math.random()*180-90)+'px');
-    d.style.setProperty('--dy',(Math.random()*160-130)+'px');
-    d.style.animationDuration=(.4+Math.random()*.3)+'s';
-    layer.appendChild(d);setTimeout(()=>d.remove(),750);
+    const d=_getPoolEl(_diamondPool,'diamond');
+    const dur=.4+Math.random()*.3;
+    d.style.cssText=`left:${cx-5+Math.random()*200-100}px;top:${cy-5+Math.random()*40-20}px;--dx:${Math.random()*180-90}px;--dy:${Math.random()*160-130}px;animation-duration:${dur}s;`;
+    layer.appendChild(d);
+    setTimeout(()=>_recycleEl(_diamondPool,d),750);
   }
 }
 
@@ -3644,22 +3684,28 @@ function showComboBanner(c,cleared,pts){
     '#5c0000','#5c0000','#5a3800',
   ];
   const baseSize=46+Math.min(c,8)*2.5;
-  const el=document.createElement('div');
-  el.className='combo-pop';
+  // FIX 7: берём из пула вместо createElement
+  const el=_getPoolEl(_comboPopPool,'combo-pop');
   el.textContent=txt+' '+c;
-  el.style.left=cx+'px';el.style.top=(cy-16)+'px';
-  el.style.fontSize=baseSize+'px';
-  el.style.setProperty('--cpop-grad', gradients[idx]||'linear-gradient(135deg,#ffd600,#ff8c00)');
-  el.style.setProperty('--cpop-glow', glows[idx]||'rgba(255,200,0,.9)');
-  el.style.setProperty('--cpop-stroke', strokes[idx]||'rgba(0,0,0,.9)');
   const dur=1.0+Math.min(c,6)*.04;
-  el.style.setProperty('--dur',dur+'s');
-  document.body.appendChild(el);setTimeout(()=>el.remove(),(dur+.1)*1000);
+  el.style.cssText=`left:${cx}px;top:${cy-16}px;font-size:${baseSize}px;--cpop-grad:${gradients[idx]||'linear-gradient(135deg,#ffd600,#ff8c00)'};--cpop-glow:${glows[idx]||'rgba(255,200,0,.9)'};--cpop-stroke:${strokes[idx]||'rgba(0,0,0,.9)'};--dur:${dur}s;`;
+  document.body.appendChild(el);
+  setTimeout(()=>_recycleEl(_comboPopPool,el),(dur+.1)*1000);
   // Score pop below combo label
   spawnScoreNum(cx, cy+baseSize*.55, '+'+Math.round(pts).toLocaleString(), col, 28+Math.min(c,8)*1.5);
 }
 
-function showLvlFX(n){vibrate('levelup');playSound('levelup');document.querySelectorAll('.lvl-fx').forEach(e=>e.remove());const el=document.createElement('div');el.className='lvl-fx';el.innerHTML=`<div class="lvl-lbl">УРОВЕНЬ</div><div class="lvl-num">${n}</div>`;document.body.appendChild(el);setTimeout(()=>el.remove(),1600);}
+// FIX 13: храним ссылку на последний lvl-fx элемент — без querySelectorAll
+let _lvlFxEl=null;
+function showLvlFX(n){
+  vibrate('levelup');playSound('levelup');
+  // убираем предыдущий если ещё висит
+  if(_lvlFxEl&&_lvlFxEl.parentNode)_lvlFxEl.parentNode.removeChild(_lvlFxEl);
+  const el=document.createElement('div');el.className='lvl-fx';
+  el.innerHTML=`<div class="lvl-lbl">УРОВЕНЬ</div><div class="lvl-num">${n}</div>`;
+  document.body.appendChild(el);_lvlFxEl=el;
+  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el);if(_lvlFxEl===el)_lvlFxEl=null;},1600);
+}
 /* ══ PERFECT CLEAR ANIMATION ══ */
 async function perfectClear(){playSound('perfect');
   const bonus=3000*lvl*combo;
@@ -3796,6 +3842,7 @@ function refillAll(){for(let i=0;i<3;i++)pieces[i]=rnd();}
 /* ══ GAME OVER ══ */
 let _goScheduled=false; // [FIX BUG5] предотвращает дублирование setTimeout(showGO)
 let blastRafId=null; // FIX 6: rAF handle для blast-анимации — отменяем при рестарте
+const _crystalTrailTimers=new Set(); // FIX 10: tracking crystal-trail таймеров
 let _currentGameId=null; // уникальный ID текущей игры
 let _lastComboLv=2; // уровень комбо для звука — защита от повторной отправки XP
 let _gameIdCounter=0;
@@ -3806,7 +3853,8 @@ function _generateGameId(){
   return `${uid}_${Date.now()}_${salt}_${++_gameIdCounter}`;
 }
 let _animTimers=[]; // копим setTimeout-ы анимаций для очистки при startGame
-function _anim(fn,ms){const id=setTimeout(()=>{_animTimers=_animTimers.filter(x=>x!==id);fn();},ms);_animTimers.push(id);return id;}
+// FIX 12: splice вместо filter — не создаём новый массив на каждый срабатывающий таймер
+function _anim(fn,ms){const id=setTimeout(()=>{const idx=_animTimers.indexOf(id);if(idx>=0)_animTimers.splice(idx,1);fn();},ms);_animTimers.push(id);return id;}
 function resetMechanics(){crystalReset();chainReset();streakReset();}
 function checkGO(){
   if(dead||_goScheduled)return;
@@ -4523,6 +4571,8 @@ function startGame(m){
   mode=m;N=(m==='classic')?10:8;
   _animTimers.forEach(clearTimeout);_animTimers=[];
   if(typeof blastRafId!=='undefined'&&blastRafId){cancelAnimationFrame(blastRafId);blastRafId=null;} // FIX 6
+  // FIX 10: очищаем все crystal-trail таймеры и классы при рестарте
+  _crystalTrailTimers.forEach(id=>{clearTimeout(id);});_crystalTrailTimers.clear();
   _currentGameId=_generateGameId(); // новый ID на каждую игру
   _c4=0;_c6=0;_c9=0;_lastComboLv=2; // [FIX] сброс счётчиков звуков комбо между играми
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
@@ -6774,7 +6824,14 @@ function closeDailyBonus(){ document.getElementById('daily-ov').classList.remove
 restoreCloudScores();
 checkReferral();
 // Инвалидируем кеш координат сетки при повороте/ресайзе
-window.addEventListener('resize', () => { gridBounds = null; });
+// FIX 11: debounce resize — инвалидируем все позиционные кэши разом
+let _resizeDebounce=null;
+window.addEventListener('resize', () => {
+  if(_resizeDebounce)clearTimeout(_resizeDebounce);
+  _resizeDebounce=setTimeout(()=>{
+    gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_resizeDebounce=null;
+  },80);
+});
 // БАГ 7 FIX: Пауза таймера Speed-режима при сворачивании Telegram
 document.addEventListener('visibilitychange',()=>{
   if(mode!=='speed'||dead)return;
