@@ -512,7 +512,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   border-radius:3px;
   box-sizing:border-box;
   background:transparent;
-  animation: glowPulse 0.9s ease-in-out infinite;
+  animation: glowPulse 1.2s ease-in-out infinite;
   /* will-change:filter убран — создавал N compositor-слоёв, ломался на слабых GPU */
   will-change: opacity;
   transform: translateZ(0);
@@ -2902,15 +2902,18 @@ function buildGrid(){
   el.style.gap='2px';
   // OPT: один delegated listener вместо N² отдельных
   el.onclick=e=>{const t=e.target.closest('.cell');if(t)tapCell(+t.dataset.r,+t.dataset.c);};
+  // ФИКС: DocumentFragment — один DOM append вместо 100
+  const frag=document.createDocumentFragment();
   for(let r=0;r<N;r++){
     cellEls[r]=[];
     for(let c=0;c<N;c++){
       const d=document.createElement('div');d.className='cell';d.dataset.r=r;d.dataset.c=c;
       d.style.width=d.style.height=cs+'px';
-      el.appendChild(d);
+      frag.appendChild(d);
       cellEls[r][c]=d;
     }
   }
+  el.appendChild(frag);
 }
 function cel(r,c){if(r<0||r>=N||c<0||c>=N)return null;return cellEls[r]?.[c]||null;}
 function renderGrid(){for(let r=0;r<N;r++)for(let c=0;c<N;c++)paintCell(r,c);}
@@ -3434,7 +3437,7 @@ function _invalidateOverlayCache(){ _overlayCache = null; }
    Запускается при появлении оверлеев, останавливается когда их нет. */
 let _hueRafId=null, _hueDeg=0, _hueLastTs=0;
 function _hueStep(ts){
-  if(_hueLastTs) _hueDeg=(_hueDeg+(ts-_hueLastTs)*0.072)%360; // 360°/5000ms ≈ 0.072°/ms — плавное переливание
+  if(_hueLastTs) _hueDeg=(_hueDeg+(ts-_hueLastTs)*0.06)%360; // 360°/6000ms — плавное переливание
   _hueLastTs=ts;
   document.documentElement.style.setProperty('--ov-hue', _hueDeg.toFixed(1));
   _hueRafId=requestAnimationFrame(_hueStep);
@@ -3475,15 +3478,16 @@ function _drawLineOverlays(rows,cols){
   rows.forEach(r=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    ov.style.cssText=`left:${offX-EXP}px;top:${offY+r*stepY-EXP}px;width:${stepX*(N-1)+cs+EXP*2}px;height:${cs+EXP*2}px;`;
+    // animation-delay: -1.4s = середина цикла 2.8s → стартует сразу на максимальном свечении
+    ov.style.cssText=`left:${offX-EXP}px;top:${offY+r*stepY-EXP}px;width:${stepX*(N-1)+cs+EXP*2}px;height:${cs+EXP*2}px;animation-delay:-1.4s;`;
     frag.appendChild(ov);
     _lineOverlayEls.push(ov);
   });
   cols.forEach(c=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    // animation-delay стагер для glowPulse — фаза opacity у колонок чуть разная (красивее)
-    const ad2=((-0.3+c*0.05)>=0 ? (-0.3+c*0.05)-0.9 : -0.3+c*0.05);
+    // стагер между колонками — фаза чуть разная, всегда отрицательный delay
+    const ad2=-1.4+(c*0.08); // шаг 0.08s — мягкий стагер в пределах -1.4...-0.76s
     ov.style.cssText=`left:${offX+c*stepX-EXP}px;top:${offY-EXP}px;width:${cs+EXP*2}px;height:${stepY*(N-1)+cs+EXP*2}px;animation-delay:${ad2.toFixed(2)}s;`;
     frag.appendChild(ov);
     _lineOverlayEls.push(ov);
@@ -4620,7 +4624,7 @@ function prefillGrid(){
     }
   }
 
-  // Анимация «падения» блоков при старте
+  // ФИКС: 350мс — ждём конца CSS transition перед волной prefill-drop
   setTimeout(()=>{
     for(const{r,c}of filledCells){
         if(grid[r][c]>=0){
@@ -4636,8 +4640,7 @@ function prefillGrid(){
         
       }
     }
-  },80);
-}
+  },350);}
 
 function startGame(m){
   if(m!=='__daily__') isDailyMode=false; // сбрасываем если не daily запуск
@@ -4679,12 +4682,23 @@ function startGame(m){
     if(ab && boostGet(ab)>0){ boostTag.textContent = boostNames[ab]||ab; boostTag.style.display='block'; }
     else boostTag.style.display='none';
   }
-  buildGrid();if(!isDailyMode)prefillGrid();refillAll();renderGrid();renderPieces();renderHold();updateComboDots();setupDrag();
-  // Спавним начальные цепочки после старта
-  setTimeout(()=>chainSpawn(), 600);
-  gridBounds=null; // пересчитается при первом drag
+  // ФИКС СТАРТ: сначала показываем экран (CSS transition), потом в следующем кадре
+  // строим грид — иначе layout thrash: transition + 100 createElement в один тик
   showScreen('game');
-  if(m==='speed')setTimeout(startTimer,300);
+  if(m==='speed') setTimeout(startTimer,400);
+  requestAnimationFrame(()=>{
+    // Кадр 1: тяжёлый DOM — buildGrid пересоздаёт 64/100 нод
+    buildGrid();
+    if(!isDailyMode) prefillGrid();
+    refillAll();
+    requestAnimationFrame(()=>{
+      // Кадр 2: рендер после построения — без layout thrash
+      renderGrid();renderPieces();renderHold();updateComboDots();setupDrag();
+      gridBounds=null;
+      // chainSpawn откладываем ещё дальше — не мешает первым двум кадрам
+      setTimeout(()=>chainSpawn(), 800);
+    });
+  });
 }
 function restartGame(){
   isDailyMode=false; // рестарт всегда обычный режим
@@ -7003,12 +7017,13 @@ syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); upda
     }
   }catch{}
 })();
-// Prefetch leaderboard data in background after 1.5s for fast open
-setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1500);
-// Онбординг — только новым игрокам, через секунду после загрузки
-setTimeout(showOnboarding, 1000);
-// Ежедневная награда — через 1.2с
-setTimeout(checkDailyBonus, 1200);
+// ФИКС: boot-таймеры расставляем с интервалом — не конкурируют со стартом игры
+// Leaderboard prefetch: 4с (раньше 1.5с) — игрок точно в меню, не в процессе старта
+setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 4000);
+// Онбординг: 1.8с (раньше 1с) — после полной отрисовки меню
+setTimeout(showOnboarding, 1800);
+// Ежедневная награда: 2.2с (раньше 1.2с) — после онбординга
+setTimeout(checkDailyBonus, 2200);
 </script>
 <!-- CASE OPEN OVERLAY -->
 <div id="case-open-ov">
