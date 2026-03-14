@@ -495,11 +495,12 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    v103: box-shadow убран из анимации — он вызывал repaint на каждом кадре (FPS drop)
    Теперь анимируется только opacity (GPU composite) + статичная border + glow через filter */
 @keyframes glowCDiffuse{
-  0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 18px rgba(0,229,255,.55)); opacity:.88; }
-  25%  { filter: hue-rotate(60deg)  drop-shadow(0 0 8px rgba(255,230,0,.95))  drop-shadow(0 0 22px rgba(255,230,0,.55)); opacity:1;   }
-  50%  { filter: hue-rotate(200deg) drop-shadow(0 0 5px rgba(255,60,172,.95)) drop-shadow(0 0 18px rgba(255,60,172,.55)); opacity:.88; }
-  75%  { filter: hue-rotate(300deg) drop-shadow(0 0 8px rgba(0,180,255,.95))  drop-shadow(0 0 22px rgba(0,180,255,.55)); opacity:1;   }
-  100% { filter: hue-rotate(360deg) drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 18px rgba(0,229,255,.55)); opacity:.88; }
+  0%   { filter: hue-rotate(0deg);   }
+  100% { filter: hue-rotate(360deg); }
+}
+@keyframes glowPulse{
+  0%,100% { opacity:.82; box-shadow: 0 0 8px 4px rgba(0,229,255,.7), 0 0 20px 8px rgba(0,229,255,.35); }
+  50%     { opacity:1;   box-shadow: 0 0 12px 6px rgba(0,229,255,.9), 0 0 30px 12px rgba(0,229,255,.5); }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
@@ -510,7 +511,8 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   border-radius:3px;
   box-sizing:border-box;
   background:transparent;
-  animation: glowCDiffuse 2s linear infinite;
+  animation: glowCDiffuse 1.4s linear infinite, glowPulse 0.9s ease-in-out infinite;
+  animation-delay: -0.7s, -0.3s;
   will-change: filter, opacity;
   transform: translateZ(0);
   z-index: 5;
@@ -3322,7 +3324,7 @@ function _drawLineOverlays(rows,cols){
   cols.forEach(c=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    ov.style.cssText=`left:${offX+c*stepX-EXP}px;top:${offY-EXP}px;width:${cs+EXP*2}px;height:${stepY*(N-1)+cs+EXP*2}px;animation-delay:${c*0.12}s;`;
+    ov.style.cssText=`left:${offX+c*stepX-EXP}px;top:${offY-EXP}px;width:${cs+EXP*2}px;height:${stepY*(N-1)+cs+EXP*2}px;animation-delay:${-0.7+c*0.12}s,${-0.3+c*0.05}s;`;
     wrap.appendChild(ov);
   });
 }
