@@ -495,30 +495,41 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    v103: box-shadow убран из анимации — он вызывал repaint на каждом кадре (FPS drop)
    Теперь анимируется только opacity (GPU composite) + статичная border + glow через filter */
 @keyframes glowCDiffuse{
-  0%  { outline-color: rgba(0,229,255,1);  }
-  33% { outline-color: rgba(255,230,0,1);  }
-  66% { outline-color: rgba(255,60,172,1); }
-  100%{ outline-color: rgba(0,229,255,1);  }
-}
-@keyframes glowOverlayPulse{
-  0%,100% { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor); opacity:.85; }
-  50%     { filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 18px currentColor); opacity:1;   }
+  0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 14px rgba(0,229,255,.55)); opacity:.88; }
+  25%  { filter: hue-rotate(60deg)  drop-shadow(0 0 8px rgba(255,230,0,.95))  drop-shadow(0 0 18px rgba(255,230,0,.55)); opacity:1;   }
+  50%  { filter: hue-rotate(200deg) drop-shadow(0 0 5px rgba(255,60,172,.95)) drop-shadow(0 0 14px rgba(255,60,172,.55)); opacity:.88; }
+  75%  { filter: hue-rotate(300deg) drop-shadow(0 0 8px rgba(0,180,255,.95))  drop-shadow(0 0 18px rgba(0,180,255,.55)); opacity:1;   }
+  100% { filter: hue-rotate(360deg) drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 14px rgba(0,229,255,.55)); opacity:.88; }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
   position:absolute;
   pointer-events:none;
-  outline: 3.5px solid rgba(0,229,255,1);
+  outline: 4px solid rgba(0,229,255,1);
   outline-offset: 0px;
   border-radius:3px;
   box-sizing:border-box;
   background:transparent;
-  animation: glowCDiffuse 1.8s linear infinite, glowOverlayPulse 1.2s ease-in-out infinite;
-  will-change: opacity, filter, outline-color;
+  animation: glowCDiffuse 2s linear infinite;
+  will-change: filter, opacity;
   transform: translateZ(0);
   z-index: 5;
 }
-/* Обычная подсветка ячеек (ok/bad) — без анимации, только цвет */
+/* ══ DEV UNLOCK BUTTON ══ */
+#dev-unlock-btn{
+  display:none;
+  margin-top:8px;
+  padding:8px 20px;
+  background:rgba(255,50,50,.15);
+  border:1px solid rgba(255,50,50,.3);
+  border-radius:12px;
+  color:rgba(255,100,100,.8);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1px;
+  cursor:pointer;
+  width:100%;
+}
 .cell.ok{ outline: 2px solid rgba(100,255,120,.85); }
 .cell.bad{ outline: 2px solid rgba(255,80,80,.75); }
 /* Line glow — через outline на ячейках, overlay не используется */
@@ -1692,7 +1703,8 @@ body[class*="theme-"] .g-header {
       <div class="m-title-row">
         <div class="m-title">BLOCK FAST<br>MANIA</div>
       </div>
-      <div class="m-sub">Puzzle · Telegram · 2026 <span style="font-size:8px;color:rgba(255,255,255,.15);user-select:none;">·</span></div>
+      <div class="m-sub" id="dev-tap-zone" onclick="devTapCount()" style="user-select:none;">Puzzle · Telegram · 2026 <span style="font-size:8px;color:rgba(255,255,255,.15);">·</span></div>
+      <button id="dev-unlock-btn" onclick="devUnlockAll()">🔓 DEV: разблокировать всё</button>
     </div>
 
     <!-- Battle Pass button -->
@@ -2115,6 +2127,26 @@ setTimeout(initDefaultStars, 500);
 /* ══ TELEGRAM ══ */
 const tg=window.Telegram?.WebApp||null;
 if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{gridBounds=null;_invalidateOverlayCache();});}
+
+/* ══ HIGH REFRESH RATE AUTODETECT ══
+   Браузер сам выбирает частоту кадров через rAF.
+   Мы только определяем реальный FPS и логируем — форсировать не нужно,
+   это может навредить на слабых устройствах */
+(function detectRefreshRate(){
+  let frames=0, last=performance.now();
+  function tick(now){
+    frames++;
+    if(now-last>=1000){
+      const fps=Math.round(frames*1000/(now-last));
+      console.log('[BFM] Display refresh rate:', fps, 'fps');
+      // Если 90/120hz — CSS анимации уже работают плавнее автоматически
+      // Ничего дополнительного делать не нужно
+      return;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
 
 /* ══ GLOBAL ERROR CATCHER — debug only ══ */
 window.onerror=function(msg,src,line){
@@ -6681,6 +6713,34 @@ showScreen('menu');
 // v105: одноразовая очистка легаси-данных скинов и тем (старые тестовые записи)
 // Удаляем устаревшие ключи bfm_skin_* и сбрасываем bfm_bp_skins / bfm_bg_theme_*
 // v105: миграция легаси-данных уже выполнена, cleanLegacyV105 удалена
+
+/* ══ DEV UNLOCK — 5 тапов по версии ══ */
+let _devTaps = 0, _devTapTimer = null;
+function devTapCount(){
+  _devTaps++;
+  if(_devTapTimer) clearTimeout(_devTapTimer);
+  _devTapTimer = setTimeout(()=>{ _devTaps=0; }, 2000);
+  if(_devTaps >= 5){
+    _devTaps = 0;
+    const btn = document.getElementById('dev-unlock-btn');
+    if(btn) btn.style.display = 'block';
+    vibrate('line');
+  }
+}
+function devUnlockAll(){
+  // Скины
+  safeSet('bfm_bp_skins', JSON.stringify(['neon','pastel','dark','ocean','fire','gold','galaxy']));
+  // Темы
+  ['cyberpunk','hell','ice','retro','nature','sakura','cosmos','ocean_bg','sunset']
+    .forEach(id => safeSet('bfm_bg_theme_'+id, '1'));
+  // Sync to CloudStorage
+  _syncBPKeyToCloud('bfm_bp_skins', safeGet('bfm_bp_skins','[]'));
+  // Скрываем кнопку
+  const btn = document.getElementById('dev-unlock-btn');
+  if(btn) btn.style.display = 'none';
+  vibrate('go');
+  tg?.showPopup?.({title:'✅ Готово!', message:'Все скины и темы разблокированы!', buttons:[{id:'ok',type:'ok'}]});
+}
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
 // Синхронизируем BP XP с сервера — защита от потери прогресса при очистке браузера
