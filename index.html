@@ -495,11 +495,11 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    v103: box-shadow убран из анимации — он вызывал repaint на каждом кадре (FPS drop)
    Теперь анимируется только opacity (GPU composite) + статичная border + glow через filter */
 @keyframes glowCDiffuse{
-  0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 14px rgba(0,229,255,.55)); opacity:.88; }
-  25%  { filter: hue-rotate(60deg)  drop-shadow(0 0 8px rgba(255,230,0,.95))  drop-shadow(0 0 18px rgba(255,230,0,.55)); opacity:1;   }
-  50%  { filter: hue-rotate(200deg) drop-shadow(0 0 5px rgba(255,60,172,.95)) drop-shadow(0 0 14px rgba(255,60,172,.55)); opacity:.88; }
-  75%  { filter: hue-rotate(300deg) drop-shadow(0 0 8px rgba(0,180,255,.95))  drop-shadow(0 0 18px rgba(0,180,255,.55)); opacity:1;   }
-  100% { filter: hue-rotate(360deg) drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 14px rgba(0,229,255,.55)); opacity:.88; }
+  0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 18px rgba(0,229,255,.55)); opacity:.88; }
+  25%  { filter: hue-rotate(60deg)  drop-shadow(0 0 8px rgba(255,230,0,.95))  drop-shadow(0 0 22px rgba(255,230,0,.55)); opacity:1;   }
+  50%  { filter: hue-rotate(200deg) drop-shadow(0 0 5px rgba(255,60,172,.95)) drop-shadow(0 0 18px rgba(255,60,172,.55)); opacity:.88; }
+  75%  { filter: hue-rotate(300deg) drop-shadow(0 0 8px rgba(0,180,255,.95))  drop-shadow(0 0 22px rgba(0,180,255,.55)); opacity:1;   }
+  100% { filter: hue-rotate(360deg) drop-shadow(0 0 5px rgba(0,229,255,.95))  drop-shadow(0 0 18px rgba(0,229,255,.55)); opacity:.88; }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
