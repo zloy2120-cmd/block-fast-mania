@@ -493,27 +493,28 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 /* line-ready: overlay поверх грида вместо анимации на каждой ячейке
    Это кардинально снижает нагрузку: 1-2 div'а вместо 10-20 анимирующих ячеек
    v103: box-shadow убран из анимации — он вызывал repaint на каждом кадре (FPS drop)
-   Теперь анимируется только opacity (GPU composite) + статичная border + glow через filter */
-@keyframes glowCDiffuse{
-  0%   { filter: hue-rotate(0deg);   }
-  100% { filter: hue-rotate(360deg); }
-}
+   v106: filter:hue-rotate убран из CSS-анимации — на слабых Android GPU (MediaTek/старый Snapdragon)
+         Telegram WebView не compositor-thread для filter → анимация замерзала.
+         Теперь hue-rotate управляется JS rAF через CSS переменную --ov-hue на :root.
+         Один rAF loop на все оверлеи вместо N compositor-слоёв с filter-шейдером. */
+/* glowCDiffuse убран — заменён JS rAF (см. _startOverlayHue) */
 @keyframes glowPulse{
-  0%,100% { opacity:.82; box-shadow: 0 0 8px 4px rgba(0,229,255,.7), 0 0 20px 8px rgba(0,229,255,.35); }
-  50%     { opacity:1;   box-shadow: 0 0 12px 6px rgba(0,229,255,.9), 0 0 30px 12px rgba(0,229,255,.5); }
+  0%,100% { opacity:.82; box-shadow: 0 0 8px 4px hsl(var(--ov-hue,180),100%,55%,.7), 0 0 20px 8px hsl(var(--ov-hue,180),100%,55%,.35); }
+  50%     { opacity:1;   box-shadow: 0 0 12px 6px hsl(var(--ov-hue,180),100%,55%,.9), 0 0 30px 12px hsl(var(--ov-hue,180),100%,55%,.5); }
 }
 /* Оверлей-полоса поверх строки/колонки — один div на линию */
 .line-overlay{
   position:absolute;
   pointer-events:none;
-  outline: 4px solid rgba(0,229,255,1);
+  /* outline-color обновляется через --ov-hue JS rAF — работает на ВСЕХ GPU */
+  outline: 4px solid hsl(var(--ov-hue,180),100%,55%);
   outline-offset: 0px;
   border-radius:3px;
   box-sizing:border-box;
   background:transparent;
-  animation: glowCDiffuse 1.4s linear infinite, glowPulse 0.9s ease-in-out infinite;
-  animation-delay: -0.7s, -0.3s;
-  will-change: filter, opacity;
+  animation: glowPulse 0.9s ease-in-out infinite;
+  /* will-change:filter убран — создавал N compositor-слоёв, ломался на слабых GPU */
+  will-change: opacity;
   transform: translateZ(0);
   z-index: 5;
 }
@@ -1443,51 +1444,82 @@ body[class*="theme-"] .g-header {
   font-size:12px;color:rgba(255,255,255,.5);margin-bottom:28px;text-align:center;
 }
 
-/* ═══ CS2-Style 3D Case ═══ */
+/* ═══ CS2-Style 3D Case — clip-path approach ═══ */
+/*
+  Изометрический 3D через clip-path — работает везде включая Telegram WebView.
+  Контейнер 240×140px. Три грани:
+  Передняя: left:40 top:28 → 160×100
+  Верхняя: polygon(40,28 → 200,28 → 240,8 → 80,8)
+  Правая:  polygon(200,28 → 200,128 → 240,108 → 240,8)
+  dx=40, dy=20 — проекция глубины
+*/
 .cs2-case-wrap{
-  perspective:700px;
   display:flex;align-items:center;justify-content:center;
-  width:200px;height:190px;position:relative;margin-bottom:4px;
+  width:260px;height:200px;position:relative;margin-bottom:8px;
+  transform:translateX(-20px);
 }
+/* Анимация всего кейса */
 .cs2-case{
-  width:152px;height:132px;
-  position:relative;transform-style:preserve-3d;
-  transform:rotateX(14deg) rotateY(-20deg);
+  width:240px;height:140px;
+  position:relative;
   animation:caseHover 3s ease-in-out infinite;
   cursor:pointer;
+  transform:perspective(600px) rotateX(4deg);
 }
-.cs2-case.opening{animation:caseOpenAnim .55s cubic-bezier(.4,0,.2,1) forwards;}
+.cs2-case.opening{animation:caseOpenAnim .65s ease-in forwards;}
 @keyframes caseHover{
-  0%,100%{transform:rotateX(14deg) rotateY(-20deg) translateY(0);}
-  50%{transform:rotateX(16deg) rotateY(-15deg) translateY(-7px);}
+  0%,100%{transform:perspective(600px) rotateX(4deg) translateY(0);}
+  50%    {transform:perspective(600px) rotateX(6deg) translateY(-10px);}
 }
 @keyframes caseOpenAnim{
-  0%{transform:rotateX(14deg) rotateY(-20deg) scale(1);opacity:1;}
-  35%{transform:rotateX(35deg) rotateY(25deg) scale(1.18);opacity:1;}
-  100%{transform:rotateX(90deg) rotateY(50deg) scale(0);opacity:0;}
+  0%  {transform:perspective(600px) rotateX(4deg) scale(1);opacity:1;}
+  40% {transform:perspective(600px) rotateX(20deg) scale(1.15);opacity:1;}
+  100%{transform:perspective(600px) rotateX(90deg) scale(0);opacity:0;}
 }
-/* Передняя грань */
+
+/* ── ПЕРЕДНЯЯ ГРАНЬ — 160×100 ── */
 .cs2-front{
-  position:absolute;inset:0;
-  background:
-    linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 50%),
-    linear-gradient(160deg,var(--c-top,#1c2f42) 0%,var(--c-mid,#101d2b) 50%,var(--c-bot,#080f17) 100%);
-  border-radius:7px;
-  border:1.5px solid var(--c-border,rgba(255,255,255,.13));
+  position:absolute;
+  left:40px;top:28px;
+  width:160px;height:100px;
+  background:linear-gradient(160deg,
+    var(--c-top,#1c2f42) 0%,
+    var(--c-mid,#101d2b) 55%,
+    var(--c-bot,#080f17) 100%);
+  border-radius:5px;
+  border:1.5px solid rgba(255,255,255,.15);
   overflow:hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.2),
-    inset 0 -2px 0 rgba(0,0,0,.6),
-    inset 2px 0 0 rgba(255,255,255,.07),
-    0 0 0 1px rgba(0,0,0,.5);
+    inset 0 1px 0 rgba(255,255,255,.15),
+    2px 4px 20px rgba(0,0,0,.5);
 }
-/* Верхняя цветная полоса */
-.cs2-top-stripe{
-  position:absolute;top:0;left:0;right:0;height:26px;
-  background:linear-gradient(180deg,var(--c-stripe,rgba(96,165,250,.45)) 0%,transparent 100%);
-  border-bottom:1.5px solid var(--c-accent,rgba(96,165,250,.5));
+
+/* ── ВЕРХНЯЯ ГРАНЬ — параллелограмм через clip-path ── */
+.cs2-top{
+  position:absolute;inset:0;
+  clip-path:polygon(40px 28px, 200px 28px, 240px 8px, 80px 8px);
+  background:linear-gradient(90deg,
+    var(--c-stripe,rgba(96,165,250,.6)) 0%,
+    color-mix(in srgb, var(--c-top,#1c2f42) 70%, white) 20%,
+    color-mix(in srgb, var(--c-top,#1c2f42) 75%, white) 80%,
+    var(--c-stripe,rgba(96,165,250,.4)) 100%
+  );
+  border:1px solid rgba(255,255,255,.1);
+  filter:brightness(1.3);
 }
-/* Текстура — сетка */
+
+/* ── ПРАВАЯ ГРАНЬ — параллелограмм через clip-path ── */
+.cs2-side-r{
+  position:absolute;inset:0;
+  clip-path:polygon(200px 28px, 200px 128px, 240px 108px, 240px 8px);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--c-top,#1c2f42) 60%, black) 0%,
+      color-mix(in srgb, var(--c-bot,#080f17) 60%, black) 100%
+    );
+}
+
+/* ── Декор передней грани ── */
 .cs2-grid{
   position:absolute;inset:0;
   background-image:
@@ -1495,76 +1527,58 @@ body[class*="theme-"] .g-header {
     linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
   background-size:14px 14px;
 }
-/* Горизонтальная полоса замка */
+.cs2-top-stripe{
+  position:absolute;top:0;left:0;right:0;height:22px;
+  background:linear-gradient(180deg,var(--c-stripe,rgba(96,165,250,.55)) 0%,transparent 100%);
+  border-bottom:1.5px solid var(--c-accent,rgba(96,165,250,.5));
+}
 .cs2-midband{
-  position:absolute;top:50%;left:0;right:0;height:20px;transform:translateY(-50%);
-  background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,var(--c-band,rgba(96,165,250,.18)) 50%,rgba(0,0,0,.5) 100%);
+  position:absolute;top:50%;left:0;right:0;height:18px;transform:translateY(-50%);
+  background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,var(--c-band,rgba(96,165,250,.2)) 50%,rgba(0,0,0,.5) 100%);
   border-top:1px solid var(--c-accent,rgba(96,165,250,.4));
   border-bottom:1px solid var(--c-accent,rgba(96,165,250,.4));
 }
-/* Металлические заклёпки */
 .cs2-rivet{
-  position:absolute;width:7px;height:7px;border-radius:50%;
+  position:absolute;width:6px;height:6px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#c8cdd2,#6a7078);
-  border:1px solid rgba(0,0,0,.4);
+  border:1px solid rgba(0,0,0,.5);
   box-shadow:inset 0 1px 1px rgba(255,255,255,.4);
 }
-.cs2-rivet.r1{top:3px;left:6px;}
-.cs2-rivet.r2{top:3px;right:6px;}
-.cs2-rivet.r3{bottom:3px;left:6px;}
-.cs2-rivet.r4{bottom:3px;right:6px;}
-/* Замок */
+.cs2-rivet.r1{top:3px;left:5px;}
+.cs2-rivet.r2{top:3px;right:5px;}
+.cs2-rivet.r3{bottom:3px;left:5px;}
+.cs2-rivet.r4{bottom:3px;right:5px;}
 .cs2-lock{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:28px;height:28px;z-index:4;
+  width:26px;height:26px;z-index:4;
   background:radial-gradient(circle at 38% 32%,#dde0e4 0%,#9ca3af 50%,#6b7280 100%);
   border-radius:50%;
   border:2px solid rgba(0,0,0,.55);
   box-shadow:0 2px 10px rgba(0,0,0,.7),inset 0 1px 2px rgba(255,255,255,.45);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;
+  font-size:11px;
 }
-/* Иконка кейса */
 .cs2-icon{
   position:absolute;top:4px;left:0;right:0;
-  text-align:center;font-size:18px;line-height:1;
+  text-align:center;font-size:26px;line-height:1;
   filter:drop-shadow(0 0 8px var(--c-glow,rgba(96,165,250,.8)));
 }
-/* Название */
 .cs2-label{
-  position:absolute;bottom:7px;left:6px;right:6px;
-  font-family:'Bungee',cursive;font-size:6.5px;letter-spacing:.9px;
+  position:absolute;bottom:5px;left:4px;right:4px;
+  font-family:'Bungee',cursive;font-size:6px;letter-spacing:.8px;
   text-align:center;text-transform:uppercase;
   color:var(--c-accent-s,#60a5fa);
   text-shadow:0 0 10px var(--c-glow,rgba(96,165,250,.7));
-  opacity:.95;
 }
-/* Блик */
 .cs2-shine{
-  position:absolute;top:3px;left:10px;width:55px;height:4px;
-  background:rgba(255,255,255,.18);border-radius:2px;filter:blur(.5px);
+  position:absolute;top:2px;left:8px;width:55px;height:3px;
+  background:rgba(255,255,255,.22);border-radius:2px;filter:blur(.5px);
 }
-/* Правая боковая грань (3D) */
-.cs2-side-r{
-  position:absolute;top:0;right:-19px;width:19px;height:132px;
-  transform-origin:left center;transform:rotateY(90deg);
-  background:linear-gradient(90deg,var(--c-mid,#101d2b) 0%,var(--c-bot,#060c14) 100%);
-  border:1px solid rgba(0,0,0,.6);border-left:none;border-radius:0 5px 5px 0;
-  box-shadow:inset -2px 0 4px rgba(0,0,0,.5);
-}
-/* Нижняя грань (3D) */
-.cs2-bottom{
-  position:absolute;left:0;bottom:-19px;width:152px;height:19px;
-  transform-origin:top center;transform:rotateX(-90deg);
-  background:linear-gradient(180deg,var(--c-bot,#080f17) 0%,#030710 100%);
-  border:1px solid rgba(0,0,0,.5);border-top:none;border-radius:0 0 5px 5px;
-}
-/* Тень под кейсом */
 .cs2-shadow{
-  position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);
-  width:120px;height:18px;
-  background:var(--c-glow,rgba(96,165,250,.4));
-  border-radius:50%;filter:blur(12px);opacity:.6;
+  position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+  width:160px;height:20px;
+  background:var(--c-glow,rgba(96,165,250,.5));
+  border-radius:50%;filter:blur(16px);opacity:.75;
 }
 /* Скрываем старые */
 .case-chest{display:none!important;}
@@ -2152,19 +2166,20 @@ if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{
    Мы только определяем реальный FPS и логируем — форсировать не нужно,
    это может навредить на слабых устройствах */
 (function detectRefreshRate(){
-  let frames=0, last=performance.now();
+  let frames=0, last=performance.now(), rafId=null;
   function tick(now){
     frames++;
     if(now-last>=1000){
       const fps=Math.round(frames*1000/(now-last));
       console.log('[BFM] Display refresh rate:', fps, 'fps');
       // Если 90/120hz — CSS анимации уже работают плавнее автоматически
-      // Ничего дополнительного делать не нужно
+      // FIX 20: явный stop — rafId=null, loop не продолжается
+      rafId=null;
       return;
     }
-    requestAnimationFrame(tick);
+    rafId=requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  rafId=requestAnimationFrame(tick);
 })();
 
 /* ══ GLOBAL ERROR CATCHER — debug only ══ */
@@ -2924,23 +2939,46 @@ function xyToCell(x,y){
 /* ══ PIECE RENDER ══ */
 const BANK_W=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bank-w'))||80;
 function pSz(R,C){const sw=Math.floor((Math.min(window.innerWidth,440)-24-BANK_W-20)/3);return Math.max(14,Math.min(21,Math.floor((sw-8)/Math.max(R,C,1))));}
+// FIX 17: пулы для pgrid-контейнеров и pcell-ячеек трея/банка
+const _pgridPool=[];
+const _pcellPool=[];
+function _getPgrid(){return _pgridPool.pop()||document.createElement('div');}
+function _getPcell(){return _pcellPool.pop()||document.createElement('div');}
+function _recyclePiece(container){
+  const pg=container.firstChild;
+  if(!pg)return;
+  // Возвращаем все pcell в пул
+  while(pg.firstChild){
+    const c=pg.firstChild;
+    pg.removeChild(c);
+    c.className='pcell';c.style.cssText='';
+    _pcellPool.push(c);
+  }
+  container.removeChild(pg);
+  pg.className='pgrid';pg.style.cssText='';
+  _pgridPool.push(pg);
+}
 function renderPieceInto(container,p,maxPx,volumetric){
-  container.innerHTML='';if(!p)return;
+  // FIX 17: возвращаем старые элементы в пул вместо innerHTML=''
+  _recyclePiece(container);
+  if(!p)return;
   const R=p.shape.length,C=p.shape[0].length;
   const ps=maxPx?Math.max(11,Math.min(17,Math.floor(maxPx/Math.max(R,C,1)))):pSz(R,C);
-  const pg=document.createElement('div');pg.className='pgrid';
-  pg.style.gridTemplateColumns=`repeat(${C},${ps}px)`;
-  pg.style.gridTemplateRows=`repeat(${R},${ps}px)`;
-  pg.style.gap='2px';
+  const pg=_getPgrid();pg.className='pgrid';
+  pg.style.cssText=`grid-template-columns:repeat(${C},${ps}px);grid-template-rows:repeat(${R},${ps}px);gap:2px;display:grid;`;
+  const frag=document.createDocumentFragment();
   for(let r=0;r<R;r++)for(let c=0;c<C;c++){
-    const d=document.createElement('div');d.className='pcell';d.style.width=d.style.height=ps+'px';
+    const d=_getPcell();d.className='pcell';
+    d.style.cssText=`width:${ps}px;height:${ps}px;`;
     if(p.shape[r][c]){
       if(volumetric)applyBlockGrid(d,p.ci);else applyBlockFlat(d,p.ci,ps);
       if(p.crystal) d.classList.add('crystal-p');
+    } else {
+      d.style.background='transparent';
     }
-    else d.style.background='transparent';
-    pg.appendChild(d);
+    frag.appendChild(d);
   }
+  pg.appendChild(frag);
   container.appendChild(pg);
 }
 // FIX 4: кэш сигнатур фигур в трее — пропускаем рендер если фигура не изменилась
@@ -3336,6 +3374,7 @@ function clearHL(){
   // FIX 2: удаляем overlay через cached refs — без querySelectorAll
   for(let i=0;i<_lineOverlayEls.length;i++) if(_lineOverlayEls[i].parentNode) _lineOverlayEls[i].parentNode.removeChild(_lineOverlayEls[i]);
   _lineOverlayEls=[];
+  _stopOverlayHue(); // останавливаем hue rAF когда оверлеев нет
   lastHL={sr:-1,sc:-1,valid:null};
 }
 
@@ -3388,6 +3427,24 @@ function showHL(shape,sr,sc,valid,si){
 let _overlayCache = null; // {wLeft, wTop, offX, offY, cs, stepX, stepY} — сбрасывается при buildGrid
 let _lineOverlayEls = []; // FIX 2: храним ссылки на overlay-элементы
 function _invalidateOverlayCache(){ _overlayCache = null; }
+
+/* ── Радужный hue-движок через CSS-переменную ────────────────────────────────
+   Вместо filter:hue-rotate CSS-анимации (ломается на слабых Android GPU)
+   один rAF обновляет --ov-hue на :root — все .line-overlay читают его.
+   Запускается при появлении оверлеев, останавливается когда их нет. */
+let _hueRafId=null, _hueDeg=0, _hueLastTs=0;
+function _hueStep(ts){
+  if(_hueLastTs) _hueDeg=(_hueDeg+(ts-_hueLastTs)*0.072)%360; // 360°/5000ms ≈ 0.072°/ms — плавное переливание
+  _hueLastTs=ts;
+  document.documentElement.style.setProperty('--ov-hue', _hueDeg.toFixed(1));
+  _hueRafId=requestAnimationFrame(_hueStep);
+}
+function _startOverlayHue(){
+  if(!_hueRafId){ _hueLastTs=0; _hueRafId=requestAnimationFrame(_hueStep); }
+}
+function _stopOverlayHue(){
+  if(_hueRafId){cancelAnimationFrame(_hueRafId);_hueRafId=null;_hueLastTs=0;}
+}
 function _drawLineOverlays(rows,cols){
   const wrap=document.getElementById('grid-wrap');
   if(!wrap)return;
@@ -3425,11 +3482,14 @@ function _drawLineOverlays(rows,cols){
   cols.forEach(c=>{
     const ov=document.createElement('div');
     ov.className='line-overlay';
-    ov.style.cssText=`left:${offX+c*stepX-EXP}px;top:${offY-EXP}px;width:${cs+EXP*2}px;height:${stepY*(N-1)+cs+EXP*2}px;animation-delay:${-0.7+c*0.12}s,${-0.3+c*0.05}s;`;
+    // animation-delay стагер для glowPulse — фаза opacity у колонок чуть разная (красивее)
+    const ad2=((-0.3+c*0.05)>=0 ? (-0.3+c*0.05)-0.9 : -0.3+c*0.05);
+    ov.style.cssText=`left:${offX+c*stepX-EXP}px;top:${offY-EXP}px;width:${cs+EXP*2}px;height:${stepY*(N-1)+cs+EXP*2}px;animation-delay:${ad2.toFixed(2)}s;`;
     frag.appendChild(ov);
     _lineOverlayEls.push(ov);
   });
   wrap.appendChild(frag);
+  if(_lineOverlayEls.length>0) _startOverlayHue(); // запускаем радужный hue-движок
 }
 
 /* ══ DRAG & DROP — оптимизированный ══ */
@@ -3437,16 +3497,23 @@ let drag=null,dragMoved=false,rafDrag=null,lastDragX=0,lastDragY=0;
 const OFFSET=80; // увеличили — фигура поднимается выше пальца
 // cellCache удалён — используем cellEls[][] массив из buildGrid
 function evXY(e){const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0]);return t?[t.clientX,t.clientY]:[e.clientX,e.clientY];}
+// FIX 19: кэш сигнатуры ghost — не пересоздаём если та же фигура того же цвета
+let _ghostSig='';
 function buildGhost(shape,ci){
+  const sig=ci+'_'+shape.map(r=>r.join('')).join('|');
+  if(sig===_ghostSig)return; // фигура не изменилась — не трогаем DOM
+  _ghostSig=sig;
   const g=document.getElementById('ghost');g.innerHTML='';
   const cs=cSz();const R=shape.length,C=shape[0].length;
   g.style.gridTemplateColumns=`repeat(${C},${cs}px)`;g.style.gridTemplateRows=`repeat(${R},${cs}px)`;
   g.style.gap='2px';g.style.display='grid';
+  const frag=document.createDocumentFragment();
   for(let r=0;r<R;r++)for(let c=0;c<C;c++){
     const d=document.createElement('div');d.className='gc';d.style.width=d.style.height=cs+'px';
     if(shape[r][c])applyBlockGrid(d,ci);else d.style.background='transparent';
-    g.appendChild(d);
+    frag.appendChild(d);
   }
+  g.appendChild(frag);
 }
 function moveGhost(x,y,shape){
   const g=document.getElementById('ghost');const cs=cSz();
@@ -3460,6 +3527,7 @@ function startDrag(si,e){
   e.preventDefault();e.stopPropagation();
   if(rafDrag){cancelAnimationFrame(rafDrag);rafDrag=null;} // отменяем предыдущий незавершённый drag
   dragMoved=false;drag={si,shape:p.shape.map(r=>[...r]),ci:p.ci};
+  _ghostSig=''; // FIX 19: при новом drag всегда перестраиваем ghost
   gridBounds=getGridBounds();
   const[x,y]=evXY(e);
   const g=document.getElementById('ghost');
@@ -3502,7 +3570,7 @@ document.addEventListener('mousemove',e=>{
   const[x,y]=evXY(e);lastDragX=x;lastDragY=y;
   if(rafDrag)return;
   rafDrag=requestAnimationFrame(()=>{rafDrag=null;processDragMove(lastDragX,lastDragY);});
-});
+},{passive:true}); // FIX 15: passive — мышь не вызывает preventDefault, браузер не ждёт
 document.addEventListener('touchmove',e=>{
   if(!drag)return;dragMoved=true;e.preventDefault();
   const[x,y]=evXY(e);lastDragX=x;lastDragY=y;
@@ -3610,6 +3678,8 @@ let _timerValRect=null;
 function _invalidateTimerValRect(){_timerValRect=null;}
 
 // Timer bonus: show near timer (right aligned)
+// FIX 18: пул для time-pop элементов
+const _timePopPool=[];
 function showTimerBonus(txt){
   const tag=document.getElementById('timer-bonus-tag');
   tag.textContent=txt;tag.classList.remove('show');
@@ -3618,9 +3688,13 @@ function showTimerBonus(txt){
   // FIX 8: используем кэш позиции вместо getBoundingClientRect каждый раз
   if(!_timerValRect){const tv=document.getElementById('timer-val');if(tv)_timerValRect=tv.getBoundingClientRect();}
   if(_timerValRect){
-    const pop=document.createElement('div');pop.className='time-pop';pop.textContent='⏱ '+txt;
-    pop.style.left=(_timerValRect.left+_timerValRect.width/2)+'px';pop.style.top=_timerValRect.top+'px';
-    document.body.appendChild(pop);setTimeout(()=>pop.remove(),1400);
+    // FIX 18: берём из пула вместо createElement
+    const pop=_getPoolEl(_timePopPool,'time-pop');
+    pop.textContent='⏱ '+txt;
+    pop.style.left=(_timerValRect.left+_timerValRect.width/2)+'px';
+    pop.style.top=_timerValRect.top+'px';
+    document.body.appendChild(pop);
+    setTimeout(()=>_recycleEl(_timePopPool,pop),1400);
   }
 }
 
@@ -4580,6 +4654,7 @@ function startGame(m){
   _hintUsedThisGame=false; // сброс подсказки при новой игре
   _spinPendingCharge=false; // сброс флага спина при старте новой игры
   _pieceSlotSig[0]=_pieceSlotSig[1]=_pieceSlotSig[2]=''; // FIX 4: инвалидируем кэш трея
+  _holdSig=''; // FIX 14: инвалидируем кэш банка
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
   _xp2xConsumedThisGame = false;
@@ -4727,17 +4802,24 @@ function updateRotBtn(){
   }
 }
 
+// FIX 14: кэш сигнатуры банка — пропускаем рендер если фигура не изменилась
+let _holdSig = '';
 function renderHold(){
   const holdEl=document.getElementById('hold');
-  renderPieceInto(document.getElementById('hold-inner'),held,BANK_W-20,false);
+  const noSpins = isBankSpinUnlocked() && getSpinLeft()<=0;
   let hc=held?'filled':'';
   if(sel==='h') hc+=' selected';
   else if(sel>=0&&sel<3&&pieces[sel]) hc+=' piece-selected';
-  holdEl.className=hc.trim();
-  // Disable spin if no piece held OR spins exhausted
-  const noSpins = isBankSpinUnlocked() && getSpinLeft()<=0;
-  document.getElementById('btn-rot').className=(held&&!noSpins)?'':'disabled';
-  updateRotBtn(); // refresh spin counter display
+  const spinDisabled=(held&&!noSpins)?'':'disabled';
+  // FIX 14: строим сигнатуру: фигура + класс + состояние спина
+  const sig=_pieceSig(held,sel==='h',held&&held.crystal)+'|'+hc+'|'+spinDisabled;
+  if(sig!==_holdSig){
+    _holdSig=sig;
+    renderPieceInto(document.getElementById('hold-inner'),held,BANK_W-20,false);
+    holdEl.className=hc.trim();
+    document.getElementById('btn-rot').className=spinDisabled;
+    updateRotBtn();
+  }
 }
 
 function updateBankLock(){
@@ -6375,15 +6457,20 @@ function openCaseOv(caseId, drop){
   // CS2 кейс: применяем цвета через CSS переменные
   const cs2 = document.getElementById('cs2-case');
   cs2.className = 'cs2-case';
-  cs2.style.setProperty('--c-top',      ch.lid  || '#1c2f42');
+  const topColor = ch.lid  || '#1c2f42';
+  const botColor = '#06101a';
+  cs2.style.setProperty('--c-top',      topColor);
   cs2.style.setProperty('--c-mid',      ch.main || '#101d2b');
-  cs2.style.setProperty('--c-bot',      '#06101a');
+  cs2.style.setProperty('--c-bot',      botColor);
   cs2.style.setProperty('--c-stripe',   (ch.glow || glow).replace(/[\d.]+\)$/,'.45)'));
   cs2.style.setProperty('--c-accent',   (ch.glow || glow).replace(/[\d.]+\)$/,'.55)'));
   cs2.style.setProperty('--c-band',     (ch.glow || glow).replace(/[\d.]+\)$/,'.2)'));
   cs2.style.setProperty('--c-accent-s', ch.lid  || '#60a5fa');
   cs2.style.setProperty('--c-glow',     ch.glow || glow);
   cs2.style.filter = `drop-shadow(0 0 28px ${ch.glow||glow}) drop-shadow(0 8px 20px rgba(0,0,0,.6))`;
+  // Правый бок — реальный цвет кейса (затемнённый), не прозрачный чёрный
+  const sideEl = cs2.querySelector('.cs2-side-r');
+  if(sideEl) sideEl.style.background = `linear-gradient(180deg, ${topColor}99 0%, ${botColor}cc 100%)`;
   document.getElementById('cs2-icon').textContent  = caseConf.ico || '📦';
   document.getElementById('cs2-label').textContent = caseConf.name || 'CASE';
   document.getElementById('cs2-shadow').style.background = ch.glow || glow;
@@ -6933,6 +7020,8 @@ setTimeout(checkDailyBonus, 1200);
     <!-- CS2-style 3D case -->
     <div class="cs2-case-wrap">
       <div class="cs2-case" id="cs2-case">
+        <div class="cs2-top"></div>
+        <div class="cs2-side-r"></div>
         <div class="cs2-front">
           <div class="cs2-grid"></div>
           <div class="cs2-top-stripe"></div>
@@ -6946,8 +7035,6 @@ setTimeout(checkDailyBonus, 1200);
           <div class="cs2-icon" id="cs2-icon">📦</div>
           <div class="cs2-label" id="cs2-label">CASE</div>
         </div>
-        <div class="cs2-side-r"></div>
-        <div class="cs2-bottom"></div>
       </div>
       <div class="cs2-shadow" id="cs2-shadow"></div>
     </div>
