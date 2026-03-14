@@ -1092,41 +1092,47 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 
 /* ══ 💎 КРИСТАЛЬНЫЙ БЛОК ══ */
 /* ══ 💎 КРИСТАЛЬНЫЙ БЛОК ══ */
-@keyframes crystalShimmer{
-  0%   {filter:hue-rotate(0deg)   brightness(1.35) saturate(1.9);}
-  33%  {filter:hue-rotate(120deg) brightness(1.65) saturate(2.3);}
-  66%  {filter:hue-rotate(240deg) brightness(1.5)  saturate(2.1);}
-  100% {filter:hue-rotate(360deg) brightness(1.35) saturate(1.9);}
-}
-@keyframes crystalPulse{
-  0%,100%{box-shadow:0 0 4px 1px rgba(255,255,255,.45), 0 0 10px 2px rgba(180,120,255,.25);}
-  50%    {box-shadow:0 0 8px 3px rgba(180,120,255,.70), 0 0 16px 4px rgba(140,80,255,.28);}
+/*
+  ОПТИМИЗАЦИЯ v106: вместо N независимых CSS animation (filter:hue-rotate) на каждой ячейке
+  используем CSS переменную --crystal-hue, управляемую одним JS rAF (_crystalHueStep).
+  Все кристальные ячейки обновляются БАТЧЕМ за один style recalc вместо N repaint-вызовов.
+  Opacity pulse — единственная CSS-анимация, она GPU composited (не вызывает repaint).
+*/
+@keyframes crystalOpacityPulse{
+  0%,100%{ opacity:.88; }
+  50%    { opacity:1;   }
 }
 /* Кристальная клетка на поле */
 .cell.crystal-cell{
-  animation:crystalShimmer 4s linear infinite, crystalPulse 1.5s ease-in-out infinite;
-  z-index:2;position:relative;
-  will-change: filter, box-shadow;
-  transform: translateZ(0);        /* создаём GPU-слой ДО старта анимации */
-  contain: layout style paint;     /* изолируем repaint от соседних ячеек */
+  /* filter управляется через --crystal-hue JS rAF — не CSS анимация */
+  filter: hue-rotate(var(--crystal-hue,0deg)) brightness(1.4) saturate(2.0)
+          drop-shadow(0 0 4px rgba(180,120,255,.55));
+  animation: crystalOpacityPulse 1.5s ease-in-out infinite;
+  z-index:2; position:relative;
+  /* will-change:transform создаёт GPU-слой без хинта на дорогой filter repaint */
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout style paint;
 }
 /* Маленький кристалл в лотке (pcell) */
 .pcell.crystal-p{
-  animation:crystalShimmer 4s linear infinite;
-  box-shadow:0 0 8px 2px rgba(200,150,255,.8);
+  filter: hue-rotate(var(--crystal-hue,0deg)) brightness(1.35) saturate(1.8)
+          drop-shadow(0 0 5px rgba(200,150,255,.7));
   border-radius:2px;
-  will-change: filter;
+  will-change: transform;
   transform: translateZ(0);
 }
-/* Кристальный след на поле (остаётся 3 хода) */
+/* Кристальный след на поле */
 @keyframes crystalTrail{
-  0%  {opacity:.9;box-shadow:0 0 12px 4px rgba(180,100,255,.85),inset 0 0 8px rgba(200,150,255,.5);}
-  60% {opacity:.6;box-shadow:0 0 8px 3px rgba(160,80,255,.6);}
-  100%{opacity:.2;box-shadow:0 0 4px 1px rgba(140,60,255,.3);}
+  0%  { opacity:.85; }
+  60% { opacity:.45; }
+  100%{ opacity:.1;  }
 }
 .cell.crystal-trail{
-  animation:crystalTrail 4s ease-out forwards;
+  animation: crystalTrail 4s ease-out forwards;
   pointer-events:none;
+  filter: hue-rotate(var(--crystal-hue,0deg)) brightness(1.2) saturate(1.5)
+          drop-shadow(0 0 6px rgba(180,100,255,.5));
 }
 /* Баннер активной кристальной силы */
 /* ── Бонус-бар: левый край, под шапкой ── */
@@ -1151,7 +1157,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   background:linear-gradient(135deg,rgba(110,30,200,.95),rgba(190,80,255,.85));
   border:1.5px solid rgba(220,160,255,.55);
 }
-#crystal-hud.show{animation:crystalPulse 1.2s ease-in-out infinite;}
+#crystal-hud.show{animation:crystalOpacityPulse 1.2s ease-in-out infinite;}
 /* ⚡ Цепь */
 #chain-hud{
   background:linear-gradient(135deg,rgba(150,90,0,.95),rgba(255,195,0,.85));
@@ -3110,6 +3116,7 @@ async function place(si,sr,sc){
     if(isCrystalPiece){
       el.classList.add('crystal-cell');
       _crystalCells.add(r+','+c);
+      _startCrystalHue(); // кристальная ячейка появилась на поле — запускаем hue
     }
     el.classList.add('placed');setTimeout(()=>el.classList.remove('placed'),300);
   }
@@ -3430,6 +3437,25 @@ function showHL(shape,sr,sc,valid,si){
 let _overlayCache = null; // {wLeft, wTop, offX, offY, cs, stepX, stepY} — сбрасывается при buildGrid
 let _lineOverlayEls = []; // FIX 2: храним ссылки на overlay-элементы
 function _invalidateOverlayCache(){ _overlayCache = null; }
+
+/* ── Кристальный hue-движок через CSS-переменную ─────────────────────────────
+   Вместо N независимых CSS animation (filter:hue-rotate) на каждом crystal-cell
+   один rAF обновляет --crystal-hue на :root. Все кристальные ячейки читают его.
+   Запускается при crystalSpawn/place, останавливается при crystalReset. */
+let _crystalHueRafId=null, _crystalHueDeg=0, _crystalHueLastTs=0;
+function _crystalHueStep(ts){
+  if(_crystalHueLastTs) _crystalHueDeg=(_crystalHueDeg+(ts-_crystalHueLastTs)*0.09)%360; // 360°/4000ms
+  _crystalHueLastTs=ts;
+  document.documentElement.style.setProperty('--crystal-hue', _crystalHueDeg.toFixed(1)+'deg');
+  _crystalHueRafId=requestAnimationFrame(_crystalHueStep);
+}
+function _startCrystalHue(){
+  if(!_crystalHueRafId){ _crystalHueLastTs=0; _crystalHueRafId=requestAnimationFrame(_crystalHueStep); }
+}
+function _stopCrystalHue(){
+  if(_crystalHueRafId){cancelAnimationFrame(_crystalHueRafId);_crystalHueRafId=null;_crystalHueLastTs=0;}
+  document.documentElement.style.setProperty('--crystal-hue','0deg');
+}
 
 /* ── Радужный hue-движок через CSS-переменную ────────────────────────────────
    Вместо filter:hue-rotate CSS-анимации (ломается на слабых Android GPU)
@@ -6619,6 +6645,7 @@ let _crystalPiece   = -1; // индекс кристального piece в ло
 function crystalReset(){
   _moveCount=0;_crystalMult=1;_crystalTurns=0;
   _crystalCells=new Set();_crystalPiece=-1;
+  _stopCrystalHue(); // останавливаем hue rAF когда кристаллов нет
   document.getElementById('crystal-hud').classList.remove('show');
 }
 
@@ -6627,6 +6654,7 @@ function crystalSpawn(){playSound('boost');
   const avail=[0,1,2].filter(i=>pieces[i]);
   if(!avail.length)return;
   _crystalPiece=avail[Math.floor(Math.random()*avail.length)];
+  _startCrystalHue(); // запускаем радужный hue-движок для кристаллов
   renderPieces();
 }
 
