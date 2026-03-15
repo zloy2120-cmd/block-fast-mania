@@ -2563,32 +2563,37 @@ async function submitBPXP(scoreVal, modeKey){
 }
 
 async function submitScore(modeKey, scoreVal){
-  if(!tg?.initData) return; // [FIX] нет initData — не в Telegram, не отправляем
-  // Клиентская защита: только логируем подозрительное, не блокируем
-  // Воркер уже блокирует > 9 999 999 — клиенту не нужен жёсткий лимит
-  // Пример: score3x буст + combo×12 + длинная партия легко даёт 3 000 000+
+  if(!tg?.initData) return; // нет initData — не в Telegram
   const SUSPICIOUS_SCORE = 10000000;
-  if(scoreVal > SUSPICIOUS_SCORE){
-    console.warn('[AntiCheat] Suspicious score:', scoreVal);
-    return; // блокируем только явно нереальные значения
+  if(scoreVal > SUSPICIOUS_SCORE){ console.warn('[AntiCheat] Suspicious score:', scoreVal); return; }
+  const body = JSON.stringify({
+    init_data: tg.initData,
+    mode: modeKey, score: scoreVal,
+    lines, max_combo: maxCombo,
+    photo_url: MY_PHOTO_URL() || undefined
+  });
+  // FIX: retry один раз при сетевой ошибке — рекорд не должен теряться при 1 неудаче
+  for(let attempt=0; attempt<2; attempt++){
+    try {
+      const res = await fetch(`${API}/score`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body
+      });
+      if(res.ok){
+        delete boardCache[modeKey];
+        delete boardCache['daily'];
+        delete _boardPending[modeKey]; // инвалидируем pending чтоб следующий запрос взял свежие данные
+        return;
+      }
+      const data = await res.json().catch(()=>({}));
+      // Rate limited — ждём и повторяем один раз
+      if(res.status===429 && attempt===0){ await new Promise(r=>setTimeout(r,3000)); continue; }
+      console.warn('API score error:', res.status, data);
+      return;
+    } catch(e){
+      if(attempt===0){ await new Promise(r=>setTimeout(r,2000)); continue; }
+      console.warn('API score network error:', e);
+    }
   }
-  try {
-    await fetch(`${API}/score`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        init_data: tg.initData, // [FIX] Worker верифицирует HMAC — tg_id берётся оттуда
-        mode: modeKey,
-        score: scoreVal,
-        lines,
-        max_combo: maxCombo,
-        photo_url: MY_PHOTO_URL() || undefined
-      })
-    });
-    // Сбрасываем кеш лидерборда для этого режима — следующий открытый покажет актуальные данные
-    delete boardCache[modeKey];
-    delete boardCache['daily'];
-  } catch(e){ console.warn('API score error:', e); }
 }
 
 /* Загрузить лидерборд с сервера */
@@ -3196,16 +3201,17 @@ async function place(si,sr,sc){
       if(el){el.classList.add('pre-blast');preBlastEls.push(el);}
     }
     setTimeout(()=>{for(let i=0;i<preBlastEls.length;i++)preBlastEls[i].classList.remove('pre-blast');},660);
-    // Screen shake based on number of lines
+    // Screen shake based on number of lines — через rAF, не через offsetWidth (forced layout)
     const gw=document.getElementById('grid-wrap');
     if(gw){
       const shCls=cleared>=3?'shake3':cleared===2?'shake2':'shake1';
-      gw.classList.remove('shake1','shake2','shake3');
-      void gw.offsetWidth;
-      gw.style.willChange='transform';
       setTimeout(()=>{
-        gw.classList.add(shCls);
-        setTimeout(()=>{gw.classList.remove(shCls);gw.style.willChange='';},500);
+        gw.classList.remove('shake1','shake2','shake3');
+        gw.style.willChange='transform';
+        requestAnimationFrame(()=>{
+          gw.classList.add(shCls);
+          setTimeout(()=>{gw.classList.remove(shCls);gw.style.willChange='';},500);
+        });
       },120);
     }
     // FIX 6: rAF-тикер вместо N² setTimeout — один loop обрабатывает все элементы по времени.
@@ -3726,6 +3732,9 @@ function addSc(pts,flash){
 /* ══ FX ══ */
 // OPT 4: Object pool для частиц — избегаем постоянного create/remove
 const _ptPool=[];
+// FIX: кэш #fx слоя — getElementById в rAF-цикле при каждой частице = DOM query каждые 16ms
+let _fxLayer=null;
+function _getFxLayer(){return _fxLayer||(_fxLayer=document.getElementById('fx'));}
 function _getParticle(){
   return _ptPool.pop()||document.createElement('div');
 }
@@ -3735,15 +3744,17 @@ function _recycleParticle(p,layer){
   _ptPool.push(p);
 }
 function spawnPts(x,y,color,n=5){
-  const layer=document.getElementById('fx');
+  const layer=_getFxLayer();
+  if(!layer)return;
   for(let i=0;i<n;i++){
     const p=_getParticle();
-    p.className='pt'+(Math.random()>.5?' sq':'');
-    p.style.left=x+'px';p.style.top=y+'px';p.style.background=color;
+    const isSq=Math.random()>.5;
     const a=Math.random()*Math.PI*2,d=28+Math.random()*80;
-    p.style.setProperty('--dx',Math.cos(a)*d+'px');p.style.setProperty('--dy',Math.sin(a)*d+'px');
-    const sz=4+Math.random()*9;p.style.width=sz+'px';p.style.height=sz+'px';
-    p.style.animationDuration=(.4+Math.random()*.35)+'s';
+    const sz=4+Math.random()*9;
+    const dur=(.4+Math.random()*.35).toFixed(2);
+    // FIX: один cssText write вместо 7 отдельных style-операций
+    p.className='pt'+(isSq?' sq':'');
+    p.style.cssText=`left:${x}px;top:${y}px;background:${color};width:${sz}px;height:${sz}px;--dx:${(Math.cos(a)*d).toFixed(1)}px;--dy:${(Math.sin(a)*d).toFixed(1)}px;animation-duration:${dur}s;`;
     layer.appendChild(p);
     setTimeout(()=>{ if(p.parentNode===layer)_recycleParticle(p,layer); },820);
   }
@@ -4767,6 +4778,7 @@ function startGame(m){
   _holdSig=''; // FIX 14: инвалидируем кэш банка
   _initHUDRefs(); // FIX H: кэшируем HUD ссылки на новый экран
   _initCdotRefs(); // FIX J: кэшируем cdot ссылки
+  _fxLayer=null;  // сбрасываем кэш fx-слоя при старте
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
   _xp2xConsumedThisGame = false;
