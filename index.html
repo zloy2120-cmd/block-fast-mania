@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="106">
+<meta name="version" content="107">
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается один раз -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
@@ -427,12 +427,17 @@ body.theme-ice .card,.theme-ice .g-panel,.theme-ice #settings-panel { background
 body.theme-ice #grid  { background:linear-gradient(145deg,rgba(0,30,60,.3),rgba(0,60,90,.25)); border-color:rgba(100,220,255,.45); box-shadow:0 12px 44px rgba(0,100,180,.4),0 0 25px rgba(0,150,255,.2); }
 
 /* --- RETRO ARCADE --- */
-body.theme-retro { --bg:#000; --bg2:#0a0a0a; --card-bg:rgba(0,20,0,.9); --card-border:rgba(0,255,0,.25); }
-body.theme-retro #menu { background:#000; }
-body.theme-retro #game  { background:#000; }
+body.theme-retro,
+html body.theme-retro { --bg:#050505; --bg2:#050505; --card-bg:rgba(10,22,0,.88); --card-border:rgba(80,160,0,.3); background:#050505 !important; }
+/* Все screen-элементы прозрачные — canvas с кирпичами виден сквозь них */
+body.theme-retro .screen { background:transparent !important; }
+body.theme-retro #menu  { background:transparent !important; }
+body.theme-retro #game  { background:transparent !important; }
+body.theme-retro #board { background:transparent !important; }
+body.theme-retro #skins-screen { background:transparent !important; }
 body.theme-retro .card,.theme-retro .g-panel,.theme-retro #settings-panel { background:var(--card-bg)!important; border-color:var(--card-border)!important; }
-body.theme-retro #grid  { background:rgba(0,0,0,.25); border-color:rgba(0,255,0,.5); box-shadow:0 0 20px rgba(0,255,0,.3),inset 0 0 20px rgba(0,255,0,.05); }
-body.theme-retro::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.25) 4px); pointer-events:none; z-index:9999; }
+body.theme-retro #grid  { background:rgba(0,12,0,.35); border-color:rgba(80,160,0,.5); box-shadow:0 0 18px rgba(60,130,0,.3),inset 0 0 14px rgba(40,100,0,.08); }
+body.theme-retro::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.18) 4px); pointer-events:none; z-index:9999; }
 
 /* --- NATURE --- */
 body.theme-nature { --bg:#010f02; --bg2:#021505; --card-bg:rgba(5,30,8,.88); --card-border:rgba(60,200,80,.3); }
@@ -2163,7 +2168,7 @@ let _vpDebounce=null;
 if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{
   if(_vpDebounce)clearTimeout(_vpDebounce);
   _vpDebounce=setTimeout(()=>{
-    gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_vpDebounce=null;
+    gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_invalidateHoldRect();_vpDebounce=null;
   },80);
 });}
 
@@ -2516,10 +2521,15 @@ function startDaily(){
 }
 
 /* ══ COMBO DOTS ══ */
+// FIX J: кэш cdot-элементов — getElementById в цикле при каждом ходу
+const _cdots=[null,null,null];
+function _initCdotRefs(){
+  for(let i=0;i<3;i++) _cdots[i]=document.getElementById('cdot'+i);
+}
 function updateComboDots(){
   for(let i=0;i<3;i++){
-    const d=document.getElementById('cdot'+i);
-    d.className='cdot'+(i<noBlastStreak?' filled'+(noBlastStreak>=2?' hot':''):'');
+    const d=_cdots[i]||document.getElementById('cdot'+i);
+    if(d) d.className='cdot'+(i<noBlastStreak?' filled'+(noBlastStreak>=2?' hot':''):'');
   }
 }
 
@@ -2587,26 +2597,45 @@ const boardCache = {};
 const CACHE_TTL = 120000; // 2 min cache (было 60s)
 // v102: per-mode reqId — предотвращает race condition при одновременном prefetch нескольких режимов
 const _boardReqIds = {classic:0, mini:0, speed:0, daily:0};
+// FIX LB: pending promise кэш — если fetch уже идёт, возвращаем тот же промис
+// Это устраняет: переключение вкладки до завершения prefetch → повторный скелетон
+const _boardPending = {};
 
 async function fetchLeaderboard(m){
   const now = Date.now();
+  // Кэш свежий — возвращаем сразу
   if(boardCache[m] && now - boardCache[m].ts < CACHE_TTL){
     return boardCache[m].data;
   }
+  // Уже грузится — возвращаем тот же промис, не дублируем запрос
+  if(_boardPending[m]) return _boardPending[m];
+
   _boardReqIds[m] = (_boardReqIds[m]||0) + 1;
   const reqId = _boardReqIds[m];
   const id = MY_TG_ID();
-  try {
-    const url = `${API}/leaderboard?mode=${m}&limit=50${id?'&tg_id='+id:''}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if(reqId !== _boardReqIds[m]) return null; // пришёл устаревший ответ — игнорируем
-    boardCache[m] = { data, ts: now };
-    return data;
-  } catch(e){
-    console.warn('API leaderboard error:', e);
-    return null;
-  }
+
+  // FIX LB: Promise с таймаутом 8 сек — не висит вечно
+  const fetchPromise = (async()=>{
+    try {
+      const url = `${API}/leaderboard?mode=${m}&limit=50${id?'&tg_id='+id:''}`;
+      const controller = new AbortController();
+      const timer = setTimeout(()=>controller.abort(), 8000);
+      const res = await fetch(url, {signal: controller.signal});
+      clearTimeout(timer);
+      const data = await res.json();
+      if(reqId !== _boardReqIds[m]) return null; // пришёл устаревший ответ — игнорируем
+      boardCache[m] = { data, ts: Date.now() };
+      return data;
+    } catch(e){
+      console.warn('API leaderboard error:', e);
+      return null;
+    } finally {
+      delete _boardPending[m]; // очищаем pending после завершения
+    }
+  })();
+
+  _boardPending[m] = fetchPromise;
+  return fetchPromise;
 }
 
 /* Фейковые данные — показываем пока грузится реальный лидерборд */
@@ -2806,7 +2835,11 @@ function switchBoardTab(m){
   if(boardCache[m]){
     renderBoardRows(boardCache[m].data); // мгновенно из кэша
     // Фоновое обновление только если кэш устарел
-    if(Date.now()-boardCache[m].ts > CACHE_TTL) fetchLeaderboard(m).then(d=>{if(d)renderBoardRows(d);});
+    if(Date.now()-boardCache[m].ts > CACHE_TTL) fetchLeaderboard(m).then(d=>{if(d&&activeBoardTab===m)renderBoardRows(d);});
+  } else if(_boardPending[m]){
+    // FIX LB: fetch уже идёт (prefetch) — показываем placeholder, ждём промис
+    renderBoardRows(null); // placeholder сразу
+    _boardPending[m].then(data=>{ if(activeBoardTab===m) renderBoardRows(data); });
   } else {
     renderBoardTab(m);
   }
@@ -2821,7 +2854,9 @@ async function renderBoardTab(m){
   }
   const ts=document.getElementById('trophy-stars');if(ts&&!ts.dataset.init){ts.dataset.init='1';for(let i=0;i<20;i++){const s=document.createElement('div');s.className='tsb';const sz=1+Math.random()*2;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${1.5+Math.random()*2}s;animation-delay:${-Math.random()*2}s;`;ts.appendChild(s);}}
   const data=await fetchLeaderboard(m);
-  renderBoardRows(data);
+  // FIX LB: проверяем что вкладка не сменилась пока грузилось
+  if(activeBoardTab!==m) return;
+  renderBoardRows(data); // data может быть null — renderBoardRows покажет placeholder
 }
 
 
@@ -3006,8 +3041,8 @@ function renderPieces(){
     // FIX 4: пропускаем если сигнатура не изменилась — не трогаем DOM
     if(sig===_pieceSlotSig[i]) continue;
     _pieceSlotSig[i]=sig;
+    if(!p){_recyclePiece(sl);sl.className='slot empty';continue;} // FIX E: пул вместо innerHTML=''
     sl.innerHTML='';
-    if(!p){sl.className='slot empty';continue;}
     // Помечаем кристальный слот
     if(isCrystal) p.crystal=true;
     else p.crystal=false;
@@ -3150,7 +3185,7 @@ async function place(si,sr,sc){
     rowsC.forEach(r=>{for(let c=0;c<N;c++)grid[r][c]=-1;});
     colsC.forEach(c=>{for(let r=0;r<N;r++)grid[r][c]=-1;});
 
-    const fl=document.createElement('div');fl.className='flash-ov';document.body.appendChild(fl);setTimeout(()=>fl.remove(),420);
+    _spawnFlash(); // FIX I: пул вместо createElement
     vibrate(22);
     // Звук взрыва линий — нарастает с количеством
     playSound(cleared>=3?'line3':cleared===2?'line2':'line1');
@@ -3372,6 +3407,9 @@ function tapCell(r,c){
 let lastHL={sr:-1,sc:-1,valid:null,si:null};
 // OPT: Set подсвеченных ячеек вместо querySelectorAll по DOM
 let _hlCells=new Set();
+// FIX F: pre-allocated буферы для getLineReadySets — нет аллокаций каждый drag-кадр (60fps)
+const _extraRows=new Array(10).fill(0); // максимум 10×10
+const _extraCols=new Array(10).fill(0);
 function clearHL(){
   _hlCells.forEach(el=>{
     el.classList.remove('ok','bad','line-ready');
@@ -3389,25 +3427,25 @@ function clearHL(){
 }
 
 // FIX 9: без клонирования грида — подсчёт заполненных ячеек напрямую
-// Прямой счёт вместо клона + every() — один проход с счётчиками
+// FIX F: pre-allocated буферы — нет new Array(N).fill(0) каждый drag-кадр
 function getLineReadySets(shape,sr,sc){
-  // Считаем сколько ячеек фигуры добавляется в каждую строку/столбец
-  const extraRows=new Array(N).fill(0);
-  const extraCols=new Array(N).fill(0);
+  // Сбрасываем только используемые элементы (N ≤ 10)
+  _extraRows.fill(0,0,N);
+  _extraCols.fill(0,0,N);
   for(let r=0;r<shape.length;r++)for(let c=0;c<shape[0].length;c++){
     if(!shape[r][c])continue;
     const gr=sr+r,gc=sc+c;
-    if(gr>=0&&gr<N&&gc>=0&&gc<N){extraRows[gr]++;extraCols[gc]++;}
+    if(gr>=0&&gr<N&&gc>=0&&gc<N){_extraRows[gr]++;_extraCols[gc]++;}
   }
   const rows=new Set(),cols=new Set();
   // Строка полна если: уже заполненных + добавляемых фигурой == N
   for(let r=0;r<N;r++){
     let filled=0;for(let c=0;c<N;c++)if(grid[r][c]>=0)filled++;
-    if(filled+extraRows[r]===N)rows.add(r);
+    if(filled+_extraRows[r]===N)rows.add(r);
   }
   for(let c=0;c<N;c++){
     let filled=0;for(let r=0;r<N;r++)if(grid[r][c]>=0)filled++;
-    if(filled+extraCols[c]===N)cols.add(c);
+    if(filled+_extraCols[c]===N)cols.add(c);
   }
   return{rows,cols};
 }
@@ -3438,42 +3476,47 @@ let _overlayCache = null; // {wLeft, wTop, offX, offY, cs, stepX, stepY} — с�
 let _lineOverlayEls = []; // FIX 2: храним ссылки на overlay-элементы
 function _invalidateOverlayCache(){ _overlayCache = null; }
 
-/* ── Кристальный hue-движок через CSS-переменную ─────────────────────────────
-   Вместо N независимых CSS animation (filter:hue-rotate) на каждом crystal-cell
-   один rAF обновляет --crystal-hue на :root. Все кристальные ячейки читают его.
-   Запускается при crystalSpawn/place, останавливается при crystalReset. */
-let _crystalHueRafId=null, _crystalHueDeg=0, _crystalHueLastTs=0;
-function _crystalHueStep(ts){
-  if(_crystalHueLastTs) _crystalHueDeg=(_crystalHueDeg+(ts-_crystalHueLastTs)*0.09)%360; // 360°/4000ms
-  _crystalHueLastTs=ts;
-  document.documentElement.style.setProperty('--crystal-hue', _crystalHueDeg.toFixed(1)+'deg');
-  _crystalHueRafId=requestAnimationFrame(_crystalHueStep);
+/* ── FIX D: Единый shared hue-движок — заменяет два отдельных rAF-петли ─────
+   _hueSharedRafId обновляет обе CSS-переменные в одном кадре.
+   Кристальный hue (_crystalHueActive): 0.09°/ms = 4 сек оборот
+   Радужный hue    (_overlayHueActive):  0.06°/ms = 6 сек оборот
+   Один rAF вместо двух — на 1 callback меньше в пике (blast + drag + crystal) */
+let _hueSharedRafId=null, _hueSharedLastTs=0;
+let _crystalHueDeg=0, _crystalHueActive=false;
+let _hueDeg=0,        _overlayHueActive=false;
+
+function _hueSharedStep(ts){
+  const dt = _hueSharedLastTs ? ts - _hueSharedLastTs : 0;
+  _hueSharedLastTs = ts;
+  if(_overlayHueActive){
+    _hueDeg=(_hueDeg+dt*0.06)%360;
+    document.documentElement.style.setProperty('--ov-hue', _hueDeg.toFixed(1));
+  }
+  if(_crystalHueActive){
+    _crystalHueDeg=(_crystalHueDeg+dt*0.09)%360;
+    document.documentElement.style.setProperty('--crystal-hue', _crystalHueDeg.toFixed(1)+'deg');
+  }
+  if(_overlayHueActive||_crystalHueActive){
+    _hueSharedRafId=requestAnimationFrame(_hueSharedStep);
+  } else {
+    _hueSharedRafId=null; _hueSharedLastTs=0;
+  }
 }
-function _startCrystalHue(){
-  if(!_crystalHueRafId){ _crystalHueLastTs=0; _crystalHueRafId=requestAnimationFrame(_crystalHueStep); }
+function _ensureSharedHue(){
+  if(!_hueSharedRafId){ _hueSharedLastTs=0; _hueSharedRafId=requestAnimationFrame(_hueSharedStep); }
 }
+
+// ── Overlay hue (радуга линий) ──
+function _startOverlayHue(){ _overlayHueActive=true;  _ensureSharedHue(); }
+function _stopOverlayHue(){  _overlayHueActive=false; /* shared loop сам остановится */ }
+
+// ── Crystal hue (переливание кристаллов) ──
+function _startCrystalHue(){ _crystalHueActive=true;  _ensureSharedHue(); }
 function _stopCrystalHue(){
-  if(_crystalHueRafId){cancelAnimationFrame(_crystalHueRafId);_crystalHueRafId=null;_crystalHueLastTs=0;}
+  _crystalHueActive=false;
   document.documentElement.style.setProperty('--crystal-hue','0deg');
 }
 
-/* ── Радужный hue-движок через CSS-переменную ────────────────────────────────
-   Вместо filter:hue-rotate CSS-анимации (ломается на слабых Android GPU)
-   один rAF обновляет --ov-hue на :root — все .line-overlay читают его.
-   Запускается при появлении оверлеев, останавливается когда их нет. */
-let _hueRafId=null, _hueDeg=0, _hueLastTs=0;
-function _hueStep(ts){
-  if(_hueLastTs) _hueDeg=(_hueDeg+(ts-_hueLastTs)*0.06)%360; // 360°/6000ms — плавное переливание
-  _hueLastTs=ts;
-  document.documentElement.style.setProperty('--ov-hue', _hueDeg.toFixed(1));
-  _hueRafId=requestAnimationFrame(_hueStep);
-}
-function _startOverlayHue(){
-  if(!_hueRafId){ _hueLastTs=0; _hueRafId=requestAnimationFrame(_hueStep); }
-}
-function _stopOverlayHue(){
-  if(_hueRafId){cancelAnimationFrame(_hueRafId);_hueRafId=null;_hueLastTs=0;}
-}
 function _drawLineOverlays(rows,cols){
   const wrap=document.getElementById('grid-wrap');
   if(!wrap)return;
@@ -3525,15 +3568,22 @@ function _drawLineOverlays(rows,cols){
 /* ══ DRAG & DROP — оптимизированный ══ */
 let drag=null,dragMoved=false,rafDrag=null,lastDragX=0,lastDragY=0;
 const OFFSET=80; // увеличили — фигура поднимается выше пальца
+// FIX B: кэшируем hold-элемент и его BoundingClientRect — не делаем forced layout каждые 16ms
+let _holdEl=null, _holdRect=null;
+function _getHoldEl(){return _holdEl||(_holdEl=document.getElementById('hold'));}
+function _invalidateHoldRect(){_holdRect=null;}
 // cellCache удалён — используем cellEls[][] массив из buildGrid
 function evXY(e){const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0]);return t?[t.clientX,t.clientY]:[e.clientX,e.clientY];}
 // FIX 19: кэш сигнатуры ghost — не пересоздаём если та же фигура того же цвета
 let _ghostSig='';
+// FIX C: кэш DOM-ссылки на ghost-элемент — не делаем getElementById каждые 16ms
+let _ghostEl=null;
+function _getGhostEl(){return _ghostEl||(_ghostEl=document.getElementById('ghost'));}
 function buildGhost(shape,ci){
   const sig=ci+'_'+shape.map(r=>r.join('')).join('|');
   if(sig===_ghostSig)return; // фигура не изменилась — не трогаем DOM
   _ghostSig=sig;
-  const g=document.getElementById('ghost');g.innerHTML='';
+  const g=_getGhostEl();g.innerHTML='';
   const cs=cSz();const R=shape.length,C=shape[0].length;
   g.style.gridTemplateColumns=`repeat(${C},${cs}px)`;g.style.gridTemplateRows=`repeat(${R},${cs}px)`;
   g.style.gap='2px';g.style.display='grid';
@@ -3546,7 +3596,7 @@ function buildGhost(shape,ci){
   g.appendChild(frag);
 }
 function moveGhost(x,y,shape){
-  const g=document.getElementById('ghost');const cs=cSz();
+  const g=_getGhostEl();const cs=cSz();
   const w=shape[0].length*cs+(shape[0].length-1)*2,h=shape.length*cs+(shape.length-1)*2;
   g.style.transform=`translate(${x-w/2}px,${y-h/2-OFFSET}px)`;
 }
@@ -3559,8 +3609,9 @@ function startDrag(si,e){
   dragMoved=false;drag={si,shape:p.shape.map(r=>[...r]),ci:p.ci};
   _ghostSig=''; // FIX 19: при новом drag всегда перестраиваем ghost
   gridBounds=getGridBounds();
+  _holdRect=_getHoldEl().getBoundingClientRect(); // FIX B: один раз при старте drag
   const[x,y]=evXY(e);
-  const g=document.getElementById('ghost');
+  const g=_getGhostEl();
   g.style.left='0';g.style.top='0';g.style.transform='translate(0,0)';
   buildGhost(p.shape,p.ci);moveGhost(x,y,p.shape);
 }
@@ -3568,9 +3619,9 @@ function startDrag(si,e){
 function processDragMove(x,y){
   if(!drag)return;
   moveGhost(x,y,drag.shape);
-  // Bank highlight on hover
-  const holdEl=document.getElementById('hold');
-  const hr=holdEl.getBoundingClientRect();
+  // Bank highlight on hover — FIX B: используем кэшированный rect
+  const holdEl=_getHoldEl();
+  const hr=_holdRect||holdEl.getBoundingClientRect();
   if(x>=hr.left&&x<=hr.right&&y>=hr.top&&y<=hr.bottom&&drag.si!=='h'){
     holdEl.classList.add('drag-over');
   } else {
@@ -3611,10 +3662,10 @@ document.addEventListener('touchmove',e=>{
 function endDrag(e){
   if(!drag)return;const[x,y]=evXY(e);
   if(rafDrag){cancelAnimationFrame(rafDrag);rafDrag=null;}
-  document.getElementById('hold').classList.remove('drag-over');
-  document.getElementById('ghost').style.display='none';clearHL();
+  _getHoldEl().classList.remove('drag-over');
+  _getGhostEl().style.display='none';clearHL();
   if(dragMoved){
-    const hr=document.getElementById('hold').getBoundingClientRect();
+    const hr=_holdRect||_getHoldEl().getBoundingClientRect(); // FIX B: кэш
     if(x>=hr.left&&x<=hr.right&&y>=hr.top&&y<=hr.bottom&&drag.si!=='h') doHoldSwapDrag(drag.si);
     else{
       const dropY=y-OFFSET;
@@ -3640,6 +3691,22 @@ function setupDrag(){
 }
 
 /* ══ SCORE ══ */
+// FIX H: кэш HUD DOM-ссылок — addSc вызывается при каждом ходу и взрыве
+let _elScore=null,_elBest=null,_elCrown=null;
+function _initHUDRefs(){
+  _elScore=document.getElementById('gs-score');
+  _elBest =document.getElementById('gs-best');
+  _elCrown=document.getElementById('g-crown');
+}
+// FIX I: пул для flash-ov — createElement без пула при каждом взрыве линии
+const _flashPool=[];
+function _spawnFlash(bg){
+  const fl=_flashPool.pop()||document.createElement('div');
+  fl.className='flash-ov';
+  fl.style.background=bg||'';
+  document.body.appendChild(fl);
+  setTimeout(()=>{if(fl.parentNode)fl.parentNode.removeChild(fl);fl.style.background='';_flashPool.push(fl);},420);
+}
 function addSc(pts,flash){
   // Применяем буст очков
   if(_activeBoostThisGame==='score2x') pts=Math.round(pts*2);
@@ -3648,10 +3715,12 @@ function addSc(pts,flash){
   else if(_activeBoostThisGame==='score5x') pts=Math.round(pts*5);
   score+=pts;
   if(score>best){best=score;lsS(isDailyMode?'daily':mode,best);isNewRecord=true;}
-  document.getElementById('g-crown').className='g-crown-icon'+(score>0&&score>=best&&best>0?' show':'');
-  document.getElementById('gs-best').textContent=best.toLocaleString();
-  const el=document.getElementById('gs-score');el.textContent=score.toLocaleString();
-  if(flash){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),200);}
+  // FIX H: используем кэшированные ссылки вместо getElementById при каждом вызове
+  if(_elCrown) _elCrown.className='g-crown-icon'+(score>0&&score>=best&&best>0?' show':'');
+  if(_elBest)  _elBest.textContent=best.toLocaleString();
+  if(_elScore){ _elScore.textContent=score.toLocaleString();
+    if(flash){_elScore.classList.add('pop');setTimeout(()=>_elScore.classList.remove('pop'),200);}
+  }
 }
 
 /* ══ FX ══ */
@@ -3815,12 +3884,8 @@ async function perfectClear(){playSound('perfect');
   const bonus=3000*lvl*combo;
   addSc(bonus,true);
 
-  // 1) Flash
-  const fl=document.createElement('div');
-  fl.className='flash-ov';
-  fl.style.background='rgba(255,255,255,.22)';
-  document.body.appendChild(fl);
-  setTimeout(()=>fl.remove(),420);
+  // 1) Flash — FIX I: пул вместо createElement
+  _spawnFlash('rgba(255,255,255,.22)');
 
   // 2) Show banner
   const bannerEl=document.getElementById('pc-banner');
@@ -4512,17 +4577,33 @@ function nextOnboarding(){
   }
 }
 let _prevScreen = 'menu'; // откуда пришли
+// Флаг активности canvas-тем — пауза на экранах BP/ачивки/настройки (не меню/игра/скины)
+let _themeActive = true;
+let _themeDrawFn = null; // ссылка на draw() текущей темы для возобновления
+// FIX G: кэш всех .screen элементов — два querySelectorAll при каждом переходе → один раз
+// Инициализируется после DOMContentLoaded (ниже), здесь — заглушка
+let _allScreens = null;
+function _getScreens(){ return _allScreens||(_allScreens=Array.from(document.querySelectorAll('.screen'))); }
 function showScreen(id){
   // Запоминаем откуда пришли (для кнопки Назад)
-  const current = [...document.querySelectorAll('.screen')].find(s=>!s.classList.contains('hidden'));
+  // FIX G: используем кэш вместо двух querySelectorAll
+  const screens=_getScreens();
+  const current=screens.find(s=>!s.classList.contains('hidden'));
   if(current) _prevScreen = current.id;
-  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden',s.id!==id));
+  screens.forEach(s=>s.classList.toggle('hidden',s.id!==id));
   // FIX 1: останавливаем/возобновляем звёздный canvas — 0 CPU когда меню не видно
   _starsActive = (id==='menu');
   if(_starsActive && typeof window._starsResume==='function') window._starsResume();
-  // Theme canvas visible on menu, game, and skins-screen (for theme preview)
+  // Тема активна на меню, игре и экране скинов — пауза только на остальных экранах (BP, ачивки и т.д.)
+  const _themeWasActive = _themeActive;
+  _themeActive = (id==='menu'||id==='game'||id==='skins-screen');
   const tc = document.getElementById('theme-canvas');
-  if(tc) tc.style.opacity = (id==='menu'||id==='game'||id==='skins-screen') ? '1' : '0';
+  if(tc) tc.style.opacity = _themeActive ? '1' : '0';
+  // Возобновляем draw-петлю при возврате на активный экран
+  if(_themeActive && !_themeWasActive && _themeDrawFn){
+    const fn=_themeDrawFn; _themeDrawFn=null;
+    requestAnimationFrame(fn);
+  }
   // Skins screen: transparent when showing themes tab so canvas is visible
   const ss = document.getElementById('skins-screen');
   if(ss && id==='skins-screen'){
@@ -4684,6 +4765,8 @@ function startGame(m){
   _spinPendingCharge=false; // сброс флага спина при старте новой игры
   _pieceSlotSig[0]=_pieceSlotSig[1]=_pieceSlotSig[2]=''; // FIX 4: инвалидируем кэш трея
   _holdSig=''; // FIX 14: инвалидируем кэш банка
+  _initHUDRefs(); // FIX H: кэшируем HUD ссылки на новый экран
+  _initCdotRefs(); // FIX J: кэшируем cdot ссылки
   // Применяем активный буст
   _activeBoostThisGame = boostGetActive();
   _xp2xConsumedThisGame = false;
@@ -5065,6 +5148,7 @@ function animCosmos(){
   let lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     // 30 FPS cap
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
@@ -5116,6 +5200,7 @@ function animCyberpunk(){
   let frame=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     frame++;
@@ -5170,6 +5255,7 @@ function animHell(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     ctx.clearRect(0,0,W,H);t+=.03;
@@ -5242,6 +5328,7 @@ function animIce(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.033;
     ctx.clearRect(0,0,W,H);ctx.drawImage(bgIce,0,0);
@@ -5287,6 +5374,7 @@ function animNature(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.033;
     ctx.clearRect(0,0,W,H);ctx.drawImage(bgN,0,0);
@@ -5336,6 +5424,7 @@ function animSakura(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.033;
     ctx.clearRect(0,0,W,H);ctx.drawImage(bgS,0,0);
@@ -5358,24 +5447,89 @@ function animRetro(){
   const c=makeThemeCanvas(),ctx=c.getContext('2d');
   const W=c.width,H=c.height;
 
-  // Pre-render brick background
+  // ── Фон в стиле Battle City NES — кирпичи, трава, земля ──
   const bgRetro=document.createElement('canvas');bgRetro.width=W;bgRetro.height=H;
   const bgCtx=bgRetro.getContext('2d');
-  // Тёмный фон
-  bgCtx.fillStyle='#1a0800';bgCtx.fillRect(0,0,W,H);
-  // Кирпичные блоки 16×16
-  const BW=16,BH=16;
-  for(let row=0;row<Math.ceil(H/BH);row++){
-    for(let col=0;col<Math.ceil(W/BW);col++){
-      const bx=col*BW,by=row*BH;
-      bgCtx.globalAlpha=0.20;bgCtx.fillStyle='#7a2800';bgCtx.fillRect(bx+1,by+1,BW-2,BH-2);
-      bgCtx.globalAlpha=0.08;bgCtx.fillStyle='#ff6030';bgCtx.fillRect(bx+2,by+2,BW-4,3);
-      bgCtx.globalAlpha=0.06;bgCtx.fillStyle='#ff4010';bgCtx.fillRect(bx+2,by+9,BW-4,3);
-      bgCtx.globalAlpha=0.10;bgCtx.fillStyle='#111';bgCtx.fillRect(bx,by,BW,1);bgCtx.fillRect(bx,by,1,BH);
+
+  // Чёрная подложка — земля не даёт зелёного фона
+  bgCtx.fillStyle='#050505';bgCtx.globalAlpha=1;bgCtx.fillRect(0,0,W,H);
+
+  // Случайный генератор на основе seed — одинаковый каждый раз
+  const rng=(()=>{let s=0x5eace3;return()=>{s=(s^s<<13)^(s>>>17)^(s<<5);return((s>>>0)/0xffffffff);}})();
+
+  const TILE=20; // размер тайла
+  const COLS=Math.ceil(W/TILE);
+  const ROWS=Math.ceil(H/TILE);
+
+  // Расставляем тайлы: 0=земля, 1=кирпич, 2=трава густая, 3=трава светлая
+  for(let row=0;row<ROWS;row++){
+    for(let col=0;col<COLS;col++){
+      const x=col*TILE, y=row*TILE;
+      const r=rng();
+
+      if(r<0.18){
+        // ── Кирпичная стена (NES-пиксель-стиль) ──
+        const bw=TILE, bh=TILE;
+        // Основа кирпича
+        bgCtx.fillStyle='#8b3a1a';bgCtx.globalAlpha=0.85;
+        bgCtx.fillRect(x,y,bw,bh);
+        // Горизонтальные швы
+        bgCtx.fillStyle='#2a1008';bgCtx.globalAlpha=0.9;
+        bgCtx.fillRect(x,y+Math.floor(bh/2)-1,bw,2);
+        bgCtx.fillRect(x,y,bw,1);
+        bgCtx.fillRect(x,y+bh-1,bw,1);
+        // Вертикальные швы (шахматный сдвиг)
+        const shift=(row%2===0)?0:Math.floor(bw/2);
+        for(let sx=shift;sx<bw;sx+=Math.floor(bw/2)){
+          bgCtx.fillRect(x+sx,y,1,Math.floor(bh/2));
+        }
+        for(let sx=(shift+Math.floor(bw/4))%Math.floor(bw/2);sx<bw;sx+=Math.floor(bw/2)){
+          bgCtx.fillRect(x+sx,y+Math.floor(bh/2),1,Math.floor(bh/2));
+        }
+        // Блик на кирпиче
+        bgCtx.fillStyle='#c05520';bgCtx.globalAlpha=0.3;
+        bgCtx.fillRect(x+1,y+1,bw-3,3);
+      } else if(r<0.30){
+        // ── Густая трава ──
+        bgCtx.fillStyle='#1e4a00';bgCtx.globalAlpha=0.92;
+        bgCtx.fillRect(x,y,TILE,TILE);
+        // Тёмные пятна фактуры
+        bgCtx.fillStyle='#163800';bgCtx.globalAlpha=0.55;
+        bgCtx.fillRect(x+2,y+3,6,4);bgCtx.fillRect(x+11,y+12,7,4);
+        bgCtx.fillRect(x+5,y+14,5,3);
+        // Светлые блики (травинки)
+        bgCtx.fillStyle='#3a8000';bgCtx.globalAlpha=0.5;
+        bgCtx.fillRect(x+4,y+1,2,6);bgCtx.fillRect(x+9,y+5,2,5);
+        bgCtx.fillRect(x+14,y+2,2,7);bgCtx.fillRect(x+1,y+11,2,6);
+        bgCtx.fillRect(x+12,y+13,2,5);
+      } else if(r<0.38){
+        // ── Светлая трава / кустарник ──
+        bgCtx.fillStyle='#2a5c00';bgCtx.globalAlpha=0.75;
+        bgCtx.fillRect(x,y,TILE,TILE);
+        bgCtx.fillStyle='#4a8800';bgCtx.globalAlpha=0.35;
+        bgCtx.fillRect(x+1,y+2,8,3);bgCtx.fillRect(x+9,y+10,8,3);
+        bgCtx.fillRect(x+3,y+14,6,3);
+      } else {
+        // ── Земля — чёрная, не даёт зелёного фона ──
+        bgCtx.fillStyle='#050505';bgCtx.globalAlpha=1.0;
+        bgCtx.fillRect(x,y,TILE,TILE);
+        // Редкие тёмные точки на земле
+        if(rng()<0.2){
+          bgCtx.fillStyle='#0e1e00';bgCtx.globalAlpha=0.4;
+          bgCtx.fillRect(x+Math.floor(rng()*14),y+Math.floor(rng()*14),3,2);
+        }
+      }
     }
   }
+  bgCtx.globalAlpha=1.0;
+
+  // Тонкая пиксельная сетка поверх — как на NES-экране
+  bgCtx.strokeStyle='rgba(0,0,0,.18)';bgCtx.lineWidth=1;
+  for(let col=0;col<=COLS;col++){bgCtx.beginPath();bgCtx.moveTo(col*TILE,0);bgCtx.lineTo(col*TILE,H);bgCtx.stroke();}
+  for(let row=0;row<=ROWS;row++){bgCtx.beginPath();bgCtx.moveTo(0,row*TILE);bgCtx.lineTo(W,row*TILE);bgCtx.stroke();}
+
   // CRT scanlines
-  bgCtx.globalAlpha=.05;bgCtx.fillStyle='#000';
+  bgCtx.fillStyle='rgba(0,0,0,.07)';
   for(let y=0;y<H;y+=4)bgCtx.fillRect(0,y,W,1);
   bgCtx.globalAlpha=1;
 
@@ -5436,6 +5590,7 @@ function animRetro(){
   let lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     ctx.clearRect(0,0,W,H);
@@ -5506,6 +5661,7 @@ function animOceanBg(){
   let t=0,lastFrame=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c)return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;t+=.025;
     ctx.clearRect(0,0,W,H);
@@ -5621,6 +5777,7 @@ function animSunset(){
   let t=0, lastTs=0;
   function draw(ts){
     if(document.getElementById('theme-canvas')!==c) return;
+    if(!_themeActive){_themeDrawFn=draw;return;} // пауза на неактивных экранах
     if(ts-lastTs<33){requestAnimationFrame(draw);return;}
     lastTs=ts; t+=0.012;
 
@@ -5678,6 +5835,8 @@ function animSunset(){
 function makeThemeCanvas(){
   const c=document.createElement('canvas');
   c.id='theme-canvas';
+  // z-index:0 — canvas под экранами (.screen z-index:1)
+  // Экраны темы должны быть transparent чтобы canvas просвечивал
   c.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;';
   document.body.prepend(c);
   c.width=window.innerWidth; c.height=window.innerHeight;
@@ -6958,7 +7117,7 @@ let _resizeDebounce=null;
 window.addEventListener('resize', () => {
   if(_resizeDebounce)clearTimeout(_resizeDebounce);
   _resizeDebounce=setTimeout(()=>{
-    gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_resizeDebounce=null;
+    gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_invalidateHoldRect();_resizeDebounce=null;
   },80);
 });
 // БАГ 7 FIX: Пауза таймера Speed-режима при сворачивании Telegram
