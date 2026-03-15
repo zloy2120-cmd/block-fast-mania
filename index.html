@@ -4396,6 +4396,13 @@ function resumeTimer(){
  * ════════════════════════════════════════════════════ */
 const RICHADS_PUB_ID  = '1004799';   // RichAds Publisher ID
 const RICHADS_APP_ID  = '6493';       // RichAds App ID
+
+/* ══ РЕКЛАМА ВРЕМЕННО ОТКЛЮЧЕНА ══
+   Чтобы включить — поменяй на false.
+   При false=выкл: RichAds не инициализируется, баннер не грузится,
+   doAd() сразу даёт награду (как будто досмотрел). */
+const ADS_DISABLED = true;
+
 // ─── Нижний баннер Adsterra 320×50 ──────────────────────────────────────────
 const TADS_WIDGET_ID = ''; // Tads отключён (CDN не работает)
 const TADS_WIDGET_TYPE = '';
@@ -4409,6 +4416,7 @@ let _bottomBannerLoaded = false;
 
 // Инициализация RichAds (точно по документации richads.com)
 function initRichAds(){
+  if(ADS_DISABLED) return; // реклама отключена
   if(!window._TelegramAdsControllerClass) return;
   if(_richadsReady) return;
   try {
@@ -4439,6 +4447,7 @@ function initRichAds(){
 
 // Загрузка нижнего баннера Adsterra 320×50
 function loadBottomBanner(){
+  if(ADS_DISABLED) return; // реклама отключена
   if(_bottomBannerLoaded) return;
   const inner = document.getElementById('ad-banner-inner');
   if(!inner) return;
@@ -4463,6 +4472,8 @@ function loadBottomBanner(){
 
 function doAd(type){
   adCallback = type;
+  // При отключённой рекламе — сразу выдаём награду (тестовый режим)
+  if(ADS_DISABLED){ giveAdReward(type); return; }
   submitEvent('ad_shown', mode, 0, `type:${type}`); // v108: аналитика рекламы
   // RichAds Rewarded Video — основной источник
   if(_richadsReady && _richadsController){
@@ -7201,6 +7212,7 @@ function streakMult(){ return _streakActive?1.5:1; }
 
 /* ══ AD BANNER: Adsterra везде + Яндекс для СНГ ══ */
 async function initSmartBanner(){
+  if(ADS_DISABLED) return; // реклама отключена
   const banner = document.getElementById('ad-banner');
   if(!banner) return;
   if(banner.dataset.loaded) return;
