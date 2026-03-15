@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="version" content="107">
+<meta name="version" content="108">
 <title>⚡ Block Fast Mania</title>
-<!-- Yandex RTB — загружается один раз -->
+<!-- Yandex RTB — загружается внизу страницы, не блокирует -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
-<script src="https://yandex.ru/ads/system/context.js" async></script>
 <!-- RichAds TMA SDK (rewarded only — auto-interstitial disabled) -->
 <script id="richads-sdk">
 // Загружаем SDK динамически после того как перехватчик уже установлен
@@ -40,6 +39,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://telegram.org/js/telegram-web-app.js" as="script">
+<link rel="preload" href="sounds.js" as="script">
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet"></noscript>
 <style>
@@ -59,6 +60,10 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 #skins-screen .sk-head{backdrop-filter:blur(12px);background:rgba(5,4,20,.7);border-bottom:1px solid rgba(255,255,255,.08);width:100%;}
 #skins-screen .sk-tabs{backdrop-filter:blur(12px);background:rgba(5,4,20,.55);width:100%;padding:4px 14px;}
 .sk-theme-grid .sk-theme-card{backdrop-filter:none;background:transparent !important;}
+/* ── low-end device: отключаем тяжёлый backdrop-filter ── */
+body.low-end #skins-screen .sk-head{backdrop-filter:none;background:rgba(5,4,20,.95);}
+body.low-end #skins-screen .sk-tabs{backdrop-filter:none;background:rgba(5,4,20,.92);}
+body.low-end .m-classic,body.low-end .m-mini,body.low-end .m-speed,body.low-end .m-daily{backdrop-filter:none;-webkit-backdrop-filter:none;}
 #achieve-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
 #game{background:var(--bg) !important;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);}
@@ -292,6 +297,14 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 .go-score{font-family:'Bungee',cursive;font-size:62px;color:var(--gold);line-height:1;margin:2px 0 0;filter:drop-shadow(0 0 16px rgba(255,214,0,.45));}
 .go-best-badge{font-size:12px;color:#22c55e;font-weight:800;margin-top:2px;display:none;}
 .go-best-badge.show{display:block;}
+/* ── статус сохранения рекорда ── */
+.go-save-status{font-size:11px;font-weight:700;margin-top:3px;min-height:16px;transition:opacity .3s;opacity:0;display:flex;align-items:center;justify-content:center;gap:4px;}
+.go-save-status.show{opacity:1;}
+.go-save-status.saving{color:#94a3b8;}
+.go-save-status.saved{color:#22c55e;}
+.go-save-status.error{color:#f87171;}
+@keyframes saveSpin{to{transform:rotate(360deg)}}
+.go-save-spinner{display:inline-block;width:10px;height:10px;border:2px solid rgba(148,163,184,.4);border-top-color:#94a3b8;border-radius:50%;animation:saveSpin .7s linear infinite;}
 .go-stats{display:flex;gap:6px;justify-content:center;margin:10px 0 12px;}
 .go-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:6px 10px;flex:1;}
 .go-sv{font-family:'Bungee',cursive;font-size:18px;color:var(--text);}
@@ -802,6 +815,9 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 .btab.active-classic{background:rgba(124,58,237,.2);color:#a78bfa;border-color:rgba(167,139,250,.3);}
 .btab.active-mini{background:rgba(8,145,178,.2);color:var(--cyan);border-color:rgba(103,232,249,.3);}
 .btab.active-speed{background:rgba(220,38,38,.2);color:#f87171;border-color:rgba(252,165,165,.3);}
+.btab.active-friends{background:rgba(16,185,129,.2);color:#34d399;border-color:rgba(52,211,153,.3);}
+.friends-empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:13px;line-height:1.6;}
+.friends-invite-btn{margin:12px auto 0;display:block;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:12px;padding:11px 24px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;}
 /* ══ PODIUM ══ */
 .podium-wrap{width:100%;display:flex;align-items:flex-end;justify-content:center;gap:6px;padding:0 4px 12px;flex-shrink:0;}
 .podium-slot{display:flex;flex-direction:column;align-items:center;flex:1;max-width:110px;position:relative;}
@@ -1916,6 +1932,7 @@ body[class*="theme-"] .g-header {
     <button class="btab" id="btab-classic" onclick="switchBoardTab('classic')">🏆 10×10</button>
     <button class="btab" id="btab-mini" onclick="switchBoardTab('mini')">⚡ 8×8 Мини</button>
     <button class="btab" id="btab-speed" onclick="switchBoardTab('speed')">🔥 Спидран</button>
+    <button class="btab" id="btab-friends" onclick="switchBoardTab('friends')">👥 Друзья</button>
   </div>
   <div class="podium-wrap" id="podium-wrap"></div>
   <div class="board-table" id="board-table"></div>
@@ -1983,6 +2000,7 @@ body[class*="theme-"] .g-header {
     <div class="go-title" id="go-title">ИГРА ОКОНЧЕНА</div>
     <div class="go-score" id="go-score">0</div>
     <div class="go-best-badge" id="go-new-rec">🎉 НОВЫЙ РЕКОРД!</div>
+    <div class="go-save-status" id="go-save-status"></div>
     <div class="go-stats">
       <div class="go-stat"><div class="go-sv" id="go-lines">0</div><div class="go-sl" id="go-sl-lines">Линий</div></div>
       <div class="go-stat"><div class="go-sv" id="go-lvl">1</div><div class="go-sl" id="go-sl-lvl">Уровень</div></div>
@@ -2174,6 +2192,16 @@ if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{
     gridBounds=null;_invalidateOverlayCache();_invalidateTimerValRect();_invalidateHoldRect();_vpDebounce=null;
   },80);
 });}
+
+/* ── LOW-END DEVICE DETECT (v108) ──
+   Отключаем тяжёлый backdrop-filter на слабых Android (≤4 ядра).
+   Класс body.low-end подхватывается CSS-правилами выше. */
+(function(){
+  try{
+    const cores = navigator.hardwareConcurrency||4;
+    if(cores<=4) document.body.classList.add('low-end');
+  }catch(e){}
+})();
 
 /* ══ HIGH REFRESH RATE AUTODETECT ══
    Браузер сам выбирает частоту кадров через rAF.
@@ -2505,6 +2533,7 @@ function restoreCloudScores(){
 
 /* ══ DAILY CHALLENGE — seeded random (одинаково у всех!) ══ */
 let isDailyMode=false,dailyRNG=null;
+let _gameStartTs=0; // v108: timestamp старта игры для duration_sec
 let _activeBoostThisGame=null,_xp2xConsumedThisGame=false;
 function getDailySeed(){const d=new Date();const s=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;return parseInt(s);}
 function makeSRNG(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
@@ -2546,6 +2575,15 @@ const MY_PHOTO_URL= ()=> tg?.initDataUnsafe?.user?.photo_url || null;
 function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* Отправить результат на сервер */
+/* v108: Отправить аналитическое событие на сервер (fire-and-forget) */
+function submitEvent(event, eventMode, eventScore, extra){
+  if(!tg?.initData) return;
+  fetch(`${API}/event`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ init_data:tg.initData, event, mode:eventMode||'', score:Math.round(eventScore||0), extra:extra||'' })
+  }).catch(()=>{}); // fire-and-forget
+}
+
 /* Отправить XP на сервер (асинхронно, не блокирует UI) */
 async function submitBPXP(scoreVal, modeKey){
   if(!tg?.initData) return; // не в Telegram — только localStorage
@@ -2565,6 +2603,22 @@ async function submitBPXP(scoreVal, modeKey){
   } catch(e){ console.warn('BP XP submit error:', e); }
 }
 
+/* ── Утилита: обновить статус сохранения рекорда на GO экране ── */
+function _setGoSaveStatus(state, text){
+  const el=document.getElementById('go-save-status');
+  if(!el)return;
+  el.className='go-save-status show '+(state||'');
+  if(state==='saving'){
+    el.innerHTML='<span class="go-save-spinner"></span>'+text;
+  } else {
+    el.textContent=text;
+  }
+}
+function _clearGoSaveStatus(){
+  const el=document.getElementById('go-save-status');
+  if(el){ el.className='go-save-status'; el.textContent=''; }
+}
+
 async function submitScore(modeKey, scoreVal){
   if(!tg?.initData) return; // нет initData — не в Telegram
   const SUSPICIOUS_SCORE = 10000000;
@@ -2575,6 +2629,8 @@ async function submitScore(modeKey, scoreVal){
     lines, max_combo: maxCombo,
     photo_url: MY_PHOTO_URL() || undefined
   });
+  // Показываем индикатор «сохраняем...»
+  _setGoSaveStatus('saving', LANG==='ru'?'сохраняем...':'saving...');
   // FIX: retry один раз при сетевой ошибке — рекорд не должен теряться при 1 неудаче
   for(let attempt=0; attempt<2; attempt++){
     try {
@@ -2585,16 +2641,20 @@ async function submitScore(modeKey, scoreVal){
         delete boardCache[modeKey];
         delete boardCache['daily'];
         delete _boardPending[modeKey]; // инвалидируем pending чтоб следующий запрос взял свежие данные
+        _setGoSaveStatus('saved', LANG==='ru'?'✅ рекорд сохранён':'✅ score saved');
+        setTimeout(()=>_clearGoSaveStatus(), 3000);
         return;
       }
       const data = await res.json().catch(()=>({}));
       // Rate limited — ждём и повторяем один раз
       if(res.status===429 && attempt===0){ await new Promise(r=>setTimeout(r,3000)); continue; }
       console.warn('API score error:', res.status, data);
+      _setGoSaveStatus('error', LANG==='ru'?'⚠️ не сохранено':'⚠️ not saved');
       return;
     } catch(e){
       if(attempt===0){ await new Promise(r=>setTimeout(r,2000)); continue; }
       console.warn('API score network error:', e);
+      _setGoSaveStatus('error', LANG==='ru'?'⚠️ нет связи':'⚠️ no connection');
     }
   }
 }
@@ -2824,7 +2884,11 @@ function renderMenuPanel(m){
 let activeBoardTab='classic';
 function showBoard(m){
   activeBoardTab=m;showScreen('board');
-  ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
+  ['classic','mini','speed','friends'].forEach(t=>{
+    const el=document.getElementById('btab-'+t);
+    if(el) el.className='btab'+(t===m?' active-'+t:'');
+  });
+  if(m==='friends'){ renderFriendsBoard(); return; }
   if(boardCache[m]){
     renderBoardRows(boardCache[m].data);
     // Фоновое обновление только если кэш устарел (CACHE_TTL = 2 мин)
@@ -2839,7 +2903,11 @@ function showBoard(m){
 }
 function switchBoardTab(m){
   activeBoardTab=m;
-  ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
+  ['classic','mini','speed','friends'].forEach(t=>{
+    const el=document.getElementById('btab-'+t);
+    if(el) el.className='btab'+(t===m?' active-'+t:'');
+  });
+  if(m==='friends'){ renderFriendsBoard(); return; }
   if(boardCache[m]){
     renderBoardRows(boardCache[m].data); // мгновенно из кэша
     // Фоновое обновление только если кэш устарел
@@ -2854,7 +2922,11 @@ function switchBoardTab(m){
 }
 
 async function renderBoardTab(m){
-  ['classic','mini','speed'].forEach(t=>document.getElementById('btab-'+t).className='btab'+(t===m?' active-'+t:''));
+  ['classic','mini','speed','friends'].forEach(t=>{
+    const el=document.getElementById('btab-'+t);
+    if(el) el.className='btab'+(t===m?' active-'+t:'');
+  });
+  if(m==='friends'){ renderFriendsBoard(); return; }
   const table=document.getElementById('board-table');
   if(!boardCache[m]){
     // Skeleton loader rows
@@ -2865,6 +2937,105 @@ async function renderBoardTab(m){
   // FIX LB: проверяем что вкладка не сменилась пока грузилось
   if(activeBoardTab!==m) return;
   renderBoardRows(data); // data может быть null — renderBoardRows покажет placeholder
+}
+
+/* ── v108: ЛИДЕРБОРД «СРЕДИ ДРУЗЕЙ» ──
+   Запрашиваем лидерборд с фильтром по friend tg_ids.
+   Список друзей накапливается через инвайт-механику (/referral) в localStorage. */
+const _friendsCache={};
+const FRIENDS_CACHE_TTL=60000;
+
+function _getFriendIds(){
+  try{ return JSON.parse(safeGet('bfm_friends','[]'))||[]; }catch{ return []; }
+}
+
+async function renderFriendsBoard(){
+  const table=document.getElementById('board-table');
+  const podium=document.getElementById('podium-wrap');
+  if(podium) podium.innerHTML='';
+
+  const friendIds=_getFriendIds();
+  const myId=MY_TG_ID();
+
+  if(!friendIds.length){
+    table.innerHTML=`<div class="friends-empty">
+      👥 Здесь будут рекорды твоих друзей.<br>
+      Пригласи друга — и соревнуйтесь кто лучше!
+      <button class="friends-invite-btn" onclick="shareInviteLink()">👥 Пригласить друга</button>
+    </div>`;
+    return;
+  }
+
+  // Skeleton
+  table.innerHTML=Array.from({length:Math.min(friendIds.length+1,6)},(_,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);opacity:${1-i*.1}"><span style="width:24px;height:16px;background:rgba(255,255,255,.1);border-radius:4px;flex-shrink:0"></span><span style="width:32px;height:32px;background:rgba(255,255,255,.08);border-radius:50%;flex-shrink:0"></span><span style="flex:1;height:14px;background:rgba(255,255,255,.08);border-radius:4px"></span><span style="width:60px;height:14px;background:rgba(255,255,255,.1);border-radius:4px"></span></div>`).join('');
+
+  const now=Date.now();
+  if(_friendsCache.data && now-_friendsCache.ts < FRIENDS_CACHE_TTL){
+    _renderFriendsRows(_friendsCache.data, myId); return;
+  }
+  try{
+    const allIds=[...new Set([...friendIds, myId].filter(Boolean))];
+    const url=`${API}/leaderboard?mode=classic&limit=50&tg_id=${myId||''}&friends=${allIds.join(',')}`;
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),8000);
+    const res=await fetch(url,{signal:ctrl.signal});
+    clearTimeout(timer);
+    const data=await res.json();
+    if(activeBoardTab!=='friends') return;
+    _friendsCache.data=data; _friendsCache.ts=Date.now();
+    _renderFriendsRows(data, myId);
+  }catch(e){
+    if(activeBoardTab!=='friends') return;
+    table.innerHTML=`<div class="friends-empty">⚠️ Не удалось загрузить. Проверь соединение.</div>`;
+  }
+}
+
+function _renderFriendsRows(data, myId){
+  const table=document.getElementById('board-table');
+  const podium=document.getElementById('podium-wrap');
+  if(podium) podium.innerHTML='';
+  let entries=[];
+  if(data&&data.board&&data.board.length>0){
+    entries=data.board.map((e,i)=>({...e,rank:i+1}));
+  }
+  if(!entries.length){
+    table.innerHTML=`<div class="friends-empty">🏆 Твои друзья ещё не играли!<button class="friends-invite-btn" onclick="shareInviteLink()">👥 Пригласить ещё</button></div>`;
+    return;
+  }
+  // Подиум топ-3
+  if(podium && entries.length>=2){
+    [1,0,2].filter(i=>entries[i]).forEach((ei,pi)=>{
+      const e=entries[ei], isMe=String(e.tg_id)===String(myId);
+      const slot=document.createElement('div');
+      slot.className='podium-slot '+(['pod-2','pod-1','pod-3'][pi]);
+      slot.innerHTML=`<div class="pod-avatar">${avatarHtml(e,isMe,'👤')}</div><div class="pod-name">${esc(e.first_name||e.username||'Игрок')}${isMe?' (ты)':''}</div><div class="pod-score">${(e.score||0).toLocaleString()}</div><div class="pod-bar"><span class="pod-crown ${['silver','gold','bronze'][pi]}">👑</span></div>`;
+      podium.appendChild(slot);
+    });
+  }
+  const frag=document.createDocumentFragment();
+  entries.slice(3).forEach((e,i)=>{
+    const isMe=String(e.tg_id)===String(myId);
+    const row=document.createElement('div'); row.className='board-row'+(isMe?' is-me':'');
+    row.innerHTML=`<div class="br-rank rn">#${e.rank||(i+4)}</div><div class="br-avatar">${avatarHtml(e,isMe,'👤')}</div><div class="br-info"><div class="br-name">${esc(e.first_name||e.username||'Игрок')}${isMe?' <span style="font-size:10px;color:var(--cyan)">(ты)</span>':''}</div><div class="br-sub">🏆 Классик</div></div><div class="br-score">${(e.score||0).toLocaleString()}</div>`;
+    frag.appendChild(row);
+  });
+  const invDiv=document.createElement('div'); invDiv.style.cssText='text-align:center;padding:12px 0 4px;';
+  invDiv.innerHTML=`<button class="friends-invite-btn" onclick="shareInviteLink()">👥 Пригласить ещё</button>`;
+  frag.appendChild(invDiv);
+  table.innerHTML=''; table.appendChild(frag);
+}
+
+/* Поделиться инвайт-ссылкой */
+function shareInviteLink(){
+  const myId=MY_TG_ID();
+  const bot='BlockFastManiaBot';
+  const link=`https://t.me/${bot}?start=${myId}`;
+  const text=`🎮 Играю в Block Fast Mania — пазл с блоками!\nПобей мой рекорд: ${link}`;
+  if(tg?.openTelegramLink){
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+  } else {
+    try{ navigator.clipboard.writeText(link); showToast('🔗 Ссылка скопирована!'); }catch{}
+  }
 }
 
 
@@ -4052,6 +4223,7 @@ function showGO(){
   if(dead)return;
   if(document.getElementById('game').classList.contains('hidden'))return;
   dead=true;if(timIv){clearInterval(timIv);timIv=null;}
+  _clearGoSaveStatus(); // v108: сбрасываем статус прошлой игры
   document.getElementById('go-score').textContent=score.toLocaleString();
   document.getElementById('go-lines').textContent=lines;
   document.getElementById('go-lvl').textContent=lvl;
@@ -4121,6 +4293,7 @@ function showGO(){
     }
     // Показать тост если повысился уровень
     if(bpResult.levelsUp>0) setTimeout(()=>showBPLevelUpToast(bpResult.newLevel), 800);
+    if(bpResult.levelsUp>0) submitEvent('bp_level_up', mode, 0, `level:${bpResult.newLevel}`); // v108
     updateMenuBP();
   }
   const card=document.getElementById('go-card');
@@ -4162,10 +4335,15 @@ function showGO(){
   }
   // Отправляем финальный счёт один раз при game over
   submitScore(isDailyMode?'daily':mode, score);
+  // v108: аналитика game_over
+  const _durSec=Math.round((Date.now()-_gameStartTs)/1000);
+  submitEvent('game_over', isDailyMode?'daily':mode, score, `lines:${lines},combo:${maxCombo},dur:${_durSec}`);
 }
 function continuePlaying(){
   _continueUsedThisGame=true;
   _continueCountThisGame++;
+  // v108: аналитика continue
+  submitEvent('continue_used', mode, score, `attempt:${_continueCountThisGame}`);
   dead=false;locked=false;isNewRecord=false;isTimeUp=false;_goScheduled=false;
   document.getElementById('go').classList.remove('show');
   held=null;noBlastStreak=0;
@@ -4285,6 +4463,7 @@ function loadBottomBanner(){
 
 function doAd(type){
   adCallback = type;
+  submitEvent('ad_shown', mode, 0, `type:${type}`); // v108: аналитика рекламы
   // RichAds Rewarded Video — основной источник
   if(_richadsReady && _richadsController){
     _richadsController.triggerInterstitialVideo()
@@ -4379,6 +4558,7 @@ function showBestHint(){
 }
 function giveAdReward(type){
   vibrate('line');
+  submitEvent('ad_rewarded', mode, 0, `type:${type}`); // v108: аналитика вознаграждения
   if(type==='speed_time'){
     const btn=document.getElementById('go-speed-continue-btn');
     if(btn) btn.closest('.go-section').style.display='none';
@@ -4504,6 +4684,14 @@ function checkReferral(){
       safeSet(_refKey,'1');
       updateAchStats({ referral_count:1 });
     }
+    // v108: добавляем пригласившего в список друзей текущего игрока
+    try{
+      const refId=parseInt(startParam);
+      if(refId && !isNaN(refId)){
+        const fids=JSON.parse(safeGet('bfm_friends','[]'))||[];
+        if(!fids.includes(refId)){ fids.push(refId); safeSet('bfm_friends',JSON.stringify(fids)); }
+      }
+    }catch(e){}
     // Показываем приветствие новому игроку
     setTimeout(()=>{
       tg?.showPopup?.({
@@ -4772,6 +4960,7 @@ function startGame(m){
   // FIX 10: очищаем все crystal-trail таймеры и классы при рестарте
   _crystalTrailTimers.forEach(id=>{clearTimeout(id);});_crystalTrailTimers.clear();
   _currentGameId=_generateGameId(); // новый ID на каждую игру
+  _gameStartTs=Date.now(); // v108: для duration_sec аналитики
   _c4=0;_c6=0;_c9=0;_lastComboLv=2; // [FIX] сброс счётчиков звуков комбо между играми
   score=0;lvl=1;combo=1;maxCombo=1;lines=0;dead=false;locked=false;held=null;sel=-1;
   isNewRecord=false;isTimeUp=false;noBlastStreak=0;_continueUsedThisGame=false;_continueCountThisGame=0;_goScheduled=false;
@@ -7283,5 +7472,7 @@ setTimeout(checkDailyBonus, 2200);
 <div id="ad-banner">
   <div id="ad-banner-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div>
 </div>
+<!-- Yandex RTB — после всего контента, не блокирует первый рендер -->
+<script src="https://yandex.ru/ads/system/context.js" async defer></script>
 </body>
 </html>
