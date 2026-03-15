@@ -1888,7 +1888,7 @@ body[class*="theme-"] .g-header {
   </div>
 
   <!-- v103: Hint button — узкая полная ширина под треем -->
-  <button id="btn-hint" onclick="doAdHint()">💡 Подсказка (реклама)</button>
+  <button id="btn-hint" onclick="doAdHint()">💡 Подсказка</button>
   <div id="hint-banner">💡 Лучший ход подсвечен!</div>
 </div>
 
@@ -2256,12 +2256,13 @@ function closeSettings(){
 
 /* ── Рендер бустов в панели настроек ── */
 const SP_BOOSTS_DEF = [
-  {id:'score2x',  name:'×2 Очки',      ico:'⚡', desc:'1 игра'},
-  {id:'score3x',  name:'×3 Очки',      ico:'🔥', desc:'1 игра'},
-  {id:'score4x',  name:'×4 Очки',      ico:'💥', desc:'1 игра'},
-  {id:'score5x',  name:'×5 Очки',      ico:'🌟', desc:'1 игра'},
-  {id:'xp2x',     name:'×2 XP',        ico:'💎', desc:'3 игры'},
-  {id:'combo_shield', name:'Щит Комбо',ico:'🛡️', desc:'1 сброс'},
+  {id:'score2x',      name:'×2 Очки',    ico:'⚡', desc:'1 игра'},
+  {id:'score3x',      name:'×3 Очки',    ico:'🔥', desc:'1 игра'},
+  {id:'score4x',      name:'×4 Очки',    ico:'💥', desc:'1 игра'},
+  {id:'score5x',      name:'×5 Очки',    ico:'🌟', desc:'1 игра'},
+  {id:'xp2x',         name:'×2 XP',      ico:'💎', desc:'3 игры'},
+  {id:'combo_shield', name:'Щит Комбо',  ico:'🛡️', desc:'1 сброс'},
+  {id:'free_continue',name:'Continue',   ico:'💝', desc:'1 раз'},
 ];
 function renderSpBoosts(){
   const list   = document.getElementById('sp-boost-list');
@@ -2643,9 +2644,15 @@ async function submitScore(modeKey, scoreVal){
         method:'POST', headers:{'Content-Type':'application/json'}, body
       });
       if(res.ok){
+        const respData = await res.json().catch(()=>({}));
+        // FIX v108b: удаляем кэш всегда при успехе — чтобы следующее открытие грузило свежее
         delete boardCache[modeKey];
         delete boardCache['daily'];
-        delete _boardPending[modeKey]; // инвалидируем pending чтоб следующий запрос взял свежие данные
+        delete _boardPending[modeKey];
+        // При новом рекорде: помечаем что нужен force-refresh лидерборда
+        if(respData.is_new_record){
+          _boardForceRefresh[modeKey] = true;
+        }
         _setGoSaveStatus('saved', LANG==='ru'?'✅ рекорд сохранён':'✅ score saved');
         setTimeout(()=>_clearGoSaveStatus(), 3000);
         return;
@@ -2671,13 +2678,15 @@ const CACHE_TTL = 120000; // 2 min cache (было 60s)
 // v102: per-mode reqId — предотвращает race condition при одновременном prefetch нескольких режимов
 const _boardReqIds = {classic:0, mini:0, speed:0, daily:0};
 // FIX LB: pending promise кэш — если fetch уже идёт, возвращаем тот же промис
-// Это устраняет: переключение вкладки до завершения prefetch → повторный скелетон
 const _boardPending = {};
+// FIX v108b: флаг принудительного обновления при новом рекорде
+// (обходит KV-кэш воркера добавляя ?bust=timestamp к запросу)
+const _boardForceRefresh = {};
 
 async function fetchLeaderboard(m){
   const now = Date.now();
-  // Кэш свежий — возвращаем сразу
-  if(boardCache[m] && now - boardCache[m].ts < CACHE_TTL){
+  // Кэш свежий — возвращаем сразу (если нет force-refresh)
+  if(boardCache[m] && now - boardCache[m].ts < CACHE_TTL && !_boardForceRefresh[m]){
     return boardCache[m].data;
   }
   // Уже грузится — возвращаем тот же промис, не дублируем запрос
@@ -2686,11 +2695,14 @@ async function fetchLeaderboard(m){
   _boardReqIds[m] = (_boardReqIds[m]||0) + 1;
   const reqId = _boardReqIds[m];
   const id = MY_TG_ID();
+  // FIX v108b: при новом рекорде добавляем bust-параметр чтобы обойти KV-кэш воркера (30 сек)
+  const bustParam = _boardForceRefresh[m] ? `&bust=${now}` : '';
+  delete _boardForceRefresh[m]; // сбрасываем флаг
 
   // FIX LB: Promise с таймаутом 8 сек — не висит вечно
   const fetchPromise = (async()=>{
     try {
-      const url = `${API}/leaderboard?mode=${m}&limit=50${id?'&tg_id='+id:''}`;
+      const url = `${API}/leaderboard?mode=${m}&limit=50${id?'&tg_id='+id:''}${bustParam}`;
       const controller = new AbortController();
       const timer = setTimeout(()=>controller.abort(), 8000);
       const res = await fetch(url, {signal: controller.signal});
@@ -2712,11 +2724,11 @@ async function fetchLeaderboard(m){
 }
 
 /* Фейковые данные — показываем пока грузится реальный лидерборд */
+// FIX v108b: FP_PLACEHOLDER очищен — фейковые имена создавали путаницу
+// (игроки видели "Катя М. 890400" и думали что это реальный рейтинг)
+// Теперь при загрузке показывается скелетон, при ошибке — пустой список
 const FP_PLACEHOLDER = {
-  classic:[{name:'Алексей К.',avatar:'👾',score:1248500},{name:'Мария В.',avatar:'🎮',score:987200},{name:'Дмитрий С.',avatar:'🦊',score:754300},{name:'Анна Б.',avatar:'🐱',score:623100},{name:'Сергей Н.',avatar:'🤖',score:412800},{name:'Ольга Т.',avatar:'🌸',score:334500}],
-  mini:[{name:'Катя М.',avatar:'🌙',score:890400},{name:'Вася П.',avatar:'🐉',score:721000},{name:'Лена К.',avatar:'🌺',score:605500},{name:'Петр С.',avatar:'🦅',score:488200},{name:'Нина В.',avatar:'🦋',score:367000},{name:'Олег Б.',avatar:'🦁',score:291300}],
-  speed:[{name:'Макс Б.',avatar:'⚡',score:654200},{name:'Юля Р.',avatar:'🌊',score:511700},{name:'Коля Д.',avatar:'🔥',score:443000},{name:'Аня С.',avatar:'💎',score:378500},{name:'Женя К.',avatar:'🌈',score:289100},{name:'Таня В.',avatar:'🎯',score:205600}],
-  daily:[{name:'—',avatar:'📅',score:0}]
+  classic:[], mini:[], speed:[], daily:[]
 };
 
 function getMe(m){return{name:MY_NAME(),avatar:'⭐',photo_url:MY_PHOTO_URL(),score:lsG(m),isMe:true};}
@@ -5678,9 +5690,12 @@ function animRetro(){
   // ── Фон в стиле Battle City NES — кирпичи, трава, земля ──
   const bgRetro=document.createElement('canvas');bgRetro.width=W;bgRetro.height=H;
   const bgCtx=bgRetro.getContext('2d');
+  let _bgReady=false; // флаг: фон готов к рендеру
 
-  // Чёрная подложка — земля не даёт зелёного фона
-  bgCtx.fillStyle='#050505';bgCtx.globalAlpha=1;bgCtx.fillRect(0,0,W,H);
+  // FIX v108b: рисуем фон асинхронно в rAF — не блокируем UI при старте темы
+  requestAnimationFrame(()=>{
+    // Чёрная подложка — земля не даёт зелёного фона
+    bgCtx.fillStyle='#050505';bgCtx.globalAlpha=1;bgCtx.fillRect(0,0,W,H);
 
   // Случайный генератор на основе seed — одинаковый каждый раз
   const rng=(()=>{let s=0x5eace3;return()=>{s=(s^s<<13)^(s>>>17)^(s<<5);return((s>>>0)/0xffffffff);}})();
@@ -5760,6 +5775,8 @@ function animRetro(){
   bgCtx.fillStyle='rgba(0,0,0,.07)';
   for(let y=0;y<H;y+=4)bgCtx.fillRect(0,y,W,1);
   bgCtx.globalAlpha=1;
+  _bgReady=true; // фон готов — draw может использовать bgRetro
+  }); // конец async rAF отрисовки фона
 
   // ── Пиксельный Battle City танк (16×16 grid, px=размер 1 пикселя)
   // dir: 0=вверх, 1=вниз (для вертикального движения)
@@ -5814,6 +5831,7 @@ function animRetro(){
       colors:{main:'#cc3333',dark:'#891515',tread:'#aa2222',barrel:'#6e1010',highlight:'#ff8888'} },
   ];
   const bullets=[];
+  const MAX_BULLETS=12; // FIX v108b: лимит пуль — не накапливаются при долгой игре
 
   let lastFrame=0;
   function draw(ts){
@@ -5822,17 +5840,21 @@ function animRetro(){
     if(ts-lastFrame<50){requestAnimationFrame(draw);return;}
     lastFrame=ts;
     ctx.clearRect(0,0,W,H);
+    // FIX v108b: ждём пока bgRetro готов — не блокируем UI при первом кадре
+    if(!_bgReady){ ctx.fillStyle='#050505'; ctx.fillRect(0,0,W,H); requestAnimationFrame(draw); return; }
     ctx.drawImage(bgRetro,0,0);
 
     TANK_DEFS.forEach(tank=>{
       tank.y += tank.dir * tank.speed;
       if(tank.y > H+80){ tank.y=H+80; tank.dir=-1; }
       if(tank.y < -80){  tank.y=-80;  tank.dir=1;  }
-      // Выстрел
+      // Выстрел — FIX v108b: лимит пуль
       tank.shootTimer=(tank.shootTimer||0)+1;
       if(tank.shootTimer > 90+Math.random()*60){
-        bullets.push({x:tank.x, y:tank.y+(tank.dir>0?24:-24), dir:tank.dir,
-                      col:tank.colors.barrel, life:1});
+        if(bullets.length < MAX_BULLETS){ // не добавляем если лимит
+          bullets.push({x:tank.x, y:tank.y+(tank.dir>0?24:-24), dir:tank.dir,
+                        col:tank.colors.barrel, life:1});
+        }
         tank.shootTimer=0;
       }
       drawBattleTank(tank.x, tank.y, tank.dir, tank.colors);
@@ -5863,7 +5885,8 @@ function animOceanBg(){
   // Pre-draw static background: deep ocean gradient + moon reflection
   const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   const bCtx=bg.getContext('2d');
-  const grad=bCtx.createLinearGradient(0,0,0,H);
+  const grad=bCtx.createLinearGradient
+(0,0,0,H);
   grad.addColorStop(0,'rgba(0,10,40,.0)');
   grad.addColorStop(0.4,'rgba(0,30,80,.06)');
   grad.addColorStop(1,'rgba(0,60,120,.12)');
@@ -6736,12 +6759,15 @@ function renderBP(){
 }
 
 function renderBPBoosts(){
+  // FIX v108b: единый список бустов — синхронизирован с SP_BOOSTS_DEF
   const BOOSTS = [
-    {id:'score2x',  name:'×2 Очки',    ico:'⚡', desc:'1 игра'},
-    {id:'score3x',  name:'×3 Очки',    ico:'🔥', desc:'1 игра'},
-    {id:'xp2x',     name:'×2 XP',      ico:'💎', desc:'за игру'},
-    {id:'combo_shield', name:'Щит',    ico:'🛡️', desc:'1 сброс'},
-    {id:'free_continue',name:'Continue',ico:'💝', desc:'1 раз'},
+    {id:'score2x',      name:'×2 Очки',    ico:'⚡', desc:'1 игра'},
+    {id:'score3x',      name:'×3 Очки',    ico:'🔥', desc:'1 игра'},
+    {id:'score4x',      name:'×4 Очки',    ico:'💥', desc:'1 игра'},
+    {id:'score5x',      name:'×5 Очки',    ico:'🌟', desc:'1 игра'},
+    {id:'xp2x',         name:'×2 XP',      ico:'💎', desc:'3 игры'},
+    {id:'combo_shield', name:'Щит Комбо',  ico:'🛡️', desc:'1 сброс'},
+    {id:'free_continue',name:'Continue',   ico:'💝', desc:'1 раз'},
   ];
   const active = boostGetActive();
   const grid = document.getElementById('bp-boosts-grid');
@@ -7337,6 +7363,59 @@ function claimDailyBonus(){
 function closeDailyBonus(){ document.getElementById('daily-ov').classList.remove('show'); }
 
 
+/* ══ SYNC LOCAL SCORES → SERVER (v108b) ══════════════════════════════════════
+   Один раз при старте отправляет локально сохранённые рекорды на сервер.
+   Нужно для игроков у которых рекорд есть в localStorage но не попал в D1
+   (например если при игре не было сети, или рекорд был до внедрения сервера).
+   Ключ bfm_scores_synced_v1 — гарантирует что отправка идёт ровно один раз. */
+async function syncLocalScoresToServer(){
+  if(!tg?.initData) return; // не в Telegram
+  const SYNC_KEY = 'bfm_scores_synced_v1';
+  if(safeGet(SYNC_KEY,'')) return; // уже синхронизировали
+  const modes = ['classic','mini','speed','daily'];
+  let anySent = false;
+  for(const m of modes){
+    const localScore = lsG(m);
+    if(!localScore || localScore <= 0) continue;
+    try{
+      const res = await fetch(`${API}/score`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          init_data: tg.initData,
+          mode: m,
+          score: localScore,
+          lines: 0,
+          max_combo: 1,
+          photo_url: MY_PHOTO_URL() || undefined,
+          _sync: true // помечаем что это синхронизация (для логов)
+        })
+      });
+      if(res.ok){
+        const data = await res.json().catch(()=>({}));
+        if(data.is_new_record){
+          // Это был новый рекорд для сервера — инвалидируем кэш лидерборда
+          delete boardCache[m];
+          _boardForceRefresh[m] = true;
+          anySent = true;
+          console.log(`[ScoreSync] Uploaded ${m}: ${localScore} → new record!`);
+        }
+      }
+    } catch(e){
+      console.warn('[ScoreSync] Failed for', m, e);
+      return; // сеть недоступна — не помечаем как выполнено, попробуем в следующий раз
+    }
+    // Небольшая пауза между запросами чтобы не давить rate limit
+    await new Promise(r=>setTimeout(r,400));
+  }
+  // Помечаем как выполнено — больше не отправляем при каждом старте
+  safeSet(SYNC_KEY, '1');
+  // Если загрузили новые рекорды — обновляем лидерборд
+  if(anySent){
+    setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1000);
+  }
+}
+
 /* ══ BOOT ══ */
 restoreCloudScores();
 checkReferral();
@@ -7440,6 +7519,8 @@ setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 
 setTimeout(showOnboarding, 1800);
 // Ежедневная награда: 2.2с (раньше 1.2с) — после онбординга
 setTimeout(checkDailyBonus, 2200);
+// v108b: синхронизируем локальные рекорды на сервер (один раз)
+setTimeout(syncLocalScoresToServer, 3500);
 </script>
 <!-- CASE OPEN OVERLAY -->
 <div id="case-open-ov">
