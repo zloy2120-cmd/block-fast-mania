@@ -1896,7 +1896,7 @@ body[class*="theme-"] .g-header {
 <!-- BATTLE PASS -->
 <div id="bp-screen" class="screen hidden">
   <div class="bp-head">
-    <button class="board-back" onclick="goBack()">← Назад</button>
+    <button class="board-back" onclick="goBack()">Назад</button>
     <div class="board-title">⚡ BATTLE PASS</div>
     <div class="bp-season-tag">Сезон 1</div>
   </div>
@@ -1919,7 +1919,7 @@ body[class*="theme-"] .g-header {
 <!-- LEADERBOARD -->
 <div id="board" class="screen hidden">
   <div class="board-head">
-    <button class="board-back" onclick="goBack()">← Назад</button>
+    <button class="board-back" onclick="goBack()">Назад</button>
     <div class="board-title">🏅 РЕКОРДЫ</div>
     <div style="width:60px"></div>
   </div>
@@ -1968,7 +1968,7 @@ body[class*="theme-"] .g-header {
 <!-- SKINS -->
 <div id="skins-screen" class="screen hidden">
   <div class="sk-head">
-    <button class="board-back" onclick="goBack()">← Назад</button>
+    <button class="board-back" onclick="goBack()">Назад</button>
     <div class="board-title" id="sk-screen-title">🎨 СКИНЫ</div>
     <div style="width:60px"></div>
   </div>
@@ -1992,7 +1992,7 @@ body[class*="theme-"] .g-header {
 <!-- ACHIEVEMENTS -->
 <div id="achieve-screen" class="screen hidden">
   <div class="ach-head">
-    <button class="board-back" onclick="goBack()">← Назад</button>
+    <button class="board-back" onclick="goBack()">Назад</button>
     <div class="board-title">🏅 АЧИВМЕНТЫ</div>
     <div style="width:60px"></div>
   </div>
@@ -2674,7 +2674,7 @@ async function submitScore(modeKey, scoreVal){
 /* Загрузить лидерборд с сервера */
 /* Кеш лидерборда — не грузим повторно 60 секунд */
 const boardCache = {};
-const CACHE_TTL = 120000; // 2 min cache (было 60s)
+const CACHE_TTL = 600000; // 10 min cache (было 2 мин — слишком часто билось в D1)
 // v102: per-mode reqId — предотвращает race condition при одновременном prefetch нескольких режимов
 const _boardReqIds = {classic:0, mini:0, speed:0, daily:0};
 // FIX LB: pending promise кэш — если fetch уже идёт, возвращаем тот же промис
@@ -2689,8 +2689,10 @@ async function fetchLeaderboard(m){
   if(boardCache[m] && now - boardCache[m].ts < CACHE_TTL && !_boardForceRefresh[m]){
     return boardCache[m].data;
   }
-  // Уже грузится — возвращаем тот же промис, не дублируем запрос
-  if(_boardPending[m]) return _boardPending[m];
+  // Уже грузится — возвращаем тот же промис (если нет force-refresh)
+  if(_boardPending[m] && !_boardForceRefresh[m]) return _boardPending[m];
+  // При bust — отменяем старый pending и делаем новый запрос
+  if(_boardPending[m] && _boardForceRefresh[m]) delete _boardPending[m];
 
   _boardReqIds[m] = (_boardReqIds[m]||0) + 1;
   const reqId = _boardReqIds[m];
@@ -2752,7 +2754,7 @@ const T={
     continueFree:'📺 Реклама → Бесплатно',continueStars:'⭐ 25 Stars → Продолжить',
     addTimeAd:'📺 Реклама → +10 сек',addTimeStars:'⭐ 25 Stars → +25 сек',
     newGame:'🔄 Новая игра',share:'📤 Поделиться',backMenu:'← Выбор режима',
-    records:'🏅 Рекорды',back:'← Назад',
+    records:'🏅 Рекорды',back:'Назад',
     dailyDesc:'одинаково для всех!',
     timeUp:'Время вышло!',
   },
@@ -2768,7 +2770,7 @@ const T={
     continueFree:'📺 Watch Ad → Free',continueStars:'⭐ 25 Stars → Continue',
     addTimeAd:'📺 Watch Ad → +10 sec',addTimeStars:'⭐ 25 Stars → +25 sec',
     newGame:'🔄 New Game',share:'📤 Share Result',backMenu:'← Mode Select',
-    records:'🏅 Records',back:'← Back',
+    records:'🏅 Records',back:'Back',
     dailyDesc:'same for everyone!',
     timeUp:'Time\'s Up!',
   }
@@ -6940,7 +6942,7 @@ function openCaseOv(caseId, drop){
   document.getElementById('cs2-icon').textContent  = caseConf.ico || '📦';
   document.getElementById('cs2-label').textContent = caseConf.name || 'CASE';
   document.getElementById('cs2-shadow').style.background = ch.glow || glow;
-  document.getElementById('case-chest-wrap').style.visibility='';
+  document.getElementById('case-chest-wrap').style.display=''; // показываем кейс
 
   // Кнопка "Открыть" в цвете кейса
   const openBtn = document.getElementById('case-open-btn');
@@ -6974,7 +6976,7 @@ function triggerCaseOpen(caseId, drop){
   vibrate([20,30,20,80,40]);
   spawnCaseParticles();
   setTimeout(()=>{
-    document.getElementById('case-chest-wrap').style.visibility='hidden';
+    document.getElementById('case-chest-wrap').style.display='none';
     document.getElementById('case-ov-subtitle').textContent = 'Ты получил:';
     if(drop){
       document.getElementById('case-result-ico').textContent  = drop.ico||'🎁';
@@ -7021,7 +7023,7 @@ function spawnCaseParticles(){
 
 function closeCaseOv(){
   document.getElementById('case-open-ov').classList.remove('show');
-  document.getElementById('case-chest-wrap').style.visibility='';
+  document.getElementById('case-chest-wrap').style.display=''; // восстанавливаем
   document.getElementById('cs2-case').classList.remove('opening');
   showBPLevelUpToast('Кейс открыт! 🎲');
 }
@@ -7423,9 +7425,10 @@ async function syncLocalScoresToServer(){
   }
   // Помечаем как выполнено — больше не отправляем при каждом старте
   safeSet(SYNC_KEY, '1');
-  // Если загрузили новые рекорды — обновляем лидерборд
+  // Если загрузили новые рекорды — немедленно обновляем лидерборд (bust уже выставлен)
   if(anySent){
-    setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 1000);
+    console.log('[ScoreSync] Done, refreshing leaderboard...');
+    ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m));
   }
 }
 
@@ -7527,7 +7530,9 @@ setTimeout(async function syncBPFromServer(){
 }, 2500);
 // ФИКС: boot-таймеры расставляем с интервалом — не конкурируют со стартом игры
 // Leaderboard prefetch: 4с (раньше 1.5с) — игрок точно в меню, не в процессе старта
-setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 4000);
+// FIX v108c: boot prefetch лидерборда ПОСЛЕ syncLocalScoresToServer (3.5с + ~3с синк = ~7с)
+// Было 4000ms — мог запускаться ДО завершения синка → bust не срабатывал
+setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 8000);
 // Онбординг: 1.8с (раньше 1с) — после полной отрисовки меню
 setTimeout(showOnboarding, 1800);
 // Ежедневная награда: 2.2с (раньше 1.2с) — после онбординга
