@@ -3075,7 +3075,7 @@ function renderBoardRows(data){
   else{const me=getMe(activeBoardTab),pl=FP_PLACEHOLDER[activeBoardTab]||[];entries=[...pl,me].sort((a,b)=>b.score-a.score).map((e,i)=>({...e,rank:i+1}));}
   if(!entries.length){table.innerHTML=`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">🎮 Будь первым!</div>`;return;}
 
-  // ── Подиум топ-3 ──
+  // ── Подиум топ-3 (только если 2+ игроков) ──
   if(podium && entries.length>=2){
     const podOrder=[1,0,2].filter(i=>entries[i]);
     const podClass=['pod-2','pod-1','pod-3'];
@@ -3100,10 +3100,11 @@ function renderBoardRows(data){
     });
   }
 
-  // ── Список с #4 и дальше ──
+  // ── Список: с #4 если есть подиум (2+ игроков), иначе с #1 ──
+  const listStartIdx = entries.length >= 2 ? 3 : 0;
   const frag=document.createDocumentFragment();
-  entries.slice(3,10).forEach((e,i)=>{
-    const rank=(e.rank||(entries.indexOf(e)+1));
+  entries.slice(listStartIdx,listStartIdx+10).forEach((e,i)=>{
+    const rank=(e.rank||(listStartIdx+i+1));
     const isMe=data?(String(e.tg_id)===String(MY_TG_ID())):e.isMe;
     const name=esc(e.first_name||e.name||'Игрок');
     const avHtml=avatarHtml(e,isMe,'👤');
