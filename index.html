@@ -689,7 +689,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 /* LEADERBOARD */
 #board{justify-content:flex-start;padding:14px;gap:0;overflow-y:auto;height:100%;max-height:100vh;overscroll-behavior:contain;}
 .board-head{width:100%;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:13px;}
-.board-back{border:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
+.board-back{border:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 18px;color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;min-width:80px;min-height:44px;}
 .board-back:active{transform:scale(.96);}
 .board-title{font-family:'Bungee',cursive;font-size:18px;color:var(--gold);}
 
@@ -1059,7 +1059,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
 .bp-card.unlocked .bp-card-xp{color:#4ade80;}
 .bp-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
 .bp-reward-ico{font-size:26px;flex-shrink:0;}
-.bp-claim-btn{border:none;border-radius:8px;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:900;cursor:pointer;background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;transition:transform .14s;}
+.bp-claim-btn{border:none;border-radius:10px;padding:9px 16px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;cursor:pointer;background:linear-gradient(135deg,#22d3ee,#7c3aed);color:#fff;transition:transform .14s;min-height:38px;min-width:72px;}
 .bp-claim-btn:active{transform:scale(.95);}
 .bp-claim-btn.claimed{background:rgba(255,255,255,.08);color:var(--muted);cursor:default;}
 /* mini xp track on current card */
@@ -1684,7 +1684,8 @@ body[class*="theme-"] .g-header {
 /* Кнопка "Открыть кейс" */
 .bp-claim-btn.case-btn{
   background:linear-gradient(135deg,#f97316,#ef4444) !important;
-  font-size:10px;
+  font-size:13px;
+  padding:9px 16px;
 }
 
 #ad-banner{
@@ -2645,14 +2646,13 @@ async function submitScore(modeKey, scoreVal){
       });
       if(res.ok){
         const respData = await res.json().catch(()=>({}));
-        // FIX v108b: удаляем кэш всегда при успехе — чтобы следующее открытие грузило свежее
         delete boardCache[modeKey];
         delete boardCache['daily'];
         delete _boardPending[modeKey];
-        // При новом рекорде: помечаем что нужен force-refresh лидерборда
-        if(respData.is_new_record){
-          _boardForceRefresh[modeKey] = true;
-        }
+        // FIX v108c: всегда bust KV-кэш после успешной отправки,
+        // чтобы открытие лидерборда гарантированно показывало актуальные данные
+        _boardForceRefresh[modeKey] = true;
+        if(modeKey!=='daily') _boardForceRefresh['daily']=true;
         _setGoSaveStatus('saved', LANG==='ru'?'✅ рекорд сохранён':'✅ score saved');
         setTimeout(()=>_clearGoSaveStatus(), 3000);
         return;
@@ -6812,20 +6812,33 @@ async function bpClaim(lvlNum){
       const res = await fetch(`${API}/bp/claim`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ init_data: tg.initData, level: lvlNum })
+        body: JSON.stringify({
+          init_data: tg.initData,
+          level: lvlNum,
+          client_xp: totalXP  // FIX v108c: передаём локальный XP — сервер использует если его XP меньше
+        })
       });
       const data = await res.json();
       if(!data.ok){
-        if(btn){ btn.textContent=lv.reward.type==='case'?'🎲 Открыть':'Забрать'; btn.disabled=false; }
-        if(data.error==='Already claimed') bpMarkClaimed(lvlNum);
-        console.warn('BP claim error:', data.error);
-        return;
-      }
-      if(Array.isArray(data.claimed)){
-        try{ safeSet('bfm_bp_claimed', JSON.stringify(data.claimed)); }catch{}
+        // FIX v108c: при любой ошибке кроме "Already claimed" — применяем локально
+        // Причины ошибок: User not found (нет в D1), Not enough XP (XP не синхронизирован),
+        // Season mismatch, сеть недоступна
+        if(data.error==='Already claimed'){
+          bpMarkClaimed(lvlNum);
+          if(btn){ btn.textContent='✓'; btn.disabled=true; }
+          return;
+        }
+        console.warn('BP claim server error, applying locally:', data.error);
+        // Продолжаем — применяем локально ниже
+      } else {
+        // Успех: синхронизируем claimed с сервера
+        if(Array.isArray(data.claimed)){
+          try{ safeSet('bfm_bp_claimed', JSON.stringify(data.claimed)); }catch{}
+        }
       }
     } catch(e){
       console.warn('BP claim offline, applying locally:', e);
+      // Продолжаем — применяем локально ниже
     }
   }
 
@@ -7367,10 +7380,10 @@ function closeDailyBonus(){ document.getElementById('daily-ov').classList.remove
    Один раз при старте отправляет локально сохранённые рекорды на сервер.
    Нужно для игроков у которых рекорд есть в localStorage но не попал в D1
    (например если при игре не было сети, или рекорд был до внедрения сервера).
-   Ключ bfm_scores_synced_v1 — гарантирует что отправка идёт ровно один раз. */
+   Ключ bfm_scores_synced_v2 — гарантирует что отправка идёт ровно один раз. */
 async function syncLocalScoresToServer(){
   if(!tg?.initData) return; // не в Telegram
-  const SYNC_KEY = 'bfm_scores_synced_v1';
+  const SYNC_KEY = 'bfm_scores_synced_v2'; // v2: перезапускаем синхронизацию у всех игроков
   if(safeGet(SYNC_KEY,'')) return; // уже синхронизировали
   const modes = ['classic','mini','speed','daily'];
   let anySent = false;
