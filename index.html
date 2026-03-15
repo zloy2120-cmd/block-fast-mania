@@ -38,7 +38,10 @@
 </script>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
   --bg:#17162e;--bg2:#1f1d3a;
@@ -2099,7 +2102,7 @@ body[class*="theme-"] .g-header {
   </div>
 </div>
 
-<script src="sounds.js" onerror="console.warn('sounds.js failed to load')"></script>
+<script src="sounds.js" defer onerror="console.warn('sounds.js failed to load')"></script>
 <script>
 
 /* ── Default twinkling stars for menu/leaderboard ── */
@@ -7193,8 +7196,8 @@ function devUnlockAll(){
 }
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
-// Синхронизируем BP XP с сервера — защита от потери прогресса при очистке браузера
-(async function syncBPFromServer(){
+// Синхронизируем BP XP с сервера — откладываем на 2.5с чтобы не конкурировать с загрузкой
+setTimeout(async function syncBPFromServer(){
   try{
     const id=MY_TG_ID();
     if(!id||id==='0') return;
@@ -7215,7 +7218,7 @@ syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); upda
       updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock();
     }
   }catch{}
-})();
+}, 2500);
 // ФИКС: boot-таймеры расставляем с интервалом — не конкурируют со стартом игры
 // Leaderboard prefetch: 4с (раньше 1.5с) — игрок точно в меню, не в процессе старта
 setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 4000);
