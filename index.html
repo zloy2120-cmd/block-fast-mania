@@ -4413,10 +4413,7 @@ function showGO(){
     document.getElementById('go-emoji').textContent='💔';
     document.getElementById('go-title').textContent=t('gameOver');
   }
-  // Adsgram Interstitial — показываем перед экраном результатов (≤1 раза в 3 мин)
-  maybeShowInterstitial().finally(() => {
-    document.getElementById('go').classList.add('show');
-  });
+  document.getElementById('go').classList.add('show');
   // Кнопка Продолжить — до 3 раз за игру, через CSS класс
   const cbtn=document.getElementById('go-continue-btn');
   if(cbtn){
@@ -4500,8 +4497,8 @@ function resumeTimer(){
  * Вывод: Adsgram → TON → @wallet (Telegram) → биржа → карта
  * ════════════════════════════════════════════════════════════ */
 
-const ADSGRAM_REWARD_ID       = '25289'; // Reward — нажатие кнопки игроком
-const ADSGRAM_INTERSTITIAL_ID = '';      // TODO: вставить ID после создания блока
+const ADSGRAM_REWARD_ID       = '25289'; // Reward — спины и подсказки (обязательный просмотр)
+const ADSGRAM_INTERSTITIAL_ID = '25294'; // Interstitial — продолжить игру (скипается через 5с)
 
 /* ══ РЕКЛАМА ВКЛЮЧЕНА (ADS_DISABLED=false — Adsgram работает) ══
    Поставь true чтобы отключить (doAd сразу выдаёт награду). */
@@ -4537,30 +4534,34 @@ function initAdsgram(){
 setTimeout(initAdsgram, 1000);
 
 // ─── Rewarded Ad — вызывается по нажатию кнопки игроком ─────────────────────
+// ─── Reward Ad — для спинов и подсказки (досмотреть обязательно) ────────────
 function doAd(type){
   adCallback = type;
   if(ADS_DISABLED){ giveAdReward(type); return; }
   submitEvent('ad_shown', mode, 0, `type:${type}`);
   if(_adsgramRewardCtrl){
     _adsgramRewardCtrl.show()
-      .then(() => { giveAdReward(type); })   // досмотрел — выдаём награду
-      .catch(() => { showFakeAd(type); });   // пропустил или ошибка
+      .then(() => { giveAdReward(type); })  // досмотрел → выдаём награду
+      .catch(() => { giveAdReward(type); }); // пропустил/ошибка → всё равно даём (UX)
     return;
   }
-  // SDK ещё не готов — fallback
-  showFakeAd(type);
+  // SDK ещё не готов — сразу даём награду
+  giveAdReward(type);
 }
 
-// ─── Interstitial — показывается после game over, не чаще раза в 3 мин ──────
-function maybeShowInterstitial(){
-  if(ADS_DISABLED) return Promise.resolve();
-  if(!ADSGRAM_INTERSTITIAL_ID) return Promise.resolve(); // ID ещё не задан
-  if(!_adsgramInterstitial) return Promise.resolve();
+// ─── Interstitial — для "Продолжить" (скипается через 5с, игра продолжается всегда) ──
+function showInterstitialThenContinue(callback){
+  if(ADS_DISABLED){ callback(); return; }
   const now = Date.now();
-  if(now - _lastInterstitialTs < INTERSTITIAL_COOLDOWN) return Promise.resolve();
+  // Кулдаун 3 мин — не показываем слишком часто
+  if(now - _lastInterstitialTs < INTERSTITIAL_COOLDOWN){ callback(); return; }
+  if(!_adsgramInterstitial){ callback(); return; }
   _lastInterstitialTs = now;
   submitEvent('ad_shown', mode, 0, 'type:interstitial');
-  return _adsgramInterstitial.show().catch(() => {}); // ошибки игнорируем — не критично
+  // И .then() и .catch() → продолжаем игру. Пользователь не должен быть заблокирован.
+  _adsgramInterstitial.show()
+    .then(() => { callback(); })
+    .catch(() => { callback(); });
 }
 
 function goUseContinue(){
@@ -4574,11 +4575,19 @@ function goUseContinue(){
     continuePlaying();
     return;
   }
-  // Иначе — показываем rewarded рекламу
-  doAd('continue');
+  // Interstitial → после закрытия/скипа → продолжаем игру
+  showInterstitialThenContinue(() => {
+    const btn=document.getElementById('go-continue-btn');
+    if(btn) btn.closest('.go-section').style.display='none';
+    continuePlaying();
+  });
 }
 function goSpeedContinue(){
-  doAd('speed_time');
+  showInterstitialThenContinue(() => {
+    const btn=document.getElementById('go-speed-continue-btn');
+    if(btn) btn.closest('.go-section').style.display='none';
+    addSpeedTime(10,'📺 +10 сек');
+  });
 }
 
 /* ══ REWARDED ADS — точки монетизации ══ */
@@ -4597,6 +4606,28 @@ function doAdHint(){
   doAd('hint');
 }
 let _hintUsedThisGame=false;
+
+// ─── Награда после досмотра Reward рекламы ───────────────────────────────────
+function giveAdReward(type){
+  vibrate('line');
+  submitEvent('ad_rewarded', mode, 0, `type:${type}`);
+  if(type==='spins'){
+    // +3 спина за рекламу
+    const today=_getSpinDateKey();
+    const used=getSpinUsesToday();
+    safeSet('bfm_spin_date',today);
+    safeSet('bfm_spin_uses',String(Math.max(0,used-3)));
+    vibrate('combo');
+    renderHold();
+    const n=document.createElement('div');
+    n.style.cssText='position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-family:Bungee,cursive;font-size:14px;padding:10px 22px;border-radius:14px;z-index:3000;white-space:nowrap;animation:toastIn .4s cubic-bezier(.34,1.56,.64,1)';
+    n.textContent='📺 +3 СПИНА получено!';
+    document.body.appendChild(n);
+    setTimeout(()=>n.remove(),2000);
+  } else if(type==='hint'){
+    showBestHint();
+  }
+}
 
 function addSpeedTime(secs,label){
   timSec=Math.min(timSec+secs,300);
