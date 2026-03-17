@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" href="https://telegram.org/js/telegram-web-app.js" as="script">
 <link rel="preload" href="sounds.js" as="script">
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet" media="print" onload="this.media='all'" fetchpriority="low">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@700;800;900&family=Lilita+One&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
@@ -1101,10 +1101,11 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
    Та же проблема: каждый кадр JS → style recalc → repaint кристальных ячеек.
    Чистый CSS keyframe с hue-rotate запускается на compositor без main thread. */
 @keyframes crystalShimmer{
-  0%   { filter:hue-rotate(0deg)   brightness(1.35) saturate(1.9) drop-shadow(0 0 4px rgba(180,120,255,.5)); }
-  33%  { filter:hue-rotate(120deg) brightness(1.65) saturate(2.3) drop-shadow(0 0 6px rgba(120,200,255,.6)); }
-  66%  { filter:hue-rotate(240deg) brightness(1.5)  saturate(2.1) drop-shadow(0 0 5px rgba(200,120,255,.55)); }
-  100% { filter:hue-rotate(360deg) brightness(1.35) saturate(1.9) drop-shadow(0 0 4px rgba(180,120,255,.5)); }
+  0%   { filter:hue-rotate(0deg)   brightness(1.3) saturate(1.8) drop-shadow(0 0 4px rgba(140,100,255,.5)); }
+  33%  { filter:hue-rotate(120deg) brightness(1.5) saturate(2.0) drop-shadow(0 0 5px rgba(100,160,255,.5)); }
+  66%  { filter:hue-rotate(240deg) brightness(1.4) saturate(1.9) drop-shadow(0 0 4px rgba(180,100,255,.5)); }
+  100% { filter:hue-rotate(360deg) brightness(1.3) saturate(1.8) drop-shadow(0 0 4px rgba(140,100,255,.5)); }
+}
 }
 @keyframes crystalOpacityPulse{
   0%,100%{ opacity:.88; }
@@ -1195,7 +1196,7 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   transform:translate(-50%,-50%);
   font-size:26px;line-height:1;
   pointer-events:none;z-index:10;
-  filter:drop-shadow(0 0 5px rgba(255,230,0,.9)) drop-shadow(0 2px 3px rgba(0,0,0,.9));
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.85));
 }
 /* Взрыв цепочки — золотая вспышка */
 @keyframes chainBlast{
@@ -4497,65 +4498,66 @@ function resumeTimer(){
  * Вывод: Adsgram → TON → @wallet (Telegram) → биржа → карта
  * ════════════════════════════════════════════════════════════ */
 
-// ─── Adsgram: один блок 25294 для всех форматов ─────────────────────────────
+// ─── Adsgram SDK integration (vanilla JS, по документации adsgram.ai) ──────────
+// blockId 25289 = Reward (одна реклама, кнопка skip через несколько сек)
 const ADSGRAM_BLOCK_ID = '25294';
 
-/* ══ РЕКЛАМА: поставь true чтобы отключить (doAd сразу выдаёт награду) ══ */
-const ADS_DISABLED = false;
+const ADS_DISABLED = false; // true = отключить рекламу (doAd сразу даёт награду)
 
 let adCallback = null;
-let _adsgramCtrl = null;          // единственный контроллер
-let _adsgramIniting = false;       // защита от повторной инициализации
-let _lastAdTs = 0;                 // timestamp последнего любого показа
-const AD_COOLDOWN = 10000;         // 10 сек между любыми показами — защита от 3 подряд
+let _AdController = null;   // один контроллер на всю сессию
+let _adIsShowing  = false;  // защита: не запускать рекламу если уже идёт
 
-// Инициализация — один раз, через onload SDK чтобы не было retry-петли
-function initAdsgram(){
-  if(ADS_DISABLED || _adsgramCtrl || _adsgramIniting) return;
-  _adsgramIniting = true;
+// init() — один раз после загрузки SDK (sad.min.js)
+// Вызываем через onload чтобы window.Adsgram точно был готов
+function _initAdsgram(){
+  if(_AdController || !window.Adsgram) return;
   try {
-    // Adsgram.init() вызываем ОДИН РАЗ — один объект на весь блок
-    _adsgramCtrl = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
-    console.log('[Adsgram] ready, blockId=' + ADSGRAM_BLOCK_ID);
-  } catch(e) {
-    console.warn('[Adsgram] init error', e);
-    _adsgramIniting = false;
-    _adsgramCtrl = null;
+    _AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    console.log('[Adsgram] init OK, blockId=' + ADSGRAM_BLOCK_ID);
+  } catch(e){
+    console.warn('[Adsgram] init error:', e);
   }
 }
-// Ждём загрузки SDK через событие — никаких setTimeout-петель
 (function(){
-  const sdkScript = document.querySelector('script[src*="sad.adsgram.ai"]');
-  if(sdkScript) sdkScript.addEventListener('load', initAdsgram);
-  // Запасной вариант — если уже загружен
-  setTimeout(()=>{ if(!_adsgramCtrl) initAdsgram(); }, 2000);
+  const s = document.querySelector('script[src*="sad.adsgram.ai"]');
+  if(s) s.addEventListener('load', _initAdsgram);
+  // fallback если скрипт уже загружен
+  setTimeout(_initAdsgram, 800);
 })();
 
-// ─── Показ рекламы — единая точка входа ──────────────────────────────────────
-// onDone() вызывается ВСЕГДА: и после просмотра, и после пропуска/ошибки
-function _showAd(onDone){
-  if(ADS_DISABLED){ onDone(); return; }
-  // Защита от спама — не показываем чаще раза в 10 сек
-  const now = Date.now();
-  if(now - _lastAdTs < AD_COOLDOWN){ onDone(); return; }
-  if(!_adsgramCtrl){ onDone(); return; }
-  _lastAdTs = now;
-  _adsgramCtrl.show()
-    .then(() => onDone())
-    .catch(() => onDone()); // ошибка/пропуск — всё равно продолжаем
+// ─── Внутренний вызов рекламы ─────────────────────────────────────────────────
+// onReward() — пользователь досмотрел → выдаём награду
+// onSkip()   — пользователь пропустил/ошибка → ничего не даём (или тоже даём — см. ниже)
+function _showAd(onReward, onSkip){
+  if(ADS_DISABLED){ onReward(); return; }
+  if(_adIsShowing) return; // уже идёт — игнорируем повторный вызов
+  if(!_AdController){ onReward(); return; } // SDK не загружен — даём награду
+  _adIsShowing = true;
+  _AdController.show()
+    .then(() => { _adIsShowing = false; onReward(); })  // досмотрел до конца
+    .catch(() => { _adIsShowing = false; if(onSkip) onSkip(); }); // пропустил/ошибка
 }
 
-// ─── Reward: спины и подсказка ───────────────────────────────────────────────
+// ─── Reward: спины и подсказка — reward только за досмотр ────────────────────
 function doAd(type){
   adCallback = type;
   submitEvent('ad_shown', mode, 0, `type:${type}`);
-  _showAd(() => giveAdReward(type));
+  _showAd(
+    () => giveAdReward(type),  // досмотрел → награда
+    () => {}                    // пропустил → ничего (честная механика)
+  );
 }
 
-// ─── Продолжить / Speed: реклама → игра продолжается в любом случае ──────────
+// ─── Continue/Speed: реклама → игра продолжается ВСЕГДА (и после просмотра, и после skip) ──
 function showInterstitialThenContinue(callback){
-  submitEvent('ad_shown', mode, 0, 'type:interstitial');
-  _showAd(callback);
+  submitEvent('ad_shown', mode, 0, 'type:continue');
+  if(ADS_DISABLED){ callback(); return; }
+  if(_adIsShowing) return;
+  if(!_AdController){ callback(); return; }
+  _adIsShowing = true;
+  _AdController.show()
+    .finally(() => { _adIsShowing = false; callback(); }); // finally = всегда продолжаем
 }
 
 function goUseContinue(){
@@ -4596,6 +4598,7 @@ function doAdHint(){
     showBestHint(); // повторный вызов — просто показываем без рекламы
     return;
   }
+  _hintUsedThisGame = true; // ставим СРАЗУ — до рекламы, чтобы повторное нажатие не запускало рекламу снова
   vibrate('menu');
   doAd('hint');
 }
@@ -4621,6 +4624,44 @@ function giveAdReward(type){
   } else if(type==='hint'){
     showBestHint();
   }
+}
+
+function showBestHint(){
+  if(dead||locked)return;
+  _hintUsedThisGame=true;
+  let bestResult=null;
+  const allPieces=[...pieces.map((p,i)=>({p,si:i})), held?{p:held,si:'h'}:null].filter(Boolean);
+  for(const{p,si} of allPieces){
+    if(!p)continue;
+    for(let r=0;r<=N-p.shape.length;r++){
+      for(let c=0;c<=N-p.shape[0].length;c++){
+        if(!canP(p.shape,r,c))continue;
+        const sim=grid.map(row=>[...row]);
+        for(let dr=0;dr<p.shape.length;dr++)for(let dc=0;dc<p.shape[0].length;dc++){
+          if(p.shape[dr][dc])sim[r+dr][c+dc]=p.ci;
+        }
+        let cleared=0;
+        for(let rr=0;rr<N;rr++)if(sim[rr].every(v=>v>=0))cleared++;
+        for(let cc=0;cc<N;cc++)if(sim.every(row=>row[cc]>=0))cleared++;
+        if(!bestResult||cleared>bestResult.linesCleared||(cleared===bestResult.linesCleared&&Math.random()>.7)){
+          bestResult={si,sr:r,sc:c,shape:p.shape,linesCleared:cleared};
+        }
+      }
+    }
+  }
+  if(!bestResult)return;
+  if(bestResult.si!=='h'&&bestResult.si>=0&&bestResult.si<3){
+    sel=bestResult.si;renderPieces();
+  } else if(bestResult.si==='h'){
+    sel='h';renderHold();
+  }
+  const p=(bestResult.si==='h')?held:pieces[bestResult.si];
+  if(!p)return;
+  showHL(p.shape,bestResult.sr,bestResult.sc,true,bestResult.si);
+  vibrate('combo');
+  const hintBanner=document.getElementById('hint-banner');
+  if(hintBanner){ hintBanner.classList.add('show'); setTimeout(()=>hintBanner.classList.remove('show'),2500); }
+  setTimeout(()=>{ clearHL(); sel=-1; renderPieces(); renderHold(); }, 3000);
 }
 
 function addSpeedTime(secs,label){
@@ -6345,7 +6386,7 @@ const CASES = {
     chest:{lid:'#9c6ef5',main:'#7c3aed',band:'rgba(0,0,0,.3)',glow:'rgba(167,139,250,.4)',btnA:'#a78bfa',btnB:'#7c3aed',btnText:'#fff',shadow:'rgba(124,58,237,.5)'},
     items:[
       { weight:30, type:'bg_theme', id:'cyberpunk',  name:'Тема: Киберпанк',ico:'🔮', desc:'Фон игры — навсегда',  rarity:'rare'   },
-      { weight:30, type:'bg_theme', id:'hell',       name:'Тема: Ад',       ico:'🔥', desc:'Фон игры — навсегда',  rarity:'rare'   },
+      { weight:30, type:'bg_theme', id:'hell',       name:'Тема: Ад',       ico:'⚡', desc:'Фон игры — навсегда',  rarity:'rare'   },
       { weight:25, type:'bg_theme', id:'retro',      name:'Тема: Ретро',    ico:'🪖', desc:'Пиксельные танки',     rarity:'rare'   },
       { weight:15, type:'bg_theme', id:'cosmos',     name:'Тема: Космос',   ico:'🌌', desc:'Фон игры — навсегда',  rarity:'epic'   },
     ]
@@ -6374,7 +6415,7 @@ const CASES = {
     chest:{lid:'#cd6a20',main:'#92400e',band:'rgba(0,0,0,.3)',glow:'rgba(180,83,9,.45)',btnA:'#d97706',btnB:'#92400e',btnText:'#fff',shadow:'rgba(180,83,9,.5)'},
     items:[
       { weight:35, type:'skin',     id:'gold',       name:'Скин Золото',   ico:'💛', desc:'Роскошные золотые блоки', rarity:'epic'   },
-      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',    ico:'🔥', desc:'Эксклюзив — навсегда',    rarity:'epic'   },
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',    ico:'⚡', desc:'Эксклюзив — навсегда',    rarity:'epic'   },
       { weight:20, type:'boost',    id:'score3x',    name:'×3 Очки',       ico:'🔥', desc:'Тройные очки — 1 игра',   rarity:'common' },
       { weight:15, type:'boost',    id:'xp2x',       name:'×2 XP',         ico:'💎', desc:'Двойной XP — 3 игры',     rarity:'common' },
     ]
@@ -6393,7 +6434,7 @@ const CASES = {
     chest:{lid:'#FFD700',main:'#B8860B',band:'rgba(255,200,0,.3)',glow:'rgba(255,215,0,.5)',btnA:'#FFD700',btnB:'#B8860B',btnText:'#1a0500',shadow:'rgba(255,215,0,.6)'},
     items:[
       { weight:35, type:'bg_theme', id:'sunset',     name:'Тема: Закат',     ico:'🌅', desc:'Фон игры — навсегда',       rarity:'epic'   },
-      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',      ico:'🔥', desc:'Эксклюзив — навсегда',       rarity:'epic'   },
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',      ico:'⚡', desc:'Эксклюзив — навсегда',       rarity:'epic'   },
       { weight:25, type:'skin',     id:'gold',       name:'Скин Золото',     ico:'💛', desc:'Роскошные блоки навсегда',   rarity:'epic'   },
       { weight:10, type:'skin',     id:'galaxy',     name:'Скин Галактика 🏆',ico:'🌌',desc:'Легендарный · навсегда',     rarity:'legend' },
     ]
@@ -6402,7 +6443,7 @@ const CASES = {
     name:'Кейс Сезона', ico:'🌟', color:'#a78bfa',
     chest:{lid:'#8b5cf6',main:'#6d28d9',band:'rgba(139,92,246,.3)',glow:'rgba(139,92,246,.5)',btnA:'#a78bfa',btnB:'#6d28d9',btnText:'#fff',shadow:'rgba(139,92,246,.5)'},
     items:[
-      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',      ico:'🔥', desc:'Эксклюзив Сезона 1',         rarity:'epic'   },
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',      ico:'⚡', desc:'Эксклюзив Сезона 1',         rarity:'epic'   },
       { weight:25, type:'skin',     id:'gold',       name:'Скин Золото',     ico:'💛', desc:'Роскошные блоки навсегда',   rarity:'epic'   },
       { weight:25, type:'skin',     id:'ocean',      name:'Скин Океан',      ico:'🐚', desc:'Разблокирован навсегда',      rarity:'epic'   },
       { weight:20, type:'skin',     id:'galaxy',     name:'Скин Галактика 🏆',ico:'🌌',desc:'Легендарный · навсегда',     rarity:'legend' },
@@ -6412,7 +6453,7 @@ const CASES = {
     name:'Кейс Мастера', ico:'💜', color:'#c084fc',
     chest:{lid:'#a855f7',main:'#7e22ce',band:'rgba(0,0,0,.3)',glow:'rgba(192,132,252,.4)',btnA:'#c084fc',btnB:'#7e22ce',btnText:'#fff',shadow:'rgba(168,85,247,.5)'},
     items:[
-      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',    ico:'🔥', desc:'Эксклюзив — навсегда',     rarity:'epic'   },
+      { weight:30, type:'skin',     id:'fire',       name:'Скин Огонь',    ico:'⚡', desc:'Эксклюзив — навсегда',     rarity:'epic'   },
       { weight:25, type:'skin',     id:'gold',       name:'Скин Золото',   ico:'💛', desc:'Роскошные блоки навсегда', rarity:'epic'   },
       { weight:25, type:'bg_theme', id:'ocean_bg',   name:'Тема: Океан',   ico:'🌊', desc:'Фон игры — навсегда',      rarity:'epic'   },
       { weight:15, type:'bg_theme', id:'sunset',     name:'Тема: Закат',   ico:'🌅', desc:'Фон игры — навсегда',      rarity:'epic'   },
@@ -6473,14 +6514,14 @@ function rollCase(caseId){
  * 20  |    58 000 |      478 000 | boost score5x ×3 + xp2x ×5 + skin galaxy
  * ══════════════════════════════════════════════════════════════ */
 const BP_LEVELS = [
-  { lvl:1,  xpNeeded:800,   reward:{type:'boost',   id:'score2x',     name:'×2 Очки',         ico:'⚡', desc:'Двойные очки — 1 игра',                amt:1}, rewardIco:'⚡' },
+  { lvl:1,  xpNeeded:800,   reward:{type:'boost',   id:'score2x',     name:'×2 Очки',         ico:'🔥', desc:'Двойные очки — 1 игра',                amt:1}, rewardIco:'🔥' },
   { lvl:2,  xpNeeded:1500,  reward:{type:'boost',   id:'combo_shield',name:'Щит Комбо',        ico:'🛡️', desc:'Комбо не сбрасывается 1 раз',          amt:2}, rewardIco:'🛡️' },
   { lvl:3,  xpNeeded:2200,  reward:{type:'case',    id:'starter',     name:'Кейс Новичка',     ico:'📦', desc:'Скин или буст — случайно'},              rewardIco:'📦' },
   { lvl:4,  xpNeeded:4800,  reward:{type:'boost',   id:'xp2x',        name:'×2 XP ×3',         ico:'💎', desc:'Двойной XP — 3 игры',                  amt:3}, rewardIco:'💎' },
   { lvl:5,  xpNeeded:8800,  reward:{type:'case',    id:'themes',      name:'Кейс Тем',          ico:'🌌', desc:'Редкая тема — случайно'},               rewardIco:'🌌' },
   { lvl:6,  xpNeeded:11300, reward:{type:'feature', id:'bank_spin',   name:'БАНК + СПИН',       ico:'🔄', desc:'Сохраняй фигуры и вращай — навсегда'}, rewardIco:'🔄' },
   { lvl:7,  xpNeeded:16800, reward:{type:'case',    id:'rare',        name:'Кейс Редкий',       ico:'🎁', desc:'Редкий скин — случайно'},               rewardIco:'🎁' },
-  { lvl:8,  xpNeeded:21300, reward:{type:'boost',   id:'score2x',     name:'×2 Очки ×3',        ico:'⚡', desc:'Двойные очки — 3 игры',                amt:3}, rewardIco:'⚡' },
+  { lvl:8,  xpNeeded:21300, reward:{type:'boost',   id:'score2x',     name:'×2 Очки ×3',        ico:'⚡', desc:'Двойные очки — 3 игры',                amt:3}, rewardIco:'🔥' },
   { lvl:9,  xpNeeded:31500, reward:{type:'case',    id:'themes2',     name:'Кейс Тем Deluxe',   ico:'🌸', desc:'Редкая тема — случайно'},               rewardIco:'🌸' },
   { lvl:10, xpNeeded:36000, reward:{type:'boost',   id:'score3x',     name:'×3 Очки ×4',        ico:'🔥', desc:'Тройные очки — 4 игры',                amt:4}, rewardIco:'🔥' },
   { lvl:11, xpNeeded:41000, reward:{type:'case',    id:'mid',         name:'Кейс Охотника',     ico:'🗡️', desc:'Топ скин — случайно'},                 rewardIco:'🗡️' },
@@ -7103,7 +7144,7 @@ let _chainCells   = new Map(); // 'r,c' → icon ('⚡'|'🔥'|'💎')
 let _chainLineAcc = 0;         // накопленные линии для следующего спавна
 let _chainBonus   = false;     // активен ли бонус прямо сейчас
 
-const CHAIN_ICONS = ['⚡','🔥','💎'];
+const CHAIN_ICONS = ['💜','⚡','💎'];
 
 function chainReset(){
   _chainCells=new Map();_chainLineAcc=0;_chainBonus=false;
@@ -7248,7 +7289,7 @@ const DAILY_REWARDS = [
   {day:1, ico:'⚡', type:'boost', id:'score2x',     amt:1, name:'×2 Очки'},
   {day:2, ico:'🛡️', type:'boost', id:'combo_shield', amt:2, name:'Щит ×2'},
   {day:3, ico:'💎', type:'boost', id:'xp2x',         amt:2, name:'×2 XP ×2'},
-  {day:4, ico:'🔥', type:'boost', id:'score3x',      amt:1, name:'×3 Очки'},
+  {day:4, ico:'⚡', type:'boost', id:'score3x',      amt:1, name:'×3 Очки'},
   {day:5, ico:'🛡️', type:'boost', id:'combo_shield', amt:3, name:'Щит ×3'},
   {day:6, ico:'⚡', type:'boost', id:'score2x',      amt:2, name:'×2 Очки ×2'},
   {day:7, ico:'🥇', type:'case',  id:'legend',                name:'Кейс Легенды'},
@@ -7449,7 +7490,7 @@ function devUnlockAll(){
 }
 // Sync BP/boosts from CloudStorage for cross-device progress
 syncBPFromCloudStorage().then(()=>{ updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock(); });
-// Синхронизируем BP XP с сервера — откладываем на 2.5с чтобы не конкурировать с загрузкой
+// Синхронизируем BP XP с сервера — откладываем на 1.5с
 setTimeout(async function syncBPFromServer(){
   try{
     const id=MY_TG_ID();
@@ -7471,18 +7512,18 @@ setTimeout(async function syncBPFromServer(){
       updateMenuBP(); renderBP && renderBP(); updateRotBtn(); updateBankLock();
     }
   }catch{}
-}, 2500);
+}, 3000);
 // ФИКС: boot-таймеры расставляем с интервалом — не конкурируют со стартом игры
 // Leaderboard prefetch: 4с (раньше 1.5с) — игрок точно в меню, не в процессе старта
 // FIX v108c: boot prefetch лидерборда ПОСЛЕ syncLocalScoresToServer (3.5с + ~3с синк = ~7с)
 // Было 4000ms — мог запускаться ДО завершения синка → bust не срабатывал
-setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 8000);
+setTimeout(()=>{ ['classic','mini','speed'].forEach(m=>fetchLeaderboard(m)); }, 3000);
 // Онбординг: 1.8с (раньше 1с) — после полной отрисовки меню
-setTimeout(showOnboarding, 1800);
+setTimeout(showOnboarding, 600);
 // Ежедневная награда: 2.2с (раньше 1.2с) — после онбординга
-setTimeout(checkDailyBonus, 2200);
+setTimeout(checkDailyBonus, 900);
 // v108b: синхронизируем локальные рекорды на сервер (один раз)
-setTimeout(syncLocalScoresToServer, 3500);
+setTimeout(syncLocalScoresToServer, 2500);
 </script>
 <!-- CASE OPEN OVERLAY -->
 <div id="case-open-ov">
