@@ -4497,71 +4497,65 @@ function resumeTimer(){
  * Вывод: Adsgram → TON → @wallet (Telegram) → биржа → карта
  * ════════════════════════════════════════════════════════════ */
 
-const ADSGRAM_REWARD_ID       = '25289'; // Reward — спины и подсказки (обязательный просмотр)
-const ADSGRAM_INTERSTITIAL_ID = '25294'; // Interstitial — продолжить игру (скипается через 5с)
+// ─── Adsgram: один блок 25294 для всех форматов ─────────────────────────────
+const ADSGRAM_BLOCK_ID = '25294';
 
-/* ══ РЕКЛАМА ВКЛЮЧЕНА (ADS_DISABLED=false — Adsgram работает) ══
-   Поставь true чтобы отключить (doAd сразу выдаёт награду). */
+/* ══ РЕКЛАМА: поставь true чтобы отключить (doAd сразу выдаёт награду) ══ */
 const ADS_DISABLED = false;
 
 let adCallback = null;
-let _adsgramRewardCtrl    = null; // контроллер Reward
-let _adsgramInterstitial  = null; // контроллер Interstitial
-let _lastInterstitialTs   = 0;    // timestamp последнего показа interstitial
-const INTERSTITIAL_COOLDOWN = 180000; // 3 минуты между interstitial
+let _adsgramCtrl = null;          // единственный контроллер
+let _adsgramIniting = false;       // защита от повторной инициализации
+let _lastAdTs = 0;                 // timestamp последнего любого показа
+const AD_COOLDOWN = 10000;         // 10 сек между любыми показами — защита от 3 подряд
 
-// Инициализация Adsgram — вызывается один раз при старте
+// Инициализация — один раз, через onload SDK чтобы не было retry-петли
 function initAdsgram(){
-  if(ADS_DISABLED) return;
-  // Ждём загрузки SDK (sad.min.js грузится async)
-  if(!window.Adsgram){
-    setTimeout(initAdsgram, 500);
-    return;
-  }
+  if(ADS_DISABLED || _adsgramCtrl || _adsgramIniting) return;
+  _adsgramIniting = true;
   try {
-    _adsgramRewardCtrl = window.Adsgram.init({ blockId: ADSGRAM_REWARD_ID, debug: false });
-    console.log('[Adsgram] Reward controller ready, blockId=' + ADSGRAM_REWARD_ID);
-  } catch(e) { console.warn('[Adsgram] Reward init error', e); }
-
-  if(ADSGRAM_INTERSTITIAL_ID){
-    try {
-      _adsgramInterstitial = window.Adsgram.init({ blockId: ADSGRAM_INTERSTITIAL_ID, debug: false });
-      console.log('[Adsgram] Interstitial controller ready, blockId=' + ADSGRAM_INTERSTITIAL_ID);
-    } catch(e) { console.warn('[Adsgram] Interstitial init error', e); }
+    // Adsgram.init() вызываем ОДИН РАЗ — один объект на весь блок
+    _adsgramCtrl = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    console.log('[Adsgram] ready, blockId=' + ADSGRAM_BLOCK_ID);
+  } catch(e) {
+    console.warn('[Adsgram] init error', e);
+    _adsgramIniting = false;
+    _adsgramCtrl = null;
   }
 }
-// Запускаем после загрузки страницы
-setTimeout(initAdsgram, 1000);
+// Ждём загрузки SDK через событие — никаких setTimeout-петель
+(function(){
+  const sdkScript = document.querySelector('script[src*="sad.adsgram.ai"]');
+  if(sdkScript) sdkScript.addEventListener('load', initAdsgram);
+  // Запасной вариант — если уже загружен
+  setTimeout(()=>{ if(!_adsgramCtrl) initAdsgram(); }, 2000);
+})();
 
-// ─── Rewarded Ad — вызывается по нажатию кнопки игроком ─────────────────────
-// ─── Reward Ad — для спинов и подсказки (досмотреть обязательно) ────────────
+// ─── Показ рекламы — единая точка входа ──────────────────────────────────────
+// onDone() вызывается ВСЕГДА: и после просмотра, и после пропуска/ошибки
+function _showAd(onDone){
+  if(ADS_DISABLED){ onDone(); return; }
+  // Защита от спама — не показываем чаще раза в 10 сек
+  const now = Date.now();
+  if(now - _lastAdTs < AD_COOLDOWN){ onDone(); return; }
+  if(!_adsgramCtrl){ onDone(); return; }
+  _lastAdTs = now;
+  _adsgramCtrl.show()
+    .then(() => onDone())
+    .catch(() => onDone()); // ошибка/пропуск — всё равно продолжаем
+}
+
+// ─── Reward: спины и подсказка ───────────────────────────────────────────────
 function doAd(type){
   adCallback = type;
-  if(ADS_DISABLED){ giveAdReward(type); return; }
   submitEvent('ad_shown', mode, 0, `type:${type}`);
-  if(_adsgramRewardCtrl){
-    _adsgramRewardCtrl.show()
-      .then(() => { giveAdReward(type); })  // досмотрел → выдаём награду
-      .catch(() => { giveAdReward(type); }); // пропустил/ошибка → всё равно даём (UX)
-    return;
-  }
-  // SDK ещё не готов — сразу даём награду
-  giveAdReward(type);
+  _showAd(() => giveAdReward(type));
 }
 
-// ─── Interstitial — для "Продолжить" (скипается через 5с, игра продолжается всегда) ──
+// ─── Продолжить / Speed: реклама → игра продолжается в любом случае ──────────
 function showInterstitialThenContinue(callback){
-  if(ADS_DISABLED){ callback(); return; }
-  const now = Date.now();
-  // Кулдаун 3 мин — не показываем слишком часто
-  if(now - _lastInterstitialTs < INTERSTITIAL_COOLDOWN){ callback(); return; }
-  if(!_adsgramInterstitial){ callback(); return; }
-  _lastInterstitialTs = now;
   submitEvent('ad_shown', mode, 0, 'type:interstitial');
-  // И .then() и .catch() → продолжаем игру. Пользователь не должен быть заблокирован.
-  _adsgramInterstitial.show()
-    .then(() => { callback(); })
-    .catch(() => { callback(); });
+  _showAd(callback);
 }
 
 function goUseContinue(){
