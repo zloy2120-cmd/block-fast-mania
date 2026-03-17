@@ -8,34 +8,10 @@
 <title>⚡ Block Fast Mania</title>
 <!-- Yandex RTB — загружается внизу страницы, не блокирует -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
-<!-- RichAds TMA SDK (rewarded only — auto-interstitial disabled) -->
-<script id="richads-sdk">
-// Загружаем SDK динамически после того как перехватчик уже установлен
-(function(){
-  // Перехватчик: блокируем любые авто-вызовы interstitial/onboarding до нашей инициализации
-  // SDK tg-ob.js может сам вызывать showAd/show при загрузке — блокируем это
-  window._richadsAutoBlocked = true;
-  const _orig = window.TelegramAdsController;
-  // Патч: после загрузки SDK подменяем авто-триггеры
-  Object.defineProperty(window, 'TelegramAdsController', {
-    configurable: true,
-    set: function(cls){
-      // Сохраняем оригинальный класс
-      window._TelegramAdsControllerClass = cls;
-    },
-    get: function(){
-      return window._TelegramAdsControllerClass;
-    }
-  });
-  const s = document.createElement('script');
-  s.src = 'https://richinfo.co/richpartners/telegram/js/tg-ob.js';
-  s.async = true;
-  s.id = 'richads-sdk-src';
-  s.onload = function(){ window._richadsAutoBlocked = false; };
-  document.head.appendChild(s);
-})();
-</script>
 
+
+<!-- Adsgram SDK — нативная реклама для Telegram Mini Apps -->
+<script src="https://sad.adsgram.ai/js/sad.min.js" async></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1765,7 +1741,7 @@ body[class*="theme-"] .g-header {
     <button class="m-bp-btn" onclick="showBP()">
       <div class="m-bp-ico">⚡</div>
       <div class="m-bp-texts">
-        <div class="m-bp-name">Battle Pass · Сезон 1</div>
+        <div class="m-bp-name">Battle Pass · <span id="lbl-season1"></span></div>
         <div class="m-bp-xp-bar"><div class="m-bp-xp-fill" id="m-bp-xp-fill" style="width:0%"></div></div>
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:3px;" id="m-bp-sub-lbl">0 / 500 XP</div>
       </div>
@@ -1819,7 +1795,7 @@ body[class*="theme-"] .g-header {
         </div>
         <div class="mlb-arrow">›</div>
       </button>
-      <button class="m-ach-btn-small" onclick="showAchievements()" title="Ачивменты">
+      <button class="m-ach-btn-small" onclick="showAchievements()" id="btn-ach-title" title="">
         <span style="font-size:22px">🏅</span>
         <span class="m-ach-small-lbl">Ачивки</span>
       </button>
@@ -1899,7 +1875,7 @@ body[class*="theme-"] .g-header {
   <div class="bp-head">
     <button class="board-back" onclick="goBack()">Назад</button>
     <div class="board-title">⚡ BATTLE PASS</div>
-    <div class="bp-season-tag">Сезон 1</div>
+    <div class="bp-season-tag" id="lbl-season2"></div>
   </div>
   <div class="bp-xp-bar-wrap">
     <div class="bp-xp-label">
@@ -1911,7 +1887,7 @@ body[class*="theme-"] .g-header {
   </div>
   <!-- Boosts inventory -->
   <div class="bp-boosts-section">
-    <div class="bp-section-title">🚀 Мои бусты</div>
+    <div class="bp-section-title" id="lbl-myboosts"></div>
     <div class="bp-boosts-grid" id="bp-boosts-grid"></div>
   </div>
   <div class="bp-levels" id="bp-levels"></div>
@@ -1949,20 +1925,20 @@ body[class*="theme-"] .g-header {
 <div id="settings-backdrop" onclick="closeSettings()"></div>
 <div id="settings-panel">
   <div class="sp-title">⚙ НАСТРОЙКИ</div>
-  <div class="sp-row"><span class="sp-lbl">🔊 Звук</span><button class="toggle on" id="t-sound" onclick="toggleSetting('sound')"></button></div>
-  <div class="sp-row"><span class="sp-lbl">📳 Вибрация</span><button class="toggle on" id="t-vibro" onclick="toggleSetting('vibro')"></button></div>
+  <div class="sp-row"><span class="sp-lbl"><span id="lbl-sound"></span></span><button class="toggle on" id="t-sound" onclick="toggleSetting('sound')"></button></div>
+  <div class="sp-row"><span class="sp-lbl"><span id="lbl-vibro"></span></span><button class="toggle on" id="t-vibro" onclick="toggleSetting('vibro')"></button></div>
   <!-- ⚡ IN-GAME BOOSTS -->
   <div class="sp-boost-section">
     <div class="sp-boost-title">⚡ ТВОИ БУСТЫ</div>
     <div class="sp-boost-list" id="sp-boost-list"></div>
   </div>
-  <button class="sp-skin-btn" style="margin-top:10px;" onclick="closeSettings();showSkins()">🎨 Скины и Темы</button>
+  <button class="sp-skin-btn" style="margin-top:10px;" onclick="closeSettings();showSkins()"><span id="lbl-skins"></span></button>
   <button class="sp-skin-btn" style="background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(34,211,238,.2));border-color:rgba(167,139,250,.4);color:#c4b5fd;margin-top:8px;" onclick="closeSettings();showBP()">⚡ Battle Pass</button>
-  <button class="sp-achieve-btn" onclick="closeSettings();showAchievements()">🏅 Ачивменты</button>
+  <button class="sp-achieve-btn" onclick="closeSettings();showAchievements()"><span id="lbl-ach"></span></button>
 
   <div style="display:flex;gap:8px;margin-top:8px;">
-    <button class="sp-menu-btn" style="flex:1;" onclick="closeSettings()">✕ Продолжить</button>
-    <button class="sp-menu-btn" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171;" onclick="closeSettings();goMenu()">🏠 Меню</button>
+    <button class="sp-menu-btn" style="flex:1;" onclick="closeSettings()"><span id="lbl-resume"></span></button>
+    <button class="sp-menu-btn" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171;" onclick="closeSettings();goMenu()"><span id="lbl-menu1"></span></button>
   </div>
 </div>
 
@@ -2028,28 +2004,28 @@ body[class*="theme-"] .g-header {
 
     <!-- CONTINUE section (classic/mini) -->
     <div class="go-section go-continue-only">
-      <div class="go-sep-label">— Продолжить? —</div>
+      <div class="go-sep-label" id="lbl-continueq1"></div>
       <div class="go-btns-row">
         <!-- Stars временно отключены (нет доступа в РФ)
         <button class="go-btn go-half go-stars" onclick="goStarsContinue()">⭐ 25 Stars</button>
         -->
-        <button class="go-btn go-continue-main" id="go-continue-btn" onclick="goUseContinue()">▶️ Продолжить</button>
+        <button class="go-btn go-continue-main" id="go-continue-btn" onclick="goUseContinue()">▶️ <span id="lbl-cont1"></span></button>
       </div>
     </div>
 
     <!-- ADD TIME section (speed only) -->
     <div class="go-section go-speed-only">
-      <div class="go-sep-label">— Продолжить? —</div>
+      <div class="go-sep-label" id="lbl-continueq2"></div>
       <div class="go-btns-row">
-        <button class="go-btn go-continue-main" id="go-speed-continue-btn" onclick="goSpeedContinue()">▶️ Продолжить (+10 сек)</button>
+        <button class="go-btn go-continue-main" id="go-speed-continue-btn" onclick="goSpeedContinue()">▶️ <span id="lbl-cont-speed"></span></button>
       </div>
     </div>
 
     <!-- Main actions -->
     <div class="go-btns-main">
-      <button class="go-btn go-new" onclick="restartGame()">🔄 Новая игра</button>
-      <button class="go-btn go-share" id="go-share-btn" onclick="shareResult()">📤 Поделиться</button>
-      <button class="go-btn go-menu-btn" onclick="goMenu()">🏠 Меню</button>
+      <button class="go-btn go-new" id="lbl-newgame" onclick="restartGame()"></button>
+      <button class="go-btn go-share" id="go-share-btn" onclick="shareResult()"><span id="lbl-share"></span></button>
+      <button class="go-btn go-menu-btn" id="lbl-gomenu" onclick="goMenu()"></button>
     </div>
   </div>
 </div>
@@ -2290,7 +2266,7 @@ function renderSpBoosts(){
     list.appendChild(el);
   });
   if(!any){
-    list.innerHTML = '<div class="sp-no-boosts" style="grid-column:1/-1">Нет бустов · получи в Battle Pass</div>';
+    list.innerHTML = `<div class="sp-no-boosts" style="grid-column:1/-1">${t('noBoosts')}</div>`;
   }
 }
 function spToggleBoost(id){
@@ -2758,6 +2734,46 @@ const T={
     records:'🏅 Рекорды',back:'Назад',
     dailyDesc:'одинаково для всех!',
     timeUp:'Время вышло!',
+    // Настройки
+    sound:'Звук',vibro:'Вибрация',
+    skinsThemes:'Скины и Темы',achievements:'Ачивки',
+    resume:'✕ Продолжить',menu:'🏠 Меню',
+    // Game Over
+    continueQ:'— Продолжить? —',
+    continueBtn:'▶️ Продолжить',
+    continueBtnSpeed:'▶️ Продолжить (+10 сек)',
+    // Battle Pass
+    season:'Сезон 1',myBoosts:'🚀 Мои бусты',
+    totalXP:'Всего: ',
+    maxReached:'Максимум!',allCollected:'🏆 Всё собрано',
+    bpLevelUp:'Battle Pass: Уровень',
+    boostsEmpty:'Бусты появятся по мере прокачки BP',
+    claimed:'✅ Получено',available:'Доступно к получению',
+    claimBtn:'Забрать',openBtn:'🎲 Открыть',
+    reward:'Награда: ',caseOpened:'Кейс открыт! 🎲',
+    // Кейс
+    openCase:'Открыть! 🔓',pressToOpen:'Нажми кнопку чтобы открыть',
+    youGot:'Ты получил:',
+    // Daily
+    dailyTitle:'🎁 ЕЖЕДНЕВНАЯ НАГРАДА',
+    dailySubtitle:'Заходи каждый день — получай бонусы!',
+    streak:'🔥 Серия: ',streakDays:' / 7 дней',
+    dayLabel:'День ',
+    claimDaily:'Забрать! 🎁',tomorrowDaily:'Завтра 🌙',
+    // Спин
+    spinLeft:' ост.',spinTomorrow:'Завтра 🌙',
+    spinLocked:'🔒 СПИН заблокирован',
+    spinLockedMsg:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне ',
+    bankLocked:'🔒 БАНК + СПИН',
+    bankLockedMsg:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне ',
+    skinLocked:'🔒 Скин заблокирован',
+    skinLockedMsg:'Открой этот скин из кейса Боевого Пропуска!',
+    themeLocked:'🔒 Тема заблокирована',
+    themeLockedMsg:'Открой эту тему из кейса Боевого Пропуска!',
+    spinEmpty:'Бесплатные спины кончились на сегодня. Приходи завтра!',
+    // Бусты
+    noBoosts:'Нет бустов · получи в Battle Pass',
+    boostActive:'✓ Активен',
   },
   en:{
     classic:'Classic',mini:'Mini',speed:'Speed',daily:'Daily',
@@ -2774,6 +2790,46 @@ const T={
     records:'🏅 Records',back:'Back',
     dailyDesc:'same for everyone!',
     timeUp:'Time\'s Up!',
+    // Settings
+    sound:'Sound',vibro:'Vibration',
+    skinsThemes:'Skins & Themes',achievements:'Achievements',
+    resume:'✕ Resume',menu:'🏠 Menu',
+    // Game Over
+    continueQ:'— Continue? —',
+    continueBtn:'▶️ Continue',
+    continueBtnSpeed:'▶️ Continue (+10 sec)',
+    // Battle Pass
+    season:'Season 1',myBoosts:'🚀 My Boosts',
+    totalXP:'Total: ',
+    maxReached:'Maximum!',allCollected:'🏆 All collected',
+    bpLevelUp:'Battle Pass: Level',
+    boostsEmpty:'Boosts will appear as you level up BP',
+    claimed:'✅ Claimed',available:'Available',
+    claimBtn:'Claim',openBtn:'🎲 Open',
+    reward:'Reward: ',caseOpened:'Case opened! 🎲',
+    // Case
+    openCase:'Open! 🔓',pressToOpen:'Press button to open',
+    youGot:'You got:',
+    // Daily
+    dailyTitle:'🎁 DAILY REWARD',
+    dailySubtitle:'Come back every day — get bonuses!',
+    streak:'🔥 Streak: ',streakDays:' / 7 days',
+    dayLabel:'Day ',
+    claimDaily:'Claim! 🎁',tomorrowDaily:'Tomorrow 🌙',
+    // Spin
+    spinLeft:' left',spinTomorrow:'Tomorrow 🌙',
+    spinLocked:'🔒 SPIN locked',
+    spinLockedMsg:'Unlock BANK & SPIN in Battle Pass at level ',
+    bankLocked:'🔒 BANK & SPIN',
+    bankLockedMsg:'Unlock BANK & SPIN in Battle Pass at level ',
+    skinLocked:'🔒 Skin locked',
+    skinLockedMsg:'Unlock this skin from a Battle Pass case!',
+    themeLocked:'🔒 Theme locked',
+    themeLockedMsg:'Unlock this theme from a Battle Pass case!',
+    spinEmpty:'Free spins are over for today. Come back tomorrow!',
+    // Boosts
+    noBoosts:'No boosts · get them in Battle Pass',
+    boostActive:'✓ Active',
   }
 };
 function t(key){return T[LANG][key]||T.ru[key]||key;}
@@ -2787,7 +2843,29 @@ function applyLang(){
     'mb-view-all-btn':t('viewAll'),
     'mlb-sub-txt': LANG==='ru'?'Топ игроков · все режимы':'Top players · all modes',
     'board-title-txt':t('records'),
+    // Settings
+    'lbl-sound':t('sound'),'lbl-vibro':t('vibro'),
+    'lbl-skins':t('skinsThemes'),'lbl-ach':t('achievements'),
+    'lbl-resume':t('resume'),'lbl-menu1':t('menu'),
+    // BP
+    'lbl-season1':t('season'),'lbl-season2':t('season'),
+    'lbl-myboosts':t('myBoosts'),
+    // Game Over
+    'lbl-continueq1':'— '+t('continueQ')+' —',
+    'lbl-continueq2':'— '+t('continueQ')+' —',
+    'lbl-cont1':t('continueBtn').replace('▶️ ',''),
+    'lbl-cont-speed':t('continueBtnSpeed').replace('▶️ ',''),
+    'lbl-newgame':t('newGame'),'lbl-share':t('share'),'lbl-gomenu':t('menu'),
+    // Daily
+    'lbl-daily-title':t('dailyTitle'),
+    'lbl-daily-sub':t('dailySubtitle'),
+    'lbl-daily-claim':t('claimDaily'),
+    // Case
+    'lbl-case-btn':t('openCase').replace('! 🔓',''),
   };
+  // title атрибут для кнопки ачивментов
+  const achBtn=document.getElementById('btn-ach-title');
+  if(achBtn) achBtn.title=t('achievements').replace('🏅 ','');
   Object.entries(map).forEach(([id,txt])=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
 }
 
@@ -3258,7 +3336,7 @@ function rotHeld(){
   if(isBankSpinUnlocked()){
     if(getSpinLeft()<=0){
       vibrate('go');
-      tg?.showPopup?.({title:'🌙 Спины закончились',message:'Бесплатные спины кончились на сегодня. Приходи завтра!',buttons:[{id:'ok',type:'ok'}]});
+      tg?.showPopup?.({title:LANG==='ru'?'🌙 Спины закончились':'🌙 Spins over',message:t('spinEmpty'),buttons:[{id:'ok',type:'ok'}]});
       return;
     }
     // Отмечаем что спин был использован — -1 спишется только при постановке на поле
@@ -4335,7 +4413,10 @@ function showGO(){
     document.getElementById('go-emoji').textContent='💔';
     document.getElementById('go-title').textContent=t('gameOver');
   }
-  document.getElementById('go').classList.add('show');
+  // Adsgram Interstitial — показываем перед экраном результатов (≤1 раза в 3 мин)
+  maybeShowInterstitial().finally(() => {
+    document.getElementById('go').classList.add('show');
+  });
   // Кнопка Продолжить — до 3 раз за игру, через CSS класс
   const cbtn=document.getElementById('go-continue-btn');
   if(cbtn){
@@ -4344,7 +4425,7 @@ function showGO(){
       cbtn.closest('.go-section').style.display='none';
     } else {
       cbtn.closest('.go-section').style.display='';
-      cbtn.textContent=left < CONTINUE_MAX ? `▶️ Продолжить (${left}/${CONTINUE_MAX})` : '▶️ Продолжить';
+      cbtn.textContent=left < CONTINUE_MAX ? `▶️ ${t('continueBtn').replace('▶️ ','')} (${left}/${CONTINUE_MAX})` : '▶️ Продолжить';
     }
   }
   // Speed: кнопка +10сек — тоже до 3 раз за игру
@@ -4411,108 +4492,75 @@ function resumeTimer(){
 }
 
 /* ══ AD / MONETIZATION ══ */
-/* ══════════════════════════════════════════════════════
- * РЕКЛАМА: RichAds (Rewarded Video) + Adsterra (Bottom Banner)
+/* ══ РЕКЛАМА: Adsgram (Rewarded + Interstitial) ══════════════════════════
  *
- * ── RichAds ──────────────────────────────────────────
- * Получи pubId и appId в кабинете publishers.richads.com:
- *   Profile → My Apps → создай приложение → скопируй ID
+ * Reward blockId:        25289  — досмотр → награда (продолжить / спины / подсказка)
+ * Interstitial blockId:  TODO   — после game over, не чаще 1 раза в 3 мин
  *
- * ── Adsterra (нижний баннер) ─────────────────────────
- * Зарегистрируйся на adsterra.com как Publisher →
- * Добавь сайт blockfastmania.ru → Banner 320×50 →
- * Скопируй src из полученного <script src="...">
- * ════════════════════════════════════════════════════ */
-const RICHADS_PUB_ID  = '1004799';   // RichAds Publisher ID
-const RICHADS_APP_ID  = '6493';       // RichAds App ID
+ * Вывод: Adsgram → TON → @wallet (Telegram) → биржа → карта
+ * ════════════════════════════════════════════════════════════ */
 
-/* ══ РЕКЛАМА ВРЕМЕННО ОТКЛЮЧЕНА ══
-   Чтобы включить — поменяй на false.
-   При false=выкл: RichAds не инициализируется, баннер не грузится,
-   doAd() сразу даёт награду (как будто досмотрел). */
-const ADS_DISABLED = true;
+const ADSGRAM_REWARD_ID       = '25289'; // Reward — нажатие кнопки игроком
+const ADSGRAM_INTERSTITIAL_ID = '';      // TODO: вставить ID после создания блока
 
-// ─── Нижний баннер Adsterra 320×50 ──────────────────────────────────────────
-const TADS_WIDGET_ID = ''; // Tads отключён (CDN не работает)
-const TADS_WIDGET_TYPE = '';
-const BOTTOM_BANNER_SRC = 'https://www.highperformanceformat.com/0ec81b33f6588a840e86be997d89de2b/invoke.js';
-const ADSTERRA_KEY = '0ec81b33f6588a840e86be997d89de2b';
+/* ══ РЕКЛАМА ВКЛЮЧЕНА (ADS_DISABLED=false — Adsgram работает) ══
+   Поставь true чтобы отключить (doAd сразу выдаёт награду). */
+const ADS_DISABLED = false;
 
 let adCallback = null;
-let _richadsController = null;
-let _richadsReady = false;
-let _bottomBannerLoaded = false;
+let _adsgramRewardCtrl    = null; // контроллер Reward
+let _adsgramInterstitial  = null; // контроллер Interstitial
+let _lastInterstitialTs   = 0;    // timestamp последнего показа interstitial
+const INTERSTITIAL_COOLDOWN = 180000; // 3 минуты между interstitial
 
-// Инициализация RichAds (точно по документации richads.com)
-function initRichAds(){
-  if(ADS_DISABLED) return; // реклама отключена
-  if(!window._TelegramAdsControllerClass) return;
-  if(_richadsReady) return;
-  try {
-    const ctrl = new window._TelegramAdsControllerClass();
-    ctrl.initialize({
-      pubId: RICHADS_PUB_ID,
-      appId: RICHADS_APP_ID,
-      autoShow: false,        // отключаем авто-interstitial
-      interstitial: false,    // дополнительный флаг отключения авто
-      onboarding: false,      // отключаем onboarding-показы
-    });
-    _richadsController = ctrl;
-    window.TelegramAdsController = ctrl; // для совместимости
-    _richadsReady = true;
-    console.log('[RichAds] initialized ok (rewarded-only mode)');
-  } catch(e){ console.warn('[RichAds] init error', e); }
-}
-// Запуск: после загрузки SDK
-(function(){
-  const tryInit = () => {
-    if(window._TelegramAdsControllerClass){ initRichAds(); return; }
-    const sdk = document.getElementById('richads-sdk-src');
-    if(sdk) sdk.addEventListener('load', initRichAds);
-  };
-  tryInit();
-  setTimeout(initRichAds, 3000);
-})();
-
-// Загрузка нижнего баннера Adsterra 320×50
-function loadBottomBanner(){
-  if(ADS_DISABLED) return; // реклама отключена
-  if(_bottomBannerLoaded) return;
-  const inner = document.getElementById('ad-banner-inner');
-  if(!inner) return;
-  _bottomBannerLoaded = true;
-
-  // Adsterra: сначала atOptions, потом invoke.js
-  window.atOptions = {
-    'key'   : ADSTERRA_KEY,
-    'format': 'iframe',
-    'height': 50,
-    'width' : 320,
-    'params': {}
-  };
-  const s = document.createElement('script');
-  s.src = BOTTOM_BANNER_SRC;
-  s.async = true;
-  s.setAttribute('data-cfasync','false');
-  s.onload = () => console.log('[Adsterra] Banner loaded OK');
-  s.onerror = () => console.warn('[Adsterra] Banner load failed');
-  inner.appendChild(s);
-}
-
-function doAd(type){
-  adCallback = type;
-  // При отключённой рекламе — сразу выдаём награду (тестовый режим)
-  if(ADS_DISABLED){ giveAdReward(type); return; }
-  submitEvent('ad_shown', mode, 0, `type:${type}`); // v108: аналитика рекламы
-  // RichAds Rewarded Video — основной источник
-  if(_richadsReady && _richadsController){
-    _richadsController.triggerInterstitialVideo()
-      .then(()  => { giveAdReward(type); })
-      .catch(()  => { showFakeAd(type);  });
+// Инициализация Adsgram — вызывается один раз при старте
+function initAdsgram(){
+  if(ADS_DISABLED) return;
+  // Ждём загрузки SDK (sad.min.js грузится async)
+  if(!window.Adsgram){
+    setTimeout(initAdsgram, 500);
     return;
   }
-  // Fallback
+  try {
+    _adsgramRewardCtrl = window.Adsgram.init({ blockId: ADSGRAM_REWARD_ID, debug: false });
+    console.log('[Adsgram] Reward controller ready, blockId=' + ADSGRAM_REWARD_ID);
+  } catch(e) { console.warn('[Adsgram] Reward init error', e); }
+
+  if(ADSGRAM_INTERSTITIAL_ID){
+    try {
+      _adsgramInterstitial = window.Adsgram.init({ blockId: ADSGRAM_INTERSTITIAL_ID, debug: false });
+      console.log('[Adsgram] Interstitial controller ready, blockId=' + ADSGRAM_INTERSTITIAL_ID);
+    } catch(e) { console.warn('[Adsgram] Interstitial init error', e); }
+  }
+}
+// Запускаем после загрузки страницы
+setTimeout(initAdsgram, 1000);
+
+// ─── Rewarded Ad — вызывается по нажатию кнопки игроком ─────────────────────
+function doAd(type){
+  adCallback = type;
+  if(ADS_DISABLED){ giveAdReward(type); return; }
+  submitEvent('ad_shown', mode, 0, `type:${type}`);
+  if(_adsgramRewardCtrl){
+    _adsgramRewardCtrl.show()
+      .then(() => { giveAdReward(type); })   // досмотрел — выдаём награду
+      .catch(() => { showFakeAd(type); });   // пропустил или ошибка
+    return;
+  }
+  // SDK ещё не готов — fallback
   showFakeAd(type);
+}
+
+// ─── Interstitial — показывается после game over, не чаще раза в 3 мин ──────
+function maybeShowInterstitial(){
+  if(ADS_DISABLED) return Promise.resolve();
+  if(!ADSGRAM_INTERSTITIAL_ID) return Promise.resolve(); // ID ещё не задан
+  if(!_adsgramInterstitial) return Promise.resolve();
+  const now = Date.now();
+  if(now - _lastInterstitialTs < INTERSTITIAL_COOLDOWN) return Promise.resolve();
+  _lastInterstitialTs = now;
+  submitEvent('ad_shown', mode, 0, 'type:interstitial');
+  return _adsgramInterstitial.show().catch(() => {}); // ошибки игнорируем — не критично
 }
 
 function goUseContinue(){
@@ -4526,14 +4574,14 @@ function goUseContinue(){
     continuePlaying();
     return;
   }
-  // Иначе — показываем рекламу
+  // Иначе — показываем rewarded рекламу
   doAd('continue');
 }
 function goSpeedContinue(){
   doAd('speed_time');
 }
 
-/* ══ REWARDED ADS — дополнительные точки монетизации ══ */
+/* ══ REWARDED ADS — точки монетизации ══ */
 // +3 спина за рекламу (когда лимит кончился)
 function doAdSpins(){
   vibrate('menu');
@@ -4550,108 +4598,6 @@ function doAdHint(){
 }
 let _hintUsedThisGame=false;
 
-// Подсвечиваем лучшее место для размещения — ищем по всем 3 фигурам
-function showBestHint(){
-  if(dead||locked)return;
-  _hintUsedThisGame=true;
-  let bestResult=null; // {si, sr, sc, linesCleared}
-  const allPieces=[...pieces.map((p,i)=>({p,si:i})), held?{p:held,si:'h'}:null].filter(Boolean);
-  for(const{p,si} of allPieces){
-    if(!p)continue;
-    for(let r=0;r<=N-p.shape.length;r++){
-      for(let c=0;c<=N-p.shape[0].length;c++){
-        if(!canP(p.shape,r,c))continue;
-        // Симулируем размещение
-        const sim=grid.map(row=>[...row]);
-        for(let dr=0;dr<p.shape.length;dr++)for(let dc=0;dc<p.shape[0].length;dc++){
-          if(p.shape[dr][dc])sim[r+dr][c+dc]=p.ci;
-        }
-        let cleared=0;
-        for(let rr=0;rr<N;rr++)if(sim[rr].every(v=>v>=0))cleared++;
-        for(let cc=0;cc<N;cc++)if(sim.every(row=>row[cc]>=0))cleared++;
-        if(!bestResult||cleared>bestResult.linesCleared||(cleared===bestResult.linesCleared&&Math.random()>.7)){
-          bestResult={si,sr:r,sc:c,shape:p.shape,linesCleared:cleared};
-        }
-      }
-    }
-  }
-  if(!bestResult)return;
-  // Выбираем фигуру-подсказку в трее
-  if(bestResult.si!=='h'&&bestResult.si>=0&&bestResult.si<3){
-    sel=bestResult.si;renderPieces();
-  } else if(bestResult.si==='h'){
-    sel='h';renderHold();
-  }
-  // Подсвечиваем позицию
-  const p=(bestResult.si==='h')?held:pieces[bestResult.si];
-  if(!p)return;
-  showHL(p.shape,bestResult.sr,bestResult.sc,true,bestResult.si);
-  vibrate('combo');
-  // Показываем баннер-подсказку
-  const hintBanner=document.getElementById('hint-banner');
-  if(hintBanner){
-    hintBanner.classList.add('show');
-    setTimeout(()=>hintBanner.classList.remove('show'),2500);
-  }
-  // Через 3 секунды — убираем подсветку
-  setTimeout(()=>{ clearHL(); sel=-1; renderPieces(); renderHold(); }, 3000);
-}
-function giveAdReward(type){
-  vibrate('line');
-  submitEvent('ad_rewarded', mode, 0, `type:${type}`); // v108: аналитика вознаграждения
-  if(type==='speed_time'){
-    const btn=document.getElementById('go-speed-continue-btn');
-    if(btn) btn.closest('.go-section').style.display='none';
-    _continueCountThisGame++;
-    addSpeedTime(10,'📺 +10 сек');
-  } else if(type==='continue'){
-    // Скрываем кнопку — continuePlaying сам инкрементирует счётчик
-    const btn=document.getElementById('go-continue-btn');
-    if(btn) btn.closest('.go-section').style.display='none';
-    continuePlaying();
-  } else if(type==='spins'){
-    // +3 спина за рекламу
-    const today=_getSpinDateKey();
-    const used=getSpinUsesToday();
-    const limit=getSpinDailyLimit();
-    // Сбрасываем сегодняшний лимит — даём ещё 3 спина
-    safeSet('bfm_spin_date',today);
-    safeSet('bfm_spin_uses',String(Math.max(0,used-3)));
-    vibrate('combo');
-    renderHold();
-    const n=document.createElement('div');
-    n.style.cssText='position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-family:Bungee,cursive;font-size:14px;padding:10px 22px;border-radius:14px;z-index:3000;white-space:nowrap;animation:toastIn .4s cubic-bezier(.34,1.56,.64,1)';
-    n.textContent='📺 +3 СПИНА получено!';
-    document.body.appendChild(n);
-    setTimeout(()=>n.remove(),2000);
-  } else if(type==='hint'){
-    // Показываем подсказку
-    showBestHint();
-  }
-}
-
-function showFakeAd(type){
-  const ov=document.getElementById('ad-ov'),tc=document.getElementById('ad-cnt'),sk=document.getElementById('skip-ad');
-  document.getElementById('ad-label').innerHTML=type==='speed_time'
-    ?'Досмотри — получи <strong style="color:#fff">+10 секунд!</strong>'
-    :'Досмотри — получи продолжение<br><strong style="color:#fff">бесплатно!</strong>';
-  ov.classList.add('show');sk.style.display='none';
-  // Рендерим Яндекс баннер R-A-18894418-2 как fallback
-  const yDiv=document.getElementById('yandex_rtb_R-A-18894418-2');
-  if(yDiv){yDiv.innerHTML='';}
-  try{
-    window.yaContextCb=window.yaContextCb||[];
-    window.yaContextCb.push(()=>{
-      Ya.Context.AdvManager.render({
-        blockId:'R-A-18894418-2',
-        renderTo:'yandex_rtb_R-A-18894418-2'
-      });
-    });
-  }catch(e){}
-  let adTimer=10;tc.textContent=adTimer;
-  const iv=setInterval(()=>{adTimer--;tc.textContent=adTimer;if(adTimer<=0){clearInterval(iv);tc.textContent='✓';sk.style.display='block';}},1000);
-  sk.onclick=()=>{ov.classList.remove('show');giveAdReward(type);};
-}
 function addSpeedTime(secs,label){
   timSec=Math.min(timSec+secs,300);
   document.getElementById('go').classList.remove('show');
@@ -4695,7 +4641,7 @@ async function createStarsInvoice(type){
 function fallbackStars(type){
   if(tg?.showPopup){
     tg.showPopup({
-      title: type==='continue'?'⭐ Продолжить':'⭐ +25 секунд',
+      title: type==='continue'?'⭐ '+t('continueBtn').replace('▶️ ',''):'⭐ +25 '+(LANG==='ru'?'секунд':'seconds'),
       message: type==='continue'?'25 Stars — продолжить с текущим счётом!':'25 Stars — добавить 25 секунд!',
       buttons:[{id:'ok',type:'default',text:'✅ Окей'},{id:'no',type:'cancel',text:'Отмена'}]
     }, btn=>{ if(btn==='ok'){ if(type==='continue') continuePlaying(); else addSpeedTime(25,'⭐ +25 сек'); }});
@@ -5144,12 +5090,12 @@ function updateRotBtn(){
   if(!unlocked){
     btn.className='bp-locked';
     btn.innerHTML='🔒 СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.7;display:block">БП '+BANK_SPIN_LVL+'</span>';
-    btn.onclick=()=>{ vibrate('go'); tg?.showPopup?.({title:'🔒 СПИН заблокирован',message:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне '+BANK_SPIN_LVL+'!',buttons:[{id:'ok',type:'ok'}]}); };
+    btn.onclick=()=>{ vibrate('go'); tg?.showPopup?.({title:t('spinLocked'),message:t('spinLockedMsg')+BANK_SPIN_LVL+'!',buttons:[{id:'ok',type:'ok'}]}); };
     if(adSpinsBtn)adSpinsBtn.classList.remove('show');
   } else {
     const left=getSpinLeft();
     const lim=getSpinDailyLimit();
-    btn.innerHTML='↻ СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.75;display:block">'+(left>0?left+'/'+lim+' ост.':'Завтра 🌙')+'</span>';
+    btn.innerHTML='↻ СПИН<span id="spin-count-badge" style="font-size:9px;opacity:.75;display:block">'+(left>0?left+'/'+lim+t('spinLeft'):'Завтра 🌙')+'</span>';
     btn.onclick=rotHeld;
     // v102: показываем кнопку +3 спина если лимит исчерпан
     if(adSpinsBtn){
@@ -5199,8 +5145,8 @@ function updateBankLock(){
   lockEl.onclick = unlocked ? null : ()=>{
     vibrate('go');
     tg?.showPopup?.({
-      title:'🔒 БАНК + СПИН',
-      message:'Разблокируй БАНК и СПИН в Боевом Пропуске на уровне '+BANK_SPIN_LVL+'!',
+      title:t('bankLocked'),
+      message:t('bankLockedMsg')+BANK_SPIN_LVL+'!',
       buttons:[{id:'ok',type:'ok'}]
     });
   };
@@ -5294,7 +5240,7 @@ function renderSkinsScreen() {
 function selectSkin(id) {
   if(!isSkinUnlocked(id)) {
     vibrate('go');
-    tg?.showPopup?.({title:'🔒 Скин заблокирован',message:'Открой этот скин из кейса Боевого Пропуска!',buttons:[{id:'ok',type:'ok'}]});
+    tg?.showPopup?.({title:t('skinLocked'),message:t('skinLockedMsg'),buttons:[{id:'ok',type:'ok'}]});
     return;
   }
   currentSkin = id;
@@ -6162,7 +6108,7 @@ function renderThemeGrid(){
 function selectThemeCard(id){
   if(!isBgThemeUnlocked(id)){
     vibrate('go');
-    tg?.showPopup?.({title:'🔒 Тема заблокирована',message:'Открой эту тему из кейса Боевого Пропуска!',buttons:[{id:'ok',type:'ok'}]});
+    tg?.showPopup?.({title:t('themeLocked'),message:t('themeLockedMsg'),buttons:[{id:'ok',type:'ok'}]});
     return;
   }
   const themeId = id==='default' ? '' : id;
@@ -6320,7 +6266,7 @@ function showAchUnlock(ach) {
     font-family:'Nunito',sans-serif;font-weight:900;color:#000;font-size:13px;
     box-shadow:0 8px 32px rgba(251,191,36,.5);z-index:999;
     animation:toastIn .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;`;
-  toast.innerHTML = `<span style="font-size:24px">${ach.icon}</span><div><div>Ачивмент разблокирован!</div><div style="font-size:11px;opacity:.7">${ach.title}</div></div>`;
+  toast.innerHTML = `<span style="font-size:24px">${ach.icon}</span><div><div>${LANG==='ru'?'Ачивка разблокирована!':'Achievement unlocked!'}</div><div style="font-size:11px;opacity:.7">${ach.title}</div></div>`;
   document.body.appendChild(toast);
   setTimeout(()=>toast.remove(), 3000);
 }
@@ -6637,7 +6583,7 @@ function bpAddXP(xpEarned){
 function showBPLevelUpToast(newLvl){
   const toast = document.getElementById('bp-levelup-toast');
   const txt = document.getElementById('bp-toast-text');
-  txt.textContent = `Battle Pass: Уровень ${newLvl}! 🎉`;
+  txt.textContent = t('bpLevelUp')+` ${newLvl}! 🎉`;
   toast.classList.add('show');
   setTimeout(()=>toast.classList.remove('show'), 3000);
 }
@@ -6689,7 +6635,7 @@ function renderBP(){
   const to   = BP_XP_THRESHOLDS[level+1] || from + 1000;
   const fillPct = level >= BP_LEVELS.length ? 100 : Math.min(100, (totalXP-from)/(to-from)*100);
   document.getElementById('bp-xp-fill').style.width = fillPct+'%';
-  document.getElementById('bp-total-xp').textContent = 'Всего: '+totalXP.toLocaleString()+' XP';
+  document.getElementById('bp-total-xp').textContent = t('totalXP')+totalXP.toLocaleString()+' XP';
 
   if(level < BP_LEVELS.length){
     const earned = totalXP - from;
@@ -6697,8 +6643,8 @@ function renderBP(){
     document.getElementById('bp-xp-cur-lbl').textContent = earned.toLocaleString()+' / '+needed.toLocaleString()+' XP';
     document.getElementById('bp-xp-next-lbl').textContent = (to-totalXP).toLocaleString()+' XP до ур.'+(level+1);
   } else {
-    document.getElementById('bp-xp-cur-lbl').textContent = 'Максимум!';
-    document.getElementById('bp-xp-next-lbl').textContent = '🏆 Всё собрано';
+    document.getElementById('bp-xp-cur-lbl').textContent = t('maxReached');
+    document.getElementById('bp-xp-next-lbl').textContent = t('allCollected');
   }
 
   renderBPBoosts();
@@ -6724,8 +6670,8 @@ function renderBP(){
       if(pct>0) miniTrack=`<div class="bp-mini-track"><div class="bp-mini-fill" style="width:${pct}%"></div></div>`;
     }
 
-    const xpDesc = claimed ? '✅ Получено' :
-                   reached ? 'Доступно к получению' :
+    const xpDesc = claimed ? t('claimed') :
+                   reached ? t('available') :
                    `${BP_XP_THRESHOLDS[i+1].toLocaleString()} XP`;
 
     // Подпись для кейса: шансы
@@ -6742,7 +6688,7 @@ function renderBP(){
     const btnHtml = claimed
       ? `<span class="bp-claim-btn claimed">✓</span>`
       : reached
-        ? `<button class="bp-claim-btn${isCase?' case-btn':''}" onclick="bpClaim(${lv.lvl})">${isCase?'🎲 Открыть':'Забрать'}</button>`
+        ? `<button class="bp-claim-btn${isCase?' case-btn':''}" onclick="bpClaim(${lv.lvl})">${isCase?t('openBtn'):t('claimBtn')}</button>`
         : '';
 
     card.innerHTML = `
@@ -6791,7 +6737,7 @@ function renderBPBoosts(){
     grid.appendChild(card);
   });
   if(!grid.children.length){
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:12px;color:var(--muted);padding:8px">Бусты появятся по мере прокачки BP</div>';
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;font-size:12px;color:var(--muted);padding:8px">${t('boostsEmpty')}</div>`;
   }
 }
 
@@ -6865,7 +6811,7 @@ async function bpClaim(lvlNum){
   } else {
     applyBPRewardDirect(lv);
     renderBP();
-    showBPLevelUpToast('Награда: '+lv.reward.name);
+    showBPLevelUpToast(t('reward')+lv.reward.name);
   }
 }
 
@@ -6951,13 +6897,13 @@ function openCaseOv(caseId, drop){
   openBtn.style.background  = btnSt.bg;
   openBtn.style.color       = btnSt.color;
   openBtn.style.boxShadow   = `0 4px 20px ${btnSt.shadow}`;
-  openBtn.textContent = 'Открыть! 🔓';
+  openBtn.textContent = t('openCase');
   openBtn.disabled = false;
   openBtn.onclick = ()=> triggerCaseOpen(caseId, drop);
 
   resWrap.classList.remove('show');
   document.getElementById('case-ov-title').textContent    = caseConf.name || 'Кейс';
-  document.getElementById('case-ov-subtitle').textContent = 'Нажми кнопку чтобы открыть';
+  document.getElementById('case-ov-subtitle').textContent = t('pressToOpen');
 
   ov.classList.add('show');
   vibrate([30,50,30]);
@@ -6979,10 +6925,10 @@ function triggerCaseOpen(caseId, drop){
   spawnCaseParticles();
   setTimeout(()=>{
     document.getElementById('case-chest-wrap').style.display='none';
-    document.getElementById('case-ov-subtitle').textContent = 'Ты получил:';
+    document.getElementById('case-ov-subtitle').textContent = t('youGot');
     if(drop){
       document.getElementById('case-result-ico').textContent  = drop.ico||'🎁';
-      document.getElementById('case-result-name').textContent = drop.name||'Награда';
+      document.getElementById('case-result-name').textContent = drop.name||(LANG==='ru'?'Награда':'Reward');
       document.getElementById('case-result-desc').textContent = drop.desc||'';
       const rarEl = document.getElementById('case-result-rarity');
       const rarMap = {common:'ОБЫЧНЫЙ',rare:'РЕДКИЙ',epic:'ЭПИЧЕСКИЙ',legend:'ЛЕГЕНДАРНЫЙ'};
@@ -7027,7 +6973,7 @@ function closeCaseOv(){
   document.getElementById('case-open-ov').classList.remove('show');
   document.getElementById('case-chest-wrap').style.display=''; // восстанавливаем
   document.getElementById('cs2-case').classList.remove('opening');
-  showBPLevelUpToast('Кейс открыт! 🎲');
+  showBPLevelUpToast(t('caseOpened'));
 }
 
 // ─── Обновить отображение BP в меню
@@ -7266,40 +7212,11 @@ function updateStreakHUD(){
 // Множитель серии
 function streakMult(){ return _streakActive?1.5:1; }
 
-/* ══ AD BANNER: Adsterra везде + Яндекс для СНГ ══ */
+/* ══ AD BANNER: Adsgram инициализируется при входе в игровой экран ══ */
 async function initSmartBanner(){
-  if(ADS_DISABLED) return; // реклама отключена
-  const banner = document.getElementById('ad-banner');
-  if(!banner) return;
-  if(banner.dataset.loaded) return;
-  banner.dataset.loaded = 'true';
-
-  // Adsterra sticky banner — работает везде (RU + EU + мир)
-  loadBottomBanner();
-
-  // Adsterra sticky bottom banner
-
-  // СНГ дополнительно — Яндекс floorAd (после одобрения 10 апреля)
-  let country = 'RU';
-  try {
-    const resp = await fetch(API + '/init', {signal: AbortSignal.timeout(3000)});
-    if(resp.ok){ const data = await resp.json(); country = data.country || 'RU'; }
-  } catch(e) {
-    const lang = tg?.initDataUnsafe?.user?.language_code || navigator.language || 'ru';
-    if(/^ru|^be|^kk|^uk/.test(lang)) country = 'RU';
-  }
-  const cisCountries = ['RU','BY','KZ','UZ','AM','UA','AZ','GE','MD','TJ','TM','KG'];
-  if(cisCountries.includes(country)){
-    try{
-      window.yaContextCb=window.yaContextCb||[];
-      window.yaContextCb.push(()=>{
-        Ya.Context.AdvManager.render({blockId:'R-A-18894418-1',type:'floorAd',platform:'touch'});
-      });
-    }catch(e){}
-  }
+  // Adsgram инициализируется через initAdsgram() (вызывается при старте)
+  // Эта функция оставлена для совместимости — баннер скрыт, нижняя плашка убрана
 }
-
-
 
 /* ══ DAILY LOGIN BONUS ══ */
 const DAILY_REWARDS = [
@@ -7336,7 +7253,7 @@ function showDailyBonus(){
 function renderDailyDays(currentDay){
   const claimed=safeGet('bfm_daily_claimed_today','')==='1';
   const streak=document.getElementById('daily-streak-label');
-  if(streak) streak.textContent = currentDay>1 ? `🔥 Серия: ${currentDay-1} / 7 дней` : '';
+  if(streak) streak.textContent = currentDay>1 ? `${t('streak')}${currentDay-1}${t('streakDays')}` : '';
   const container=document.getElementById('daily-days');
   if(!container) return;
   container.innerHTML=DAILY_REWARDS.map(r=>{
@@ -7344,13 +7261,13 @@ function renderDailyDays(currentDay){
     const isCurrent=r.day===currentDay&&!claimed;
     const isFuture=!isPast&&!isCurrent;
     return `<div class="daily-day-card ${isPast?'past':''} ${isCurrent?'current':''} ${isFuture?'future':''}">
-      <div class="daily-day-num">День ${r.day}</div>
+      <div class="daily-day-num">${t('dayLabel')+r.day}</div>
       <div class="daily-day-ico">${isPast?'✅':r.ico}</div>
       <div class="daily-day-name">${r.name}</div>
     </div>`;
   }).join('');
   const btn=document.getElementById('daily-claim-btn');
-  if(btn){btn.textContent=claimed?'Завтра 🌙':'Забрать! 🎁';btn.disabled=claimed;}
+  if(btn){btn.textContent=claimed?t('tomorrowDaily'):t('claimDaily');btn.disabled=claimed;}
 }
 function claimDailyBonus(){
   const today=_dailyTodayStr();
@@ -7545,7 +7462,7 @@ setTimeout(syncLocalScoresToServer, 3500);
 <!-- CASE OPEN OVERLAY -->
 <div id="case-open-ov">
   <div class="case-ov-title" id="case-ov-title">🎲 Открываем кейс</div>
-  <div class="case-ov-subtitle" id="case-ov-subtitle">Нажми кнопку чтобы открыть</div>
+  <div class="case-ov-subtitle" id="case-ov-subtitle"></div>
   <div class="case-chest-wrap" id="case-chest-wrap">
     <div class="case-chest" id="case-chest">📦</div>
     <div class="css-chest" id="css-chest"></div>
@@ -7570,7 +7487,7 @@ setTimeout(syncLocalScoresToServer, 3500);
       </div>
       <div class="cs2-shadow" id="cs2-shadow"></div>
     </div>
-    <button class="chest-open-btn" id="case-open-btn">Открыть!</button>
+    <button class="chest-open-btn" id="case-open-btn"><span id="lbl-case-btn"></span></button>
   </div>
   <div class="case-result-wrap" id="case-result-wrap">
     <div class="case-result-ico" id="case-result-ico">⚡</div>
@@ -7585,11 +7502,11 @@ setTimeout(syncLocalScoresToServer, 3500);
 <!-- DAILY BONUS OVERLAY -->
 <div id="daily-ov">
   <div class="daily-inner">
-    <div class="daily-title">🎁 ЕЖЕДНЕВНАЯ НАГРАДА</div>
-    <div class="daily-subtitle">Заходи каждый день — получай бонусы!</div>
+    <div class="daily-title" id="lbl-daily-title"></div>
+    <div class="daily-subtitle" id="lbl-daily-sub"></div>
     <div class="daily-streak" id="daily-streak-label"></div>
     <div class="daily-days" id="daily-days"></div>
-    <button class="daily-claim-btn" id="daily-claim-btn" onclick="claimDailyBonus()">Забрать! 🎁</button>
+    <button class="daily-claim-btn" id="daily-claim-btn" onclick="claimDailyBonus()" id="lbl-daily-claim"></button>
     <button class="daily-close-btn" onclick="closeDailyBonus()">Закрыть</button>
   </div>
 </div>
