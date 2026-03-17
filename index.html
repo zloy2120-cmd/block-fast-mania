@@ -4498,74 +4498,41 @@ function resumeTimer(){
  * Вывод: Adsgram → TON → @wallet (Telegram) → биржа → карта
  * ════════════════════════════════════════════════════════════ */
 
-// ─── Adsgram Reward Integration ─────────────────────────────────────────────
-// Docs: https://docs.adsgram.ai/publisher/api-reference
-// blockId 25294 = основной Reward блок
+// ─── Adsgram Integration ─────────────────────────────────────────────────────
 const ADSGRAM_BLOCK_ID = '25294';
-const ADS_DISABLED = true; // true = реклама выключена
+const ADS_DISABLED = false;
 
-let adCallback    = null;
-let _AdController = null;
-let _adIsShowing  = false;
-let _adOnDone     = null; // колбэк после завершения рекламы
-let _adOnReward   = null; // колбэк только при полном просмотре
+let _AdController   = null;
+let _adIsShowing    = false;
+let _adSafetyTimer  = null;
+let _adOnFinished   = null; // хранит callback "продолжить игру" для сброса при ошибках
+let _adOnRewarded   = null; // хранит callback "выдать награду"
 
-// init() один раз по доке — повторный вызов с тем же blockId вернёт тот же объект
+// Сброс — вызывается после ЛЮБОГО завершения рекламы
+// Вызывает _adOnFinished если он есть (чтобы игра не зависла)
+function _adReset(callFinished){
+  _adIsShowing = false;
+  if(_adSafetyTimer){ clearTimeout(_adSafetyTimer); _adSafetyTimer = null; }
+  if(callFinished && _adOnFinished){ const cb = _adOnFinished; _adOnFinished = null; cb(); }
+  else { _adOnFinished = null; }
+  _adOnRewarded = null;
+}
+
 function _initAdsgram(){
-  if(_AdController || !window.Adsgram) return;
+  if(!window.Adsgram || _AdController) return;
   try{
     _AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
 
-    // ── Подписываемся на все события по API Reference ──────────────────────
-    // onReward: пользователь досмотрел до конца → выдаём награду
-    _AdController.addEventListener('onReward', () => {
-      if(_adOnReward){ _adOnReward(); _adOnReward = null; }
-    });
-
-    // onSkip: пользователь закрыл → только завершаем, не награждаем
-    _AdController.addEventListener('onSkip', () => {
-      _adIsShowing = false;
-      _adOnReward = null;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    });
-
-    // onComplete: для Interstitial = досмотрел или закрыл → завершаем
-    _AdController.addEventListener('onComplete', () => {
-      _adIsShowing = false;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    });
-
-    // onError: ошибка → завершаем без награды, не блокируем игрока
-    _AdController.addEventListener('onError', () => {
-      _adIsShowing = false;
-      _adOnReward = null;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    });
-
-    // onBannerNotFound: нет рекламы → завершаем без блокировки
-    _AdController.addEventListener('onBannerNotFound', () => {
-      _adIsShowing = false;
-      _adOnReward = null;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    });
-
-    // onNonStopShow: игрок пытается смотреть рекламы подряд — Adsgram показывает алерт
-    // Подписываемся чтобы сбросить наши флаги и не заблокировать игру
-    _AdController.addEventListener('onNonStopShow', () => {
-      _adIsShowing = false;
-      _adOnReward = null;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    });
-
-    // onTooLongSession: слишком долгая сессия — сбрасываем флаги
-    _AdController.addEventListener('onTooLongSession', () => {
-      _adIsShowing = false;
-      _adOnReward = null;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    });
+    // События которые НЕ всегда дают promise resolve/reject:
+    // после них _adIsShowing мог застрять в true — сбрасываем принудительно
+    // + вызываем onFinished чтобы "Продолжить" не завис
+    _AdController.addEventListener('onNonStopShow',    () => _adReset(true));
+    _AdController.addEventListener('onTooLongSession', () => _adReset(true));
+    _AdController.addEventListener('onBannerNotFound', () => _adReset(true));
+    _AdController.addEventListener('onError',          () => _adReset(true));
 
     console.log('[Adsgram] ready blockId=' + ADSGRAM_BLOCK_ID);
-  }catch(e){ console.warn('[Adsgram] init error',e); }
+  }catch(e){ console.warn('[Adsgram] init error', e); }
 }
 (function(){
   const s = document.querySelector('script[src*="sad.adsgram.ai"]');
@@ -4573,56 +4540,51 @@ function _initAdsgram(){
   setTimeout(_initAdsgram, 800);
 })();
 
-// ─── Внутренний показ через addEventListener (не через .then/.catch) ─────────
-// onDone   — вызывается всегда (reward + skip + error + notFound + nonStop)
-// onReward — только при полном просмотре
-function _showAd(onDone, onReward){
-  if(ADS_DISABLED){ if(onReward) onReward(); if(onDone) onDone(); return; }
-  if(_adIsShowing){ return; }       // уже идёт — игнорируем
-  if(!_AdController){ if(onDone) onDone(); return; } // SDK не загружен
+// ─── Единая точка показа рекламы ─────────────────────────────────────────────
+function _showAd({ onRewarded, onFinished }){
+  if(ADS_DISABLED){
+    if(onRewarded) onRewarded();
+    if(onFinished) onFinished();
+    return;
+  }
+  if(_adIsShowing) return;  // уже идёт — игнорируем повторный тап
+  if(!_AdController){
+    if(onFinished) onFinished(); // SDK не загружен — не блокируем игрока
+    return;
+  }
 
-  _adIsShowing = true;
-  _adOnDone    = onDone || null;
-  _adOnReward  = onReward || null;
+  _adIsShowing   = true;
+  _adOnFinished  = onFinished || null;
+  _adOnRewarded  = onRewarded || null;
 
-  // show() запускает показ — все события придут через addEventListener выше
-  _AdController.show().catch(() => {
-    // .catch страховка на случай если событие не придёт
-    if(_adIsShowing){
-      _adIsShowing = false;
-      _adOnReward = null;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    }
-  });
+  // Safety: если через 60с promise не завершился — принудительно продолжаем
+  _adSafetyTimer = setTimeout(() => {
+    console.warn('[Adsgram] safety reset 60s');
+    _adReset(true);
+  }, 60000);
+
+  _AdController.show()
+    .then(() => {
+      const rew = _adOnRewarded;
+      _adReset(true);  // сначала сбрасываем (onFinished уже null после _adReset)
+      if(rew) rew();   // выдаём награду за полный просмотр
+    })
+    .catch(() => {
+      // пропустил / ошибка — НЕ награждаем, но продолжаем игру
+      _adReset(true);
+    });
 }
 
-// ─── Reward: спины и подсказка — только за полный просмотр ───────────────────
+// ─── Спины (+3) и Подсказка — награда только за полный просмотр ──────────────
 function doAd(type){
-  adCallback = type;
   submitEvent('ad_shown', mode, 0, `type:${type}`);
-  _showAd(
-    null,                          // onDone — не нужен, пропуск = нет награды
-    () => giveAdReward(type)       // onReward — только за досмотр
-  );
+  _showAd({ onRewarded: () => giveAdReward(type), onFinished: null });
 }
 
-// ─── Продолжить/Speed — игра продолжается ВСЕГДА (onDone срабатывает всегда) ─
+// ─── Продолжить / Speed+10с — игра продолжается ВСЕГДА ───────────────────────
 function showInterstitialThenContinue(callback){
   submitEvent('ad_shown', mode, 0, 'type:continue');
-  if(ADS_DISABLED){ callback(); return; }
-  if(_adIsShowing){ return; }
-  if(!_AdController){ callback(); return; }
-
-  _adIsShowing = true;
-  _adOnDone    = callback; // callback придёт через onSkip/onComplete/onError/onBannerNotFound
-  _adOnReward  = null;
-
-  _AdController.show().catch(() => {
-    if(_adIsShowing){
-      _adIsShowing = false;
-      if(_adOnDone){ _adOnDone(); _adOnDone = null; }
-    }
-  });
+  _showAd({ onRewarded: null, onFinished: callback });
 }
 
 
