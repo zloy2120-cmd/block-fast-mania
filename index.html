@@ -40,6 +40,8 @@ html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var
 body.low-end #skins-screen .sk-head{backdrop-filter:none;background:rgba(5,4,20,.95);}
 body.low-end #skins-screen .sk-tabs{backdrop-filter:none;background:rgba(5,4,20,.92);}
 body.low-end .m-classic,body.low-end .m-mini,body.low-end .m-speed,body.low-end .m-daily{backdrop-filter:none;-webkit-backdrop-filter:none;}
+body.low-end #go{background:rgba(6,5,22,.98);}
+body.low-end [class*="theme-"] #tray,body.low-end [class*="theme-"] .g-panel{backdrop-filter:none !important;}
 #achieve-screen{background:linear-gradient(160deg,#0e0c24 0%,#1a1640 40%,#0d1c3a 100%);}
 #game{background:var(--bg) !important;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);}
@@ -102,9 +104,9 @@ body.low-end .m-classic,body.low-end .m-mini,body.low-end .m-speed,body.low-end 
 }
 .mbtn-inner{display:flex;align-items:center;gap:12px;padding:13px 16px;width:100%;position:relative;z-index:3;}
 
-.m-classic{background:linear-gradient(135deg,rgba(109,40,217,.55),rgba(124,58,237,.4),rgba(109,40,217,.3));border:1.5px solid rgba(167,139,250,.45);box-shadow:0 6px 24px rgba(109,40,217,.3),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
-.m-mini{background:linear-gradient(135deg,rgba(8,145,178,.5),rgba(14,116,144,.38),rgba(6,182,212,.25));border:1.5px solid rgba(103,232,249,.4);box-shadow:0 6px 24px rgba(8,145,178,.25),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
-.m-speed{background:linear-gradient(135deg,rgba(185,28,28,.5),rgba(220,38,38,.38),rgba(239,68,68,.25));border:1.5px solid rgba(252,165,165,.38);box-shadow:0 6px 24px rgba(220,38,38,.25),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.m-classic{background:linear-gradient(135deg,rgba(109,40,217,.55),rgba(124,58,237,.4),rgba(109,40,217,.3));border:1.5px solid rgba(167,139,250,.45);box-shadow:0 6px 24px rgba(109,40,217,.3),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.m-mini{background:linear-gradient(135deg,rgba(8,145,178,.5),rgba(14,116,144,.38),rgba(6,182,212,.25));border:1.5px solid rgba(103,232,249,.4);box-shadow:0 6px 24px rgba(8,145,178,.25),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.m-speed{background:linear-gradient(135deg,rgba(185,28,28,.5),rgba(220,38,38,.38),rgba(239,68,68,.25));border:1.5px solid rgba(252,165,165,.38);box-shadow:0 6px 24px rgba(220,38,38,.25),inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 
 .mbtn-ico-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 3px 8px rgba(0,0,0,.3);}
 .mbtn-ico{font-size:22px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.4));}
@@ -264,7 +266,7 @@ body.low-end .m-classic,body.low-end .m-mini,body.low-end .m-speed,body.low-end 
 .mlb-arrow{font-size:22px;color:rgba(251,191,36,.55);padding-right:18px;}
 
 /* ══ GAME OVER — redesigned ══ */
-#go{display:none;position:fixed;inset:0;background:rgba(6,5,22,.92);backdrop-filter:blur(18px);z-index:600;align-items:center;justify-content:center;}
+#go{display:none;position:fixed;inset:0;background:rgba(6,5,22,.96);z-index:600;align-items:center;justify-content:center;}
 #go.show{display:flex;}
 .go-card{background:linear-gradient(160deg,#0d0d28,#14143c);border:1.5px solid rgba(255,255,255,.1);border-radius:28px;padding:20px 18px 16px;text-align:center;width:min(320px,90vw);box-shadow:0 0 60px rgba(239,68,68,.12),0 30px 60px rgba(0,0,0,.65);}
 .go-emoji{font-size:44px;display:block;animation:emojiPop .5s cubic-bezier(.34,1.56,.64,1);}
@@ -1409,13 +1411,13 @@ body[class*="theme-"] #game {
   background: transparent !important;
 }
 body[class*="theme-"] #tray {
-  background: rgba(0,0,0,.35) !important;
+  background: rgba(0,0,0,.45) !important;
   border-color: rgba(255,255,255,.1) !important;
-  backdrop-filter: blur(4px);
+  /* blur убран — вызывал постоянные repaint во время игры */
 }
 body[class*="theme-"] .g-panel {
-  background: rgba(0,0,0,.3) !important;
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,.42) !important;
+  /* blur убран */
 }
 body[class*="theme-"] #score-row, 
 body[class*="theme-"] .g-header {
@@ -2183,7 +2185,7 @@ if(tg){tg.ready();tg.expand();tg.onEvent('viewportChanged',()=>{
 (function(){
   try{
     const cores = navigator.hardwareConcurrency||4;
-    if(cores<=4) document.body.classList.add('low-end');
+    if(cores<=6) document.body.classList.add('low-end'); // расширен: 4→6 для Snapdragon 600/700
   }catch(e){}
 })();
 
