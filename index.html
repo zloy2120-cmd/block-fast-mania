@@ -26,6 +26,9 @@
   --text:#eeeeff;--muted:rgba(190,190,230,0.52);
   --gold:#ffd600;--cyan:#22d3ee;--green:#22c55e;
   --bank-w:80px;
+  --hl-color:rgba(255,255,255,.85);
+  --hl-glow:rgba(255,255,255,.3);
+  --hl-bg:rgba(255,255,255,.15);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:visible;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;user-select:none;touch-action:none;}
@@ -471,23 +474,23 @@ body.theme-sunset #grid  { background:linear-gradient(180deg,rgba(15,5,25,.4) 0%
   isolation:isolate;
 }
 /* Valid placement highlight */
-@keyframes hlFadeIn{
-  from{ opacity:0; }
-  to  { opacity:1; }
+/* ── Highlight: transition на opacity — без reflow, без мерцания ── */
+/* Все ячейки всегда имеют transition, ok просто меняет opacity */
+.cell{
+  transition: opacity 100ms ease-out;
 }
 .cell.ok{
-  outline:2.5px solid rgba(255,255,255,.9)!important;
-  background:rgba(255,255,255,.18)!important;
-  box-shadow: 0 0 10px rgba(255,255,255,.3)!important;
-  border-radius:1px!important;
-  animation: hlFadeIn 90ms ease-out both;
+  outline: 2.5px solid rgba(255,255,255,.9) !important;
+  background: rgba(255,255,255,.22) !important;
+  box-shadow: 0 0 10px rgba(255,255,255,.35) !important;
+  border-radius: 2px !important;
+  opacity: 1 !important;
 }
 /* Invalid placement */
 .cell.bad{
-  outline:2px solid rgba(239,68,68,.85)!important;
-  background:rgba(239,68,68,.25)!important;
-  box-shadow:inset 0 3px 0 rgba(255,100,100,.4),inset 0 -3px 0 rgba(100,0,0,.4),0 0 8px rgba(239,68,68,.4)!important;
-  animation: hlFadeIn 90ms ease-out both;
+  outline: 2px solid rgba(239,68,68,.9) !important;
+  background: rgba(239,68,68,.22) !important;
+  box-shadow: 0 0 10px rgba(239,68,68,.45) !important;
 }
 /* Line-ready — оригинальный радужный outline + мягкое рассеянное свечение за рамками
    outline анимирует цвет рамки (paint, но только для ячеек линии)
@@ -5329,6 +5332,7 @@ function renderSkinsScreen() {
     </div>`;
   }).join('');
 }
+
 
 function selectSkin(id) {
   if(!isSkinUnlocked(id)) {
